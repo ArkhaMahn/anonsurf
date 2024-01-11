@@ -1,4 +1,5 @@
 using Gtk;
+using Soup;
 
 const uchar BUTTON_SIZE_X = 105;
 const uchar BUTTON_SIZE_Y = 65;
@@ -122,8 +123,28 @@ public class ButtonMyIP: Button {
     this.clicked.connect(on_click_myip);
   }
 
+  private bool is_using_tor() {
+    /*
+    Sorry. You are not using Tor.
+    */
+    // https://wiki.gnome.org/Projects/Vala/LibSoupSample
+    var session = new Soup.Session();
+    var message = new Soup.Message("GET", "https://check.torproject.org/");
+    session.send_message(message);
+    // TODO Reverse this condition: Maybe error happens. Check for success, error and not using tor?
+    if (((string)message.response_body.data).contains("Sorry. You are not using Tor.")) {
+      return false;
+    }
+    return true;
+  }
+
   private void on_click_myip() {
-    print("Checking Public IP\n");
+    // https://wiki.gnome.org/Projects/Vala/LibSoupSample
+    if (is_using_tor()) {
+      print("Using Tor\n");
+    } else {
+      print("Not using Tor\n");
+    }
   }
 }
 
