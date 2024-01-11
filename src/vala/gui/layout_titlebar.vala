@@ -34,8 +34,8 @@ public class AnonSurfTitleBar: HeaderBar {
   public AnonSurfTitleBar(AnonSurfDialogOptions dialog_options) {
     this.set_show_close_button(true);
     this.set_title("AnonSurf");
+    this.pack_end(new ButtonSettings(dialog_options));
     this.pack_end(new ButtonAbout());
-    this.pack_start(new ButtonSettings(dialog_options));
     this.set_decoration_layout(":close");
   }
 }
