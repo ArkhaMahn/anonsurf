@@ -123,11 +123,11 @@ public class ButtonMyIP: Button {
     this.clicked.connect(on_click_myip);
   }
 
-  private bool is_using_tor() {
+  private bool http_tor_status() {
     /*
+    https://wiki.gnome.org/Projects/Vala/LibSoupSample
     Sorry. You are not using Tor.
     */
-    // https://wiki.gnome.org/Projects/Vala/LibSoupSample
     var session = new Soup.Session();
     var message = new Soup.Message("GET", "https://check.torproject.org/");
     session.send_message(message);
@@ -138,13 +138,19 @@ public class ButtonMyIP: Button {
     return true;
   }
 
-  private void on_click_myip() {
-    // https://wiki.gnome.org/Projects/Vala/LibSoupSample
-    if (is_using_tor()) {
+  private void check_tor_status() {
+    // TODO show notification instead
+    if (http_tor_status()) {
       print("Using Tor\n");
     } else {
       print("Not using Tor\n");
     }
+  }
+
+  private void on_click_myip() {
+    this.set_sensitive(false);
+    var background_check = new Thread<void>("background_check", check_tor_status);
+    this.set_sensitive(true);
   }
 }
 
