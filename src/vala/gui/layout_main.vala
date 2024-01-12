@@ -63,7 +63,7 @@ public class BoxStatusBoot: Box {
   public ButtonBoot btn_boot;
 
   public BoxStatusBoot() {
-    GLib.Object(orientation: Orientation.VERTICAL);
+    GLib.Object(orientation: Orientation.HORIZONTAL);
     create_box_layout();
     refresh();
   }
