@@ -169,7 +169,7 @@ public class ButtonMyIP: Button {
     return false; // tmp fix for missing return statement
   }
 
-  private void check_tor_status() {
+  private void check_tor_connection() {
     // TODO show notification instead
     // FIXME ** (anonsurf-gtk:990382): CRITICAL **: 02:47:09.624: string_contains: assertion 'self != NULL' failed
     if (http_tor_status()) {
@@ -182,7 +182,7 @@ public class ButtonMyIP: Button {
   private void on_click_myip() {
     // FIXME button wasn't disabled
     this.set_sensitive(false);
-    var background_check = new Thread<void>("background_check", check_tor_status);
+    var background_check = new Thread<void>("background_check", check_tor_connection);
     this.set_sensitive(true);
   }
 }
