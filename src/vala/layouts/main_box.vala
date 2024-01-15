@@ -17,6 +17,7 @@ public enum AnonSurfStatusErr {
   Likely dbus can get status of the running service. For example: system bus -> org.freedesktop.systemd1 -> unit/tor_2eservice
   Unit has methods like kill, reload, restart, stop, start (really why?).
   Maybe we can disable / enable unit file? https://pi3g.com/enabling-and-disabling-a-systemd-service-in-python-using-dbus/
+  https://stackoverflow.com/questions/43499880/how-to-extract-service-state-via-systemd-dbus-api
 */
 
 

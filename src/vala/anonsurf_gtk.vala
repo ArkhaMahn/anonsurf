@@ -1,8 +1,19 @@
 using Gtk;
 
-extern bool is_anonsurf_running();
-extern bool is_tor_running();
-extern bool is_anonsurf_enabled_boot();
+
+public class AnonSurfLayout: Gtk.Window {
+  //   TODO: update icon of tray icon by status
+  // TODO: update title bar by status. Maybe move status area to this
+  public BoxMainLayout main_layout;
+
+  public AnonSurfLayout(AnonSurfDialogOptions dialog_options) {
+    this.main_layout = new BoxMainLayout();
+    this.set_titlebar(new AnonSurfTitleBar(dialog_options));
+    this.set_icon_name("anonsurf");
+    this.set_resizable(false);
+    this.add(this.main_layout);
+  }
+}
 
 
 public class AnonSurfApp: GLib.Application {
