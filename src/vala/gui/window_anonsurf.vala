@@ -2,6 +2,8 @@ using Gtk;
 
 
 public class AnonSurfLayout: Gtk.Window {
+  //   TODO: update icon of tray icon by status
+  // TODO: update title bar by status. Maybe move status area to this
   public BoxMainLayout main_layout;
 
   public AnonSurfLayout(AnonSurfDialogOptions dialog_options) {

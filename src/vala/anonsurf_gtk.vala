@@ -17,12 +17,12 @@ public class AnonSurfApp: GLib.Application {
   public override void activate() {
     this.layout = new AnonSurfLayout(this.dialog_options);
     this.layout.show_all();
-    Timeout.add(200, on_refresh_gui);
+    Timeout.add(200, refresh_gui);
     Gtk.main();
   }
 
-  private bool on_refresh_gui() {
-    this.layout.main_layout.on_update_layout();
+  private bool refresh_gui() {
+    this.layout.main_layout.update_layout();
     return true;
   }
 }
