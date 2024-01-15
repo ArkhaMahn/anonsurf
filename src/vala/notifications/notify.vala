@@ -1,0 +1,20 @@
+public enum NotifyLevel {
+  Ok,
+  Warn,
+  Error
+}
+
+
+public void send_notification(string title, string desc, NotifyLevel level) {
+  string icon_name;
+
+  if (level == Ok) {
+    icon_name = "security-high";
+  } else if (level == Warn) {
+    icon_name = "security-medium";
+  } else {
+    icon_name = "security-low";
+  }
+  Notify.Notification noti = new Notify.Notification (title, desc, icon_name);
+  noti.show();
+}

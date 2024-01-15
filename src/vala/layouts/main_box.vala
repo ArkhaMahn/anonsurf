@@ -14,10 +14,6 @@ public enum AnonSurfStatusErr {
 
 /*
   TODO: change classes to private if possible
-  Likely dbus can get status of the running service. For example: system bus -> org.freedesktop.systemd1 -> unit/tor_2eservice
-  Unit has methods like kill, reload, restart, stop, start (really why?).
-  Maybe we can disable / enable unit file? https://pi3g.com/enabling-and-disabling-a-systemd-service-in-python-using-dbus/
-  https://stackoverflow.com/questions/43499880/how-to-extract-service-state-via-systemd-dbus-api
 */
 
 
@@ -42,7 +38,6 @@ public class ButtonBoot: Button {
   }
 
   private void do_disable_boot() {
-    // Here? https://github.com/tcbrindle/systemd-glib/blob/master/src/systemd-service-iface.vala
     print("Disabling boot\n");
   }
 
@@ -151,33 +146,27 @@ public class ButtonMyIP: Button {
     this.clicked.connect(on_click_myip);
   }
 
-  private bool http_tor_status() {
+  private void http_tor_status() {
     /*
-    https://wiki.gnome.org/Projects/Vala/LibSoupSample
-    Sorry. You are not using Tor.
+      https://wiki.gnome.org/Projects/Vala/LibSoupSample
     */
     var session = new Soup.Session();
     var message = new Soup.Message("GET", "https://check.torproject.org/");
+
     session.send_message(message);
-    // TODO Maybe return error too?
-    // TODO send notification instead
+
     if (((string)message.response_body.data).contains("Congratulations. This browser is configured to use Tor.")) {
-      return true;
+      send_notification("Connection is secured", "Your connection is under Tor network", NotifyLevel.Ok);
     }
     else if (((string)message.response_body.data).contains("Sorry. You are not using Tor.")) {
-      return false;
+      send_notification("Connection is not secured", "Your connection is not under Tor network", NotifyLevel.Warn);
+    } else {
+      send_notification("Check Error", "Unexpected error while checking network connection", NotifyLevel.Error);
     }
-    return false; // tmp fix for missing return statement
   }
 
   private void check_tor_connection() {
-    // TODO show notification instead
-    // FIXME ** (anonsurf-gtk:990382): CRITICAL **: 02:47:09.624: string_contains: assertion 'self != NULL' failed
-    if (http_tor_status()) {
-      print("Using Tor\n");
-    } else {
-      print("Not using Tor\n");
-    }
+    http_tor_status();
   }
 
   private void on_click_myip() {

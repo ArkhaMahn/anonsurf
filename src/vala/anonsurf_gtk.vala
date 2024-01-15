@@ -45,5 +45,6 @@ int main(string[] args) {
   var dialog_options = new AnonSurfDialogOptions();
   var app = new AnonSurfApp(dialog_options);
   var sys_tray = new AnonSurfStatusIcon(app, dialog_options);
+  Notify.init("AnonSurf GTK");
   return app.run(args);
 }
