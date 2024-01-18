@@ -1,8 +1,6 @@
 import os
 import libs / [cli_utils, boot_utils, myip, tor_utils]
 
-
-
 #[
   Check user's options
 ]#
@@ -33,5 +31,6 @@ proc checkOptions() =
       cli_banner_help()
     else:
       cli_send_msg(Err, "Invalid option", "Invalid option " & paramStr(1))
+
 
 checkOptions()
