@@ -1,5 +1,8 @@
 import os
 import posix
+import strscans
+import net
+import strutils
 import cli_utils
 
 
@@ -56,29 +59,74 @@ proc cli_anonsurf_stop*() =
     else:
       echo "Failed to start anonsurf"
 
-# proc ansurf_extra_changeID*(conf: string): seq[string] =
-#   var
-#     tmp, passwd: string
-#     sock = net.newSocket()
-
-#   if scanf(readFile(conf), "$w $w", tmp, passwd):
-#     let controlPort = getTorrcPorts().controlPort
-#     # sock.connect("127.0.0.1", Port(9051))
-#     if ":" in controlPort:
-#       sock.connect("127.0.0.1", Port(parseInt(controlPort.split(":")[1])))
-#     else:
-#       sock.connect("127.0.0.1", Port(parseInt(controlPort)))
-#     sock.send("authenticate \"" & passwd & "\"\nsignal newnym\nquit\n")
-#     let recvData = sock.recv(256).split("\n")
-#     sock.close()
-#     return recvData
 
 #[
-  Change Tor's identifier
+  Parse Tor's config file, and get value of control port
 ]#
-# TODO remake this function
+proc parse_torrc_control_port*(control_port: var string): bool =
+  const
+    path = "/etc/tor/torrc"
+
+  if fileExists(path):
+    for line in lines(path):
+      if line.startsWith("ControlPort"):
+        control_port = line.split(" ")[1]
+        return true
+    return false
+  else:
+    return false
+
+
+#[
+  Connect to Tor's control port and send request
+]#
+proc change_identity_from_tor_sock() =
+  let
+    conf_file = "/etc/anonsurf/nyxrc"
+
+  if not fileExists(conf_file):
+    cli_send_msg(Err, "Missing config file", "nyxrc not found")
+    return
+
+  var
+    tmp, passwd: string
+    sock = net.newSocket()
+
+  if scanf(readFile(conf_file), "$w $w", tmp, passwd):
+    var
+      control_port: string
+
+    if not parse_torrc_control_port(control_port):
+      cli_send_msg(Err, "Tor's config error", "Unable to find control port")
+      return
+
+    if ":" in control_port:
+      sock.connect("127.0.0.1", Port(parseInt(control_port.split(":")[1])))
+    else:
+      sock.connect("127.0.0.1", Port(parseInt(control_port)))
+
+    sock.send("authenticate \"" & passwd & "\"\nsignal newnym\nquit\n")
+    let
+      sock_data = sock.recv(256).split("\n")
+
+    if sock_data[0] != "250 OK\c" or sock_data[1] != "250 OK\c":
+      cli_send_msg(Err, "Failed to change identity", "Tor didn't change Identity")
+    else:
+      cli_send_msg(Ok, "Identity changed", "You have a new Identity from Tor")
+    sock.close()
+
+
+#[
+  Change Tor's identifier using Tor's control port
+]#
 proc cli_anonsurf_change_id*() =
-  echo "Developing"
+  if not is_anonsurf_running():
+    cli_send_msg(Err, "AnonSurf is not running", "AnonSurf is not running. Can't change Tor's identity")
+  else:
+    try:
+      change_identity_from_tor_sock()
+    except:
+      cli_send_msg(Err, "Changing identity error", "Error while changing identity")
 
 
 #[
