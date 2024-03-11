@@ -1,3 +1,25 @@
+anonsurf (4.2+parrot1) lory-updates; urgency=medium
+
+  [ Nong Hoang Tu ]
+  * Improve options
+  * Make check IP work
+  * Background check is using new thread
+  * Move position of dialog button
+  * Rewrite Boot dialog
+  * Change Box Status Boot layout to horizontal
+  * New code base for main layout
+  * Add buttons and fucntions again
+  * Update function name
+  * New code structure
+  * Remove binary file
+  * Add template for dbus
+  * Add Notification
+  * Rewrite AnonSurf CLI
+  * Add change id
+  * Remove spaces
+
+ -- Lorenzo "Palinuro" Faletra <palinuro@parrotsec.org>  Mon, 11 Mar 2024 16:39:33 +0100
+
 anonsurf (4.1.1+parrot2) lory; urgency=medium
 
   * Rebuild for Parrot 6.
