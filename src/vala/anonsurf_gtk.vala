@@ -1,14 +1,16 @@
 using Gtk;
 
+// TODO: if start supprocess, it's better to use absolute path of cmd service (check path exists first)
+
 
 public class AnonSurfLayout: Gtk.Window {
   //   TODO: update icon of tray icon by status
   // TODO: update title bar by status. Maybe move status area to this
   public BoxMainLayout main_layout;
 
-  public AnonSurfLayout(AnonSurfDialogOptions dialog_options) {
+  public AnonSurfLayout() {
     this.main_layout = new BoxMainLayout();
-    this.set_titlebar(new AnonSurfTitleBar(dialog_options));
+    this.set_titlebar(new AnonSurfTitleBar());
     this.set_icon_name("anonsurf");
     this.set_resizable(false);
     this.add(this.main_layout);
@@ -17,16 +19,14 @@ public class AnonSurfLayout: Gtk.Window {
 
 
 public class AnonSurfApp: GLib.Application {
-  private AnonSurfDialogOptions dialog_options;
   private AnonSurfLayout layout;
 
-  public AnonSurfApp(AnonSurfDialogOptions dialog_options) {
-    Object(application_id: "org.parrot.anonsurf-gtk");
-    this.dialog_options = dialog_options;
+  public AnonSurfApp() {
+    Object(application_id: "org.parrot.anonsurf.gui");
   }
 
   public override void activate() {
-    this.layout = new AnonSurfLayout(this.dialog_options);
+    this.layout = new AnonSurfLayout();
     this.layout.show_all();
     Timeout.add(200, refresh_gui);
     Gtk.main();
@@ -42,9 +42,8 @@ public class AnonSurfApp: GLib.Application {
 int main(string[] args) {
   Gtk.init(ref args);
 
-  var dialog_options = new AnonSurfDialogOptions();
-  var app = new AnonSurfApp(dialog_options);
-  var sys_tray = new AnonSurfStatusIcon(app, dialog_options);
+  var app = new AnonSurfApp();
+  var sys_tray = new AnonSurfStatusIcon(app);
   Notify.init("AnonSurf GTK");
   return app.run(args);
 }

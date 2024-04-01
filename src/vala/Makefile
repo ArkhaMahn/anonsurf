@@ -7,4 +7,4 @@ all:
 	layouts/main_box.vala layouts/titlebar.vala \
 	systray/systray.vala \
 	notifications/notify.vala \
-	dialogs/about.vala  dialogs/options.vala
+	dialogs/about.vala

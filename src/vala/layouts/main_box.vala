@@ -106,15 +106,24 @@ public class BoxStatusBoot: Box {
 }
 
 
-public class ButtonStart: Button {
+public class ButtonStart: LockButton {
+  // TODO make a public thread object
+  // private SimplePermission permissions;
+
   public ButtonStart() {
+    // permissions = new SimplePermission(false); // TODO handle file write here to pass SimplePermission?
     this.set_label("Start");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(start_anonsurf);
   }
 
   private void start_anonsurf() {
-    print("Starting anonsurf");
+    this.set_sensitive(false); // doesn't work
+    var x = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
+    x.wait_async();
+    // exit code?
+    print("Starting anonsurf\n");
+    this.set_sensitive(true);
   }
 
   private void stop_anonsurf() {
