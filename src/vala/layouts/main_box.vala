@@ -32,33 +32,38 @@ public class LabelBootStatus: Label {
 
 
 public class ButtonBoot: Button {
+  public ThreadPool<WorkerSystemdStartup> pool;
+
   public ButtonBoot() {
     this.set_size_request(BUTTON_BOOT_SIZE_X, BUTTON_BOOT_SIZE_Y);
     this.clicked.connect(on_click_boot_action);
-  }
-
-  private void do_disable_boot() {
-    print("Disabling boot\n");
-  }
-
-  private void do_enable_boot() {
-    print("Enabling boot\n");
+    this.pool = new ThreadPool<WorkerSystemdStartup>.with_owned_data ((worker) => {
+      worker.run();
+    }, 1, false);
   }
 
   private void on_click_boot_action() {
-    if (this.get_label() == "Enable") {
-      do_disable_boot();
-    }
-    else {
-      do_enable_boot();
+    try {
+      if (this.get_label() == "Enable") {
+        this.pool.add(new WorkerSystemdStartup(true));
+      } else {
+        this.pool.add(new WorkerSystemdStartup(false));
+      }
+    } catch (ThreadError e) {
+      print("ThreadError: %s\n", e.message);
     }
   }
 
   public void on_update_label(bool is_enabled_boot) {
-    if (is_enabled_boot == true) {
-      this.set_label("Disable");
+    if (this.pool.get_num_threads() > 0) {
+      this.set_sensitive(false);
     } else {
-      this.set_label("Enable");
+      this.set_sensitive(true);
+      if (is_enabled_boot == true) {
+        this.set_label("Disable");
+      } else {
+        this.set_label("Enable");
+      }
     }
   }
 }
@@ -116,15 +121,15 @@ public class ButtonStart: Button {
     this.pool = new ThreadPool<WorkerSystemdService>.with_owned_data ((worker) => {
       worker.run();
     }, 1, false);
-      // 1 -> Max threads in pool
+    // 1 -> Max threads in pool
   }
 
   private void on_click_button() {
     try {
       if (this.get_label() == "Start") {
-        pool.add(new WorkerSystemdService(true));
+        this.pool.add(new WorkerSystemdService(true));
       } else {
-        pool.add(new WorkerSystemdService(false));
+        this.pool.add(new WorkerSystemdService(false));
       }
     } catch (ThreadError e) {
       print("ThreadError: %s\n", e.message);
@@ -132,9 +137,7 @@ public class ButtonStart: Button {
   }
 
   public void update_button(bool is_surf_running) {
-    uint running = this.pool.get_num_threads();
-
-    if (running > 0) {
+    if (this.pool.get_num_threads() > 0) {
       this.set_sensitive(false);
     } else {
       this.set_sensitive(true);
@@ -169,8 +172,7 @@ public class ButtonMyIP: Button {
   }
 
   public void update_button() {
-    uint running = this.pool.get_num_threads();
-    if (running > 0) {
+    if (this.pool.get_num_threads() > 0) {
       this.set_sensitive(false);
     } else {
       this.set_sensitive(true);
