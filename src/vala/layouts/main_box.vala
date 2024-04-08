@@ -106,51 +106,25 @@ public class BoxStatusBoot: Box {
 }
 
 
-public class Worker { // TODO change class name to a better match
-    // TODO share this thread pool with right click menu in system tray
-    public bool is_action_start { private set; get; }
-
-    public Worker(bool is_action_start) {
-      if (is_action_start) {
-        this.is_action_start = true;
-      } else {
-        this.is_action_start = false;
-      }
-    }
-
-    public void run() {
-      if (this.is_action_start == true) {
-        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
-        action_start_anonsurf.wait();
-      } else {
-        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
-        action_start_anonsurf.wait();
-      }
-    }
-}
-
-
 public class ButtonStart: Button {
-  public ThreadPool<Worker> pool;
+  public ThreadPool<WorkerSystemdService> pool;
 
   public ButtonStart() {
     this.set_label("Start");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
-    this.pool = new ThreadPool<Worker>.with_owned_data ((worker) => {
-        worker.run();
-      }, 1, false);
+    this.pool = new ThreadPool<WorkerSystemdService>.with_owned_data ((worker) => {
+      worker.run();
+    }, 1, false);
       // 1 -> Max threads in pool
   }
 
-
   private void on_click_button() {
     try {
-      // TODO optimize this code (check function tor IP)
       if (this.get_label() == "Start") {
-        pool.add(new Worker(true));
+        pool.add(new WorkerSystemdService(true));
       } else {
-        pool.add(new Worker(false));
+        pool.add(new WorkerSystemdService(false));
       }
     } catch (ThreadError e) {
       print("ThreadError: %s\n", e.message);

@@ -1,6 +1,17 @@
-// public class WorkerSystemdService: Worker {
-//     public void run(bool is_action_start) {
-//       if (is_action_start == true) {
+// public class Worker { // TODO change class name to a better match
+//     // TODO share this thread pool with right click menu in system tray
+//     public bool is_action_start { private set; get; }
+
+//     public Worker(bool is_action_start) {
+//       if (is_action_start) {
+//         this.is_action_start = true;
+//       } else {
+//         this.is_action_start = false;
+//       }
+//     }
+
+//     public void run() {
+//       if (this.is_action_start == true) {
 //         var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
 //         action_start_anonsurf.wait();
 //       } else {
@@ -9,6 +20,28 @@
 //       }
 //     }
 // }
+
+public class WorkerSystemdService {
+    public bool is_action_start { private set; get; }
+
+    public WorkerSystemdService(bool is_action_start) {
+      if (is_action_start) {
+        this.is_action_start = true;
+      } else {
+        this.is_action_start = false;
+      }
+    }
+
+    public void run() {
+      if (this.is_action_start == true) {
+        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
+        action_start_anonsurf.wait();
+      } else {
+        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
+        action_start_anonsurf.wait();
+      }
+    }
+}
 
 
 public class WorkerSystemdStartup {
