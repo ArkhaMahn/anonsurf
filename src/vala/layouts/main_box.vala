@@ -107,9 +107,10 @@ public class BoxStatusBoot: Box {
 
 
 public class Worker { // TODO change class name to a better match
+    // TODO share this thread pool with right click menu in system tray
     public bool is_action_start { private set; get; }
 
-    public Worker (bool is_action_start) {
+    public Worker(bool is_action_start) {
       if (is_action_start) {
         this.is_action_start = true;
       } else {
@@ -145,6 +146,7 @@ public class ButtonStart: Button {
       this.pool = new ThreadPool<Worker>.with_owned_data ((worker) => {
         worker.run();
       }, 1, false);
+      // 1 -> Max threads in pool
 
       if (this.get_label() == "Start") {
         pool.add(new Worker(true));
@@ -159,6 +161,8 @@ public class ButtonStart: Button {
   public void update_button(bool is_surf_running) {
     uint running = this.pool.get_num_threads();
     // FIXME error: (anonsurf-gtk:86524): GLib-CRITICAL **: 16:03:08.014: g_thread_pool_get_num_threads: assertion 'real' failed
+    // Seems like we need to free the pool? https://gitlab.gnome.org/GNOME/glib/-/issues/1598
+    // Syntax error this.pool.free(false, true); 1 missing arguments for `void GLib.ThreadPool.free (owned GLib.ThreadPool<T>?, bool, bool)'
 
     if (running > 0) {
       this.set_sensitive(false);
@@ -175,40 +179,32 @@ public class ButtonStart: Button {
 
 
 public class ButtonMyIP: Button {
+  private ThreadPool<WorkerCheckTor> pool;
+
   public ButtonMyIP() {
     this.set_label("My IP");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_myip);
   }
 
-  private void http_tor_status() {
-    /*
-      https://wiki.gnome.org/Projects/Vala/LibSoupSample
-    */
-    var session = new Soup.Session();
-    var message = new Soup.Message("GET", "https://check.torproject.org/");
-
-    session.send_message(message);
-
-    if (((string)message.response_body.data).contains("Congratulations. This browser is configured to use Tor.")) {
-      send_notification("Connection is secured", "Your connection is under Tor network", NotifyLevel.Ok);
-    }
-    else if (((string)message.response_body.data).contains("Sorry. You are not using Tor.")) {
-      send_notification("Connection is not secured", "Your connection is not under Tor network", NotifyLevel.Warn);
-    } else {
-      send_notification("Check Error", "Unexpected error while checking network connection", NotifyLevel.Error);
-    }
-  }
-
-  private void check_tor_connection() {
-    http_tor_status();
-  }
-
   private void on_click_myip() {
-    // FIXME button wasn't disabled
-    this.set_sensitive(false);
-    var background_check = new Thread<void>("background_check", check_tor_connection);
-    this.set_sensitive(true);
+    try {
+      this.pool = new ThreadPool<WorkerCheckTor>.with_owned_data ((worker) => {
+			  worker.run ();
+		  }, 1, false);
+      this.pool.add(new WorkerCheckTor());
+    } catch (ThreadError e) {
+      print("ThreadError: %s\n", e.message);
+    }
+  }
+
+  public void update_button() {
+    uint running = this.pool.get_num_threads();
+    if (running > 0) {
+      this.set_sensitive(false);
+    } else {
+      this.set_sensitive(true);
+    }
   }
 }
 
@@ -227,6 +223,7 @@ public class BoxTopButtons: Box {
 
   public void refresh_box(bool is_surf_running) {
     btnStart.update_button(is_surf_running);
+    btnMyIP.update_button();
   }
 }
 
