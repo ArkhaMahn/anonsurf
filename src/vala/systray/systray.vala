@@ -57,7 +57,6 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
     this.append(new SystrayMenuStart());
     this.append(new SystrayMenuStatus());
     this.append(new SystrayMenuCheckIP());
-    // FIXME when open dialog settings and use this from systray, app creates 2 dialogs. Must have 1 only
     this.append(new SystrayMenuQuit());
     this.show_all();
   }

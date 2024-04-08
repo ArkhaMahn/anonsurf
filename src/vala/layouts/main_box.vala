@@ -106,24 +106,55 @@ public class BoxStatusBoot: Box {
 }
 
 
-public class ButtonStart: LockButton {
-  // TODO make a public thread object
-  // private SimplePermission permissions;
+public class Worker {
+    public string thread_name { private set; get; }
+    public bool is_action_start { private set; get; }
+    public int priority { private set; get; }
+
+    public Worker (string name, bool is_action_start, int priority) {
+      this.priority = priority;
+      this.thread_name = name;
+
+      if (is_action_start) {
+        this.is_action_start = true;
+      } else {
+        this.is_action_start = false;
+      }
+    }
+
+    public void run() {
+      // TODO stop as well
+      if (this.is_action_start == true) {
+        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
+        action_start_anonsurf.wait();
+      } else {
+        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
+        action_start_anonsurf.wait();
+      }
+    }
+}
+
+
+public class ButtonStart: Button {
+  // public Worker anonsurf_worker;
+  public ThreadPool<Worker> pool;
 
   public ButtonStart() {
-    // permissions = new SimplePermission(false); // TODO handle file write here to pass SimplePermission?
     this.set_label("Start");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(start_anonsurf);
   }
 
   private void start_anonsurf() {
-    this.set_sensitive(false); // doesn't work
-    var x = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
-    x.wait_async();
-    // exit code?
-    print("Starting anonsurf\n");
-    this.set_sensitive(true);
+    try {
+      // TODO create a public object so We can check if thread is running
+      this.pool = new ThreadPool<Worker>.with_owned_data ((worker) => {
+        worker.run ();
+      }, 1, false);
+      pool.add(new Worker ("AnonSurf", true, 1));
+    } catch (ThreadError e) {
+      print("ThreadError: %s\n", e.message);
+    }
   }
 
   private void stop_anonsurf() {
@@ -139,10 +170,19 @@ public class ButtonStart: LockButton {
   }
 
   public void update_button(bool is_surf_running) {
-    if (is_surf_running) {
-      this.set_label("Stop");
+    uint running = this.pool.get_num_threads();
+    // FIXME error: (anonsurf-gtk:86524): GLib-CRITICAL **: 16:03:08.014: g_thread_pool_get_num_threads: assertion 'real' failed
+
+    if (running > 0) {
+      // Check if any thread is running. Yes -> Disable button
+      this.set_sensitive(false);
     } else {
-      this.set_label("Start");
+      this.set_sensitive(true);
+      if (is_surf_running) {
+        this.set_label("Stop");
+      } else {
+        this.set_label("Start");
+      }
     }
   }
 }
