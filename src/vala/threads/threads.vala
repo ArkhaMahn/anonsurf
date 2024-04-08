@@ -12,10 +12,10 @@ public class WorkerSystemdService {
 
     public void run() {
       if (this.is_action_start == true) {
-        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
+        Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
         action_start_anonsurf.wait();
       } else {
-        var action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
+        Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
         action_start_anonsurf.wait();
       }
     }
@@ -33,13 +33,36 @@ public class WorkerSystemdStartup {
       }
     }
 
+    private void enable_anonsurf() {
+      // TODO improve output messages
+      Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, NONE);
+      action_enable_anonsurf.wait();
+
+      int exit_code = action_enable_anonsurf.get_exit_status();
+      if (exit_code == 0) {
+        send_notification("Enabled", "AnonSurf is enabled at boot", NotifyLevel.Ok);
+      } else {
+        send_notification("Failed to enable", "AnonSurf couldn't be enabled at boot", NotifyLevel.Error);
+      }
+    }
+
+    private void disable_anonsurf() {
+      Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, NONE);
+      action_disable_anonsurf.wait();
+
+      int exit_code = action_disable_anonsurf.get_exit_status();
+      if (exit_code == 0) {
+        send_notification("Disabled", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
+      } else {
+        send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
+      }
+    }
+
     public void run() {
       if (this.is_action_enable == true) {
-        var action_start_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, NONE);
-        action_start_anonsurf.wait();
+        enable_anonsurf();
       } else {
-        var action_start_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, NONE);
-        action_start_anonsurf.wait();
+        disable_anonsurf();
       }
     }
 }
