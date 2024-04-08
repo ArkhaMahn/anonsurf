@@ -137,17 +137,16 @@ public class ButtonStart: Button {
     this.set_label("Start");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
+    this.pool = new ThreadPool<Worker>.with_owned_data ((worker) => {
+        worker.run();
+      }, 1, false);
+      // 1 -> Max threads in pool
   }
 
 
   private void on_click_button() {
     try {
       // TODO optimize this code (check function tor IP)
-      this.pool = new ThreadPool<Worker>.with_owned_data ((worker) => {
-        worker.run();
-      }, 1, false);
-      // 1 -> Max threads in pool
-
       if (this.get_label() == "Start") {
         pool.add(new Worker(true));
       } else {
@@ -160,9 +159,6 @@ public class ButtonStart: Button {
 
   public void update_button(bool is_surf_running) {
     uint running = this.pool.get_num_threads();
-    // FIXME error: (anonsurf-gtk:86524): GLib-CRITICAL **: 16:03:08.014: g_thread_pool_get_num_threads: assertion 'real' failed
-    // Seems like we need to free the pool? https://gitlab.gnome.org/GNOME/glib/-/issues/1598
-    // Syntax error this.pool.free(false, true); 1 missing arguments for `void GLib.ThreadPool.free (owned GLib.ThreadPool<T>?, bool, bool)'
 
     if (running > 0) {
       this.set_sensitive(false);
@@ -185,13 +181,13 @@ public class ButtonMyIP: Button {
     this.set_label("My IP");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_myip);
+    this.pool = new ThreadPool<WorkerCheckTor>.with_owned_data ((worker) => {
+      worker.run ();
+    }, 1, false);
   }
 
   private void on_click_myip() {
     try {
-      this.pool = new ThreadPool<WorkerCheckTor>.with_owned_data ((worker) => {
-			  worker.run ();
-		  }, 1, false);
       this.pool.add(new WorkerCheckTor());
     } catch (ThreadError e) {
       print("ThreadError: %s\n", e.message);
