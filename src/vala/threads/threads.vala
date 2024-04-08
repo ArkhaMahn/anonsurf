@@ -1,70 +1,93 @@
 
 public class WorkerSystemdService {
-    public bool is_action_start { private set; get; }
+  public bool is_action_start { private set; get; }
 
-    public WorkerSystemdService(bool is_action_start) {
-      if (is_action_start) {
-        this.is_action_start = true;
-      } else {
-        this.is_action_start = false;
-      }
+  public WorkerSystemdService(bool is_action_start) {
+    if (is_action_start) {
+      this.is_action_start = true;
+    } else {
+      this.is_action_start = false;
     }
+  }
 
-    public void run() {
-      if (this.is_action_start == true) {
-        Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
-        action_start_anonsurf.wait();
-      } else {
-        Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
-        action_start_anonsurf.wait();
-      }
+  private void start_anonsurf() {
+    Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
+    action_start_anonsurf.wait();
+
+    int exit_code = action_start_anonsurf.get_exit_status();
+    if (exit_code == 0) {
+      send_notification("Activated", "AnonSurf is activated", NotifyLevel.Ok);
+    } else {
+      send_notification("Failed to activated", "AnonSurf couldn't start", NotifyLevel.Error);
     }
+  }
+
+
+  private void stop_anonsurf() {
+    Subprocess action_stop_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
+    action_stop_anonsurf.wait();
+
+    int exit_code = action_stop_anonsurf.get_exit_status();
+    if (exit_code == 0) {
+      send_notification("Deactivated", "AnonSurf is deactivated", NotifyLevel.Warn);
+    } else {
+      send_notification("Failed to deactivate", "AnonSurf couldn't stop", NotifyLevel.Error);
+    }
+  }
+
+  public void run() {
+    if (this.is_action_start == true) {
+      start_anonsurf();
+    } else {
+      stop_anonsurf();
+    }
+  }
 }
 
 
 public class WorkerSystemdStartup {
-      public bool is_action_enable { private set; get; }
+  // TODO improve output messages
+  public bool is_action_enable { private set; get; }
 
-    public WorkerSystemdStartup(bool is_action_enable) {
-      if (is_action_enable) {
-        this.is_action_enable = true;
-      } else {
-        this.is_action_enable = false;
-      }
+  public WorkerSystemdStartup(bool is_action_enable) {
+    if (is_action_enable) {
+      this.is_action_enable = true;
+    } else {
+      this.is_action_enable = false;
     }
+  }
 
-    private void enable_anonsurf() {
-      // TODO improve output messages
-      Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, NONE);
-      action_enable_anonsurf.wait();
+  private void enable_anonsurf() {
+    Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, NONE);
+    action_enable_anonsurf.wait();
 
-      int exit_code = action_enable_anonsurf.get_exit_status();
-      if (exit_code == 0) {
-        send_notification("Enabled", "AnonSurf is enabled at boot", NotifyLevel.Ok);
-      } else {
-        send_notification("Failed to enable", "AnonSurf couldn't be enabled at boot", NotifyLevel.Error);
-      }
+    int exit_code = action_enable_anonsurf.get_exit_status();
+    if (exit_code == 0) {
+      send_notification("Enabled", "AnonSurf is enabled at boot", NotifyLevel.Ok);
+    } else {
+      send_notification("Failed to enable", "AnonSurf couldn't be enabled at boot", NotifyLevel.Error);
     }
+  }
 
-    private void disable_anonsurf() {
-      Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, NONE);
-      action_disable_anonsurf.wait();
+  private void disable_anonsurf() {
+    Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, NONE);
+    action_disable_anonsurf.wait();
 
-      int exit_code = action_disable_anonsurf.get_exit_status();
-      if (exit_code == 0) {
-        send_notification("Disabled", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
-      } else {
-        send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
-      }
+    int exit_code = action_disable_anonsurf.get_exit_status();
+    if (exit_code == 0) {
+      send_notification("Disabled", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
+    } else {
+      send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
     }
+  }
 
-    public void run() {
-      if (this.is_action_enable == true) {
-        enable_anonsurf();
-      } else {
-        disable_anonsurf();
-      }
+  public void run() {
+    if (this.is_action_enable == true) {
+      enable_anonsurf();
+    } else {
+      disable_anonsurf();
     }
+  }
 }
 
 
