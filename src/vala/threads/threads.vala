@@ -57,8 +57,12 @@ public class WorkerSystemdStartup {
     }
   }
 
+  /*
+    Given flags STDOUT_SILENCE | STDERR_SILENCE -> No StdOut nor StdErr shows
+  */
+
   private void enable_anonsurf() {
-    Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, NONE);
+    Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
     action_enable_anonsurf.wait();
 
     int exit_code = action_enable_anonsurf.get_exit_status();
@@ -70,7 +74,7 @@ public class WorkerSystemdStartup {
   }
 
   private void disable_anonsurf() {
-    Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, NONE);
+    Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
     action_disable_anonsurf.wait();
 
     int exit_code = action_disable_anonsurf.get_exit_status();
