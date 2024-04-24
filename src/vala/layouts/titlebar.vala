@@ -39,6 +39,7 @@ public class AnonSurfTitleBar: HeaderBar {
 
     this.set_show_close_button(true);
     this.set_decoration_layout(":close");
+    this.set_title("AnonSurf");
 
     this.pack_start(icon);
     this.pack_end(button_about);
@@ -46,9 +47,9 @@ public class AnonSurfTitleBar: HeaderBar {
 
   private void on_update_title(bool is_surf_running) {
     if (is_surf_running) {
-      this.set_title("AnonSurf - Activated");
+      this.set_subtitle("Activated");
     } else {
-      this.set_title("AnonSurf - Deactivated");
+      this.set_subtitle("Deactivated");
     }
     // TODO show error too
   }
