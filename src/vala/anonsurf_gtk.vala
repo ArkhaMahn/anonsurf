@@ -5,12 +5,14 @@ using Gtk;
 
 public class AnonSurfLayout: Gtk.Window {
   //   TODO: update icon of tray icon by status
-  // TODO: update title bar by status. Maybe move status area to this
   public BoxMainLayout main_layout;
+  public AnonSurfTitleBar title_bar;
 
   public AnonSurfLayout() {
+    this.title_bar = new AnonSurfTitleBar();
     this.main_layout = new BoxMainLayout();
-    this.set_titlebar(new AnonSurfTitleBar());
+
+    this.set_titlebar(this.title_bar);
     this.set_icon_name("anonsurf");
     this.set_resizable(false);
     this.add(this.main_layout);
@@ -30,6 +32,7 @@ public class AnonSurfApp: GLib.Application {
     this.layout = new AnonSurfLayout();
     this.refresh_gui();
     this.layout.show_all();
+
     Timeout.add(200, refresh_gui);
     Gtk.main();
   }
@@ -45,8 +48,10 @@ public class AnonSurfApp: GLib.Application {
 
   private bool refresh_gui() {
     bool is_surf_running = check_surf_running();
+
     this.layout.main_layout.update_layout(is_surf_running);
     this.sys_tray.on_update_systray(is_surf_running);
+    this.layout.title_bar.on_update_title(is_surf_running);
     return true;
   }
 }
