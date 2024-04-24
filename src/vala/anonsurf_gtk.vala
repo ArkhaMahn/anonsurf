@@ -21,7 +21,7 @@ public class AnonSurfWindow: Gtk.Window {
 
 
 public class AnonSurfApp: GLib.Application {
-  private AnonSurfWindow layout;
+  private AnonSurfWindow window;
   private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {
@@ -29,9 +29,9 @@ public class AnonSurfApp: GLib.Application {
   }
 
   public override void activate() {
-    this.layout = new AnonSurfWindow();
+    this.window = new AnonSurfWindow();
     this.refresh_gui();
-    this.layout.show_all();
+    this.window.show_all();
 
     Timeout.add(200, refresh_gui);
     Gtk.main();
@@ -49,9 +49,9 @@ public class AnonSurfApp: GLib.Application {
   private bool refresh_gui() {
     bool is_surf_running = check_surf_running();
 
-    this.layout.main_layout.update_layout(is_surf_running);
+    this.window.main_layout.update_layout(is_surf_running);
     this.sys_tray.on_update_systray(is_surf_running);
-    this.layout.title_bar.on_update_title_bar(is_surf_running);
+    this.window.title_bar.on_update_title_bar(is_surf_running);
     return true;
   }
 }
