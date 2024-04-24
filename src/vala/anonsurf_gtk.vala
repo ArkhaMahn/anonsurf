@@ -1,15 +1,14 @@
 using Gtk;
 
 // TODO: if start supprocess, it's better to use absolute path of cmd service (check path exists first)
-// FIXME (anonsurf-gtk:724754): Gtk-CRITICAL **: 23:25:19.168: gtk_label_set_label: assertion 'GTK_IS_LABEL (label)' failed when minimize
 
 
-public class AnonSurfLayout: Gtk.Window {
+public class AnonSurfWindow: Gtk.Window {
   //   TODO: update icon of tray icon by status
   public BoxMainLayout main_layout;
   public AnonSurfTitleBar title_bar;
 
-  public AnonSurfLayout() {
+  public AnonSurfWindow() {
     this.title_bar = new AnonSurfTitleBar();
     this.main_layout = new BoxMainLayout();
 
@@ -22,7 +21,7 @@ public class AnonSurfLayout: Gtk.Window {
 
 
 public class AnonSurfApp: GLib.Application {
-  private AnonSurfLayout layout;
+  private AnonSurfWindow layout;
   private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {
@@ -30,7 +29,7 @@ public class AnonSurfApp: GLib.Application {
   }
 
   public override void activate() {
-    this.layout = new AnonSurfLayout();
+    this.layout = new AnonSurfWindow();
     this.refresh_gui();
     this.layout.show_all();
 

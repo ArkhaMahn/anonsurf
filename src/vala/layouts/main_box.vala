@@ -11,10 +11,6 @@ public enum AnonSurfStatusErr {
   ANONSURFNOTRUNNING
 }
 
-/*
-  TODO: change classes to private if possible
-*/
-
 
 public class BoxMainLayout: Box {
   private BoxStatusBoot boxBoot;

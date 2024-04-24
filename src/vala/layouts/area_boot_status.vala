@@ -1,5 +1,6 @@
 using Gtk;
 
+
 public class LabelBootStatus: Label {
   public LabelBootStatus() {
   }

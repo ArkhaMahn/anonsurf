@@ -1,5 +1,6 @@
 using Gtk;
 
+
 public class ButtonStart: Button {
   public ThreadPool<WorkerSystemdService> pool;
 
@@ -129,17 +130,13 @@ public class ButtonStatus: Button {
 
   private void check_tor_connection() {
     this.tor_status.show_dialog();
-    // this.tor_status.run();
-    // this.tor_status.destroy();
   }
 
   public void update_button(bool is_surf_running) {
     if (is_surf_running) {
       this.set_sensitive(true);
     } else {
-      // TODO this is for test only
-      this.set_sensitive(true);
-      // this.set_sensitive(false);
+      this.set_sensitive(false);
     }
   }
 }
