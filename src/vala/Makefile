@@ -1,5 +1,6 @@
-# Require libnotify-dev, libsoup2.4-dev
-VALA-FLAGS = --pkg gtk+-3.0 --pkg libsoup-2.4 --pkg libnotify # --pkg gio-2.0
+# Require libnotify-dev, libsoup2.4-dev, libvte-2.91-dev
+# Libvte binding is at /usr/share/vala/vapi/vte-2.91.vapi
+VALA-FLAGS = --pkg gtk+-3.0 --pkg libsoup-2.4 --pkg libnotify --vapidir /usr/share/vala/vapi/ --pkg vte-2.91 # --pkg gio-2.0 FIXME VTE not found
 
 all:
 	mkdir -p build/
@@ -7,5 +8,5 @@ all:
 	layouts/main_box.vala layouts/titlebar.vala \
 	systray/systray.vala \
 	notifications/notify.vala \
-	dialogs/about.vala \
+	dialogs/about.vala dialogs/status.vala \
 	threads/threads.vala

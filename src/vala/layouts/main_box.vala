@@ -222,15 +222,19 @@ public class ButtonChangeID: Button {
 
 
 public class ButtonStatus: Button {
+  private StatusDialog tor_status;
+
   public ButtonStatus() {
+    this.tor_status = new StatusDialog();
     this.set_label("Tor stat");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(check_tor_connection);
   }
 
   private void check_tor_connection() {
-    // TODO start nyx with vte
-    print("checking tor\n");
+    this.tor_status.show_dialog();
+    // this.tor_status.run();
+    // this.tor_status.destroy();
   }
 
   public void update_button(bool is_surf_running) {
