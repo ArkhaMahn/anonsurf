@@ -20,6 +20,7 @@ public class AnonSurfLayout: Gtk.Window {
 
 public class AnonSurfApp: GLib.Application {
   private AnonSurfLayout layout;
+  private AnonSurfStatusIcon sys_tray;
 
   public AnonSurfApp() {
     Object(application_id: "org.parrot.anonsurf.gui");
@@ -27,13 +28,25 @@ public class AnonSurfApp: GLib.Application {
 
   public override void activate() {
     this.layout = new AnonSurfLayout();
+    this.refresh_gui();
     this.layout.show_all();
     Timeout.add(200, refresh_gui);
     Gtk.main();
   }
 
+  public void set_systray_connection(AnonSurfStatusIcon systray) {
+    this.sys_tray = systray;
+  }
+
+  private bool check_surf_running() {
+    File file = File.new_for_path("/run/systemd/units/invocation:anonsurfd.service");
+    return file.query_exists();
+  }
+
   private bool refresh_gui() {
-    this.layout.main_layout.update_layout();
+    bool is_surf_running = check_surf_running();
+    this.layout.main_layout.update_layout(is_surf_running);
+    this.sys_tray.on_update_systray(is_surf_running);
     return true;
   }
 }
@@ -42,8 +55,12 @@ public class AnonSurfApp: GLib.Application {
 int main(string[] args) {
   Gtk.init(ref args);
 
-  var app = new AnonSurfApp();
-  var sys_tray = new AnonSurfStatusIcon(app);
+  AnonSurfApp app = new AnonSurfApp();
+  AnonSurfStatusIcon sys_tray = new AnonSurfStatusIcon();
+
+  sys_tray.set_app_connection(app);
+  app.set_systray_connection(sys_tray);
+
   Notify.init("AnonSurf GTK");
   return app.run(args);
 }

@@ -2,7 +2,6 @@ using Gtk;
 
 
 public class SystrayMenuStart: Gtk.MenuItem {
-  // TODO when refresh, we try to change the label to Stop
   public SystrayMenuStart() {
     this.set_label("Start");
     this.activate.connect(on_click_main_action);
@@ -14,6 +13,14 @@ public class SystrayMenuStart: Gtk.MenuItem {
     }
     else {
       print("Stop\n");
+    }
+  }
+
+  public void on_update_status(bool is_surf_running) {
+    if (is_surf_running) {
+      this.set_label("Stop");
+    } else {
+      this.set_label("Start");
     }
   }
 }
@@ -52,12 +59,22 @@ public class SystrayMenuQuit: Gtk.MenuItem {
 
 
 public class AnonSurfSystrayMenu: Gtk.Menu {
+  public SystrayMenuStart menu_start;
+  public SystrayMenuStatus menu_status;
+  public SystrayMenuCheckIP menu_check_ip;
+  public SystrayMenuQuit menu_quit;
+
   public AnonSurfSystrayMenu() {
+    this.menu_start = new SystrayMenuStart();
+    this.menu_status = new SystrayMenuStatus();
+    this.menu_check_ip = new SystrayMenuCheckIP();
+    this.menu_quit = new SystrayMenuQuit();
+
     // FIXME Incompatible pointer when append
-    this.append(new SystrayMenuStart());
-    this.append(new SystrayMenuStatus());
-    this.append(new SystrayMenuCheckIP());
-    this.append(new SystrayMenuQuit());
+    this.append(this.menu_start);
+    this.append(this.menu_status);
+    this.append(this.menu_check_ip);
+    this.append(this.menu_quit);
     this.show_all();
   }
 }
@@ -67,8 +84,7 @@ public class AnonSurfStatusIcon: StatusIcon {
   private AnonSurfSystrayMenu menu;
   private AnonSurfApp app;
 
-  public AnonSurfStatusIcon(AnonSurfApp app) {
-    this.app = app;
+  public AnonSurfStatusIcon() {
     this.menu = new AnonSurfSystrayMenu();
     this.set_from_icon_name("anonsurf");
 
@@ -80,7 +96,15 @@ public class AnonSurfStatusIcon: StatusIcon {
     this.menu.popup(null, null, null, button, time);
   }
 
+  public void set_app_connection(AnonSurfApp app) {
+    this.app = app;
+  }
+
   private void on_left_click_systray() {
     this.app.activate();
+  }
+
+  public void on_update_systray(bool is_surf_running) {
+    this.menu.menu_start.on_update_status(is_surf_running);
   }
 }
