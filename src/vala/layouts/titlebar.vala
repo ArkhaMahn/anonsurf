@@ -1,6 +1,20 @@
 using Gtk;
 
 
+public class TitleStatusIcon: Image {
+  public void on_update_icon(bool is_surf_running) {
+    if (is_surf_running) {
+      // this.from_icon_name("security-high"); // GTK 4 syntax
+      this.set_from_icon_name("security-high", DIALOG);
+    } else {
+      // this.from_icon_name("security-medium"); // GTK 4 syntax
+      this.set_from_icon_name("security-medium", DIALOG);
+    }
+    // TODO show error too
+  }
+}
+
+
 public class ButtonAbout: Button {
   public ButtonAbout() {
     this.set_image(new Image.from_icon_name("help-about", BUTTON));
@@ -16,19 +30,31 @@ public class ButtonAbout: Button {
 
 
 public class AnonSurfTitleBar: HeaderBar {
+  private TitleStatusIcon icon;
+  private ButtonAbout button_about;
+
   public AnonSurfTitleBar() {
+    icon = new TitleStatusIcon();
+    button_about = new ButtonAbout();
+
     this.set_show_close_button(true);
-    this.set_title("AnonSurf"); // TODO remove this
-    this.pack_end(new ButtonAbout());
     this.set_decoration_layout(":close");
+
+    this.pack_start(icon);
+    this.pack_end(button_about);
   }
 
-  public void on_update_title(bool is_surf_running) {
+  private void on_update_title(bool is_surf_running) {
     if (is_surf_running) {
       this.set_title("AnonSurf - Activated");
     } else {
       this.set_title("AnonSurf - Deactivated");
     }
     // TODO show error too
+  }
+
+  public void on_update_title_bar(bool is_surf_running) {
+    on_update_title(is_surf_running);
+    this.icon.on_update_icon(is_surf_running);
   }
 }

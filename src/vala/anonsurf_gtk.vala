@@ -1,6 +1,7 @@
 using Gtk;
 
 // TODO: if start supprocess, it's better to use absolute path of cmd service (check path exists first)
+// FIXME (anonsurf-gtk:724754): Gtk-CRITICAL **: 23:25:19.168: gtk_label_set_label: assertion 'GTK_IS_LABEL (label)' failed when minimize
 
 
 public class AnonSurfLayout: Gtk.Window {
@@ -51,7 +52,7 @@ public class AnonSurfApp: GLib.Application {
 
     this.layout.main_layout.update_layout(is_surf_running);
     this.sys_tray.on_update_systray(is_surf_running);
-    this.layout.title_bar.on_update_title(is_surf_running);
+    this.layout.title_bar.on_update_title_bar(is_surf_running);
     return true;
   }
 }

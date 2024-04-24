@@ -24,7 +24,7 @@ public class BoxMainLayout: Box {
     GLib.Object(orientation: Orientation.HORIZONTAL);
     boxBoot = new BoxStatusBoot();
     boxButton = new BoxButtonArea();
-    this.pack_start(boxBoot, false, true, 3);
+    this.pack_start(boxBoot, true, true, 3);
     this.pack_start(boxButton, false, true, 3);
   }
 
