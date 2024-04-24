@@ -93,6 +93,7 @@ public class AnonSurfStatusIcon: StatusIcon {
   }
 
   private void on_right_click_systray(uint button, uint time) {
+    // TODO warning `Gtk.Menu.popup' has been deprecated since 3.22
     this.menu.popup(null, null, null, button, time);
   }
 

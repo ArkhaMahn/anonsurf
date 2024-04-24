@@ -11,26 +11,34 @@ public class WorkerSystemdService {
   }
 
   private void start_anonsurf() {
-    Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
-    action_start_anonsurf.wait();
+    try {
+      Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
+      action_start_anonsurf.wait();
 
-    int exit_code = action_start_anonsurf.get_exit_status();
-    if (exit_code == 0) {
-      send_notification("Activated", "AnonSurf is activated", NotifyLevel.Ok);
-    } else {
+      int exit_code = action_start_anonsurf.get_exit_status();
+      if (exit_code == 0) {
+        send_notification("Activated", "AnonSurf is activated", NotifyLevel.Ok);
+      } else {
+        send_notification("Failed to activated", "AnonSurf couldn't start", NotifyLevel.Error);
+      }
+    } catch (GLib.Error error) {
       send_notification("Failed to activated", "AnonSurf couldn't start", NotifyLevel.Error);
     }
   }
 
 
   private void stop_anonsurf() {
-    Subprocess action_stop_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
-    action_stop_anonsurf.wait();
+    try {
+      Subprocess action_stop_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
+      action_stop_anonsurf.wait();
 
-    int exit_code = action_stop_anonsurf.get_exit_status();
-    if (exit_code == 0) {
-      send_notification("Deactivated", "AnonSurf is deactivated", NotifyLevel.Warn);
-    } else {
+      int exit_code = action_stop_anonsurf.get_exit_status();
+      if (exit_code == 0) {
+        send_notification("Deactivated", "AnonSurf is deactivated", NotifyLevel.Warn);
+      } else {
+        send_notification("Failed to deactivate", "AnonSurf couldn't stop", NotifyLevel.Error);
+      }
+    } catch (GLib.Error error) {
       send_notification("Failed to deactivate", "AnonSurf couldn't stop", NotifyLevel.Error);
     }
   }
@@ -62,25 +70,33 @@ public class WorkerSystemdStartup {
   */
 
   private void enable_anonsurf() {
-    Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
-    action_enable_anonsurf.wait();
+    try {
+      Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
+      action_enable_anonsurf.wait();
 
-    int exit_code = action_enable_anonsurf.get_exit_status();
-    if (exit_code == 0) {
-      send_notification("Enabled", "AnonSurf is enabled at boot", NotifyLevel.Ok);
-    } else {
+      int exit_code = action_enable_anonsurf.get_exit_status();
+      if (exit_code == 0) {
+        send_notification("Enabled", "AnonSurf is enabled at boot", NotifyLevel.Ok);
+      } else {
+        send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
+      }
+    } catch (GLib.Error error) {
       send_notification("Failed to enable", "AnonSurf couldn't be enabled at boot", NotifyLevel.Error);
     }
   }
 
   private void disable_anonsurf() {
-    Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
-    action_disable_anonsurf.wait();
+    try {
+      Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
+      action_disable_anonsurf.wait();
 
-    int exit_code = action_disable_anonsurf.get_exit_status();
-    if (exit_code == 0) {
-      send_notification("Disabled", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
-    } else {
+      int exit_code = action_disable_anonsurf.get_exit_status();
+      if (exit_code == 0) {
+        send_notification("Disabled", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
+      } else {
+        send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
+      }
+    } catch (GLib.Error error) {
       send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
     }
   }

@@ -20,9 +20,13 @@ public class ButtonBoot: Button {
   public ButtonBoot() {
     this.set_size_request(BUTTON_BOOT_SIZE_X, BUTTON_BOOT_SIZE_Y);
     this.clicked.connect(on_click_boot_action);
-    this.pool = new ThreadPool<WorkerSystemdStartup>.with_owned_data ((worker) => {
-      worker.run();
-    }, 1, false);
+    try {
+      this.pool = new ThreadPool<WorkerSystemdStartup>.with_owned_data ((worker) => {
+        worker.run();
+      }, 1, false);
+    } catch (GLib.Error error) {
+      print("Failed to create thread: %s\n", error.message);
+    }
   }
 
   private void on_click_boot_action() {

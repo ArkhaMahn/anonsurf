@@ -1,5 +1,4 @@
 using Gtk;
-using Soup;
 
 const uchar BUTTON_SIZE_X = 105;
 const uchar BUTTON_SIZE_Y = 65;

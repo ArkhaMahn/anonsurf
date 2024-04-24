@@ -7,10 +7,13 @@ public class ButtonStart: Button {
     this.set_label("Start");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
-    this.pool = new ThreadPool<WorkerSystemdService>.with_owned_data ((worker) => {
-      worker.run();
-    }, 1, false);
-    // 1 -> Max threads in pool
+    try {
+      this.pool = new ThreadPool<WorkerSystemdService>.with_owned_data ((worker) => {
+        worker.run();
+      }, 1, false);
+    } catch (GLib.Error error) {
+      print("Failed to create thread: %s\n", error.message);
+    }
   }
 
   private void on_click_button() {
@@ -47,9 +50,13 @@ public class ButtonMyIP: Button {
     this.set_label("My IP");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_myip);
-    this.pool = new ThreadPool<WorkerCheckTor>.with_owned_data ((worker) => {
-      worker.run ();
-    }, 1, false);
+    try {
+      this.pool = new ThreadPool<WorkerCheckTor>.with_owned_data ((worker) => {
+        worker.run ();
+      }, 1, false);
+    } catch (GLib.Error error) {
+      print("Failed to create thread: %s\n", error.message);
+    }
   }
 
   private void on_click_myip() {
