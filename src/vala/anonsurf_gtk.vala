@@ -22,7 +22,7 @@ public class AnonSurfLayout: Gtk.Window {
 
 public class AnonSurfApp: GLib.Application {
   private AnonSurfLayout layout;
-  private AnonSurfStatusIcon sys_tray;
+  private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {
     Object(application_id: "org.parrot.anonsurf.gui");
@@ -37,7 +37,7 @@ public class AnonSurfApp: GLib.Application {
     Gtk.main();
   }
 
-  public void set_systray_connection(AnonSurfStatusIcon systray) {
+  public void set_systray_connection(AnonSurfSystrayIcon systray) {
     this.sys_tray = systray;
   }
 
@@ -61,7 +61,7 @@ int main(string[] args) {
   Gtk.init(ref args);
 
   AnonSurfApp app = new AnonSurfApp();
-  AnonSurfStatusIcon sys_tray = new AnonSurfStatusIcon();
+  AnonSurfSystrayIcon sys_tray = new AnonSurfSystrayIcon();
 
   sys_tray.set_app_connection(app);
   app.set_systray_connection(sys_tray);

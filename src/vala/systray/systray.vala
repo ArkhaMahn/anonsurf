@@ -80,11 +80,11 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
 }
 
 
-public class AnonSurfStatusIcon: StatusIcon {
+public class AnonSurfSystrayIcon: StatusIcon {
   private AnonSurfSystrayMenu menu;
   private AnonSurfApp app;
 
-  public AnonSurfStatusIcon() {
+  public AnonSurfSystrayIcon() {
     this.menu = new AnonSurfSystrayMenu();
     this.set_from_icon_name("anonsurf");
 
