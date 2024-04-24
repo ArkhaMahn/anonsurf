@@ -43,8 +43,6 @@ public class StatusDialog: Dialog {
     this.set_title("Tor Status");
     this.set_resizable(false);
     this.set_icon_name("nyx-logo"); // FIXME must install this logo anyway
-    this.destroy.connect(() => {Gtk.main_quit();});
-
 
     // term_status = new NyxTerminal(this);
     term_status = new NyxTerminal();
