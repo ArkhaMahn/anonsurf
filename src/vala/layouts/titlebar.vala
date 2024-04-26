@@ -55,7 +55,9 @@ public class AnonSurfTitleBar: HeaderBar {
   }
 
   public void on_update_title_bar(bool is_surf_running) {
-    on_update_title(is_surf_running); // FIXME gtk_label_set_label: assertion 'GTK_IS_LABEL (label)' failed (when minimize)
+    if (this.get_visible()) {
+      on_update_title(is_surf_running);
+    }
     this.icon.on_update_icon(is_surf_running);
   }
 }
