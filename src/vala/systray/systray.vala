@@ -2,18 +2,15 @@ using Gtk;
 
 
 public class SystrayItemStart: Gtk.MenuItem {
+  private AnonSurfApp app;
+
   public SystrayItemStart() {
     this.set_label("Start");
     this.activate.connect(on_click_main_action);
   }
 
   private void on_click_main_action() {
-    if (this.get_label() == "Start") {
-      print("Start\n");
-    }
-    else {
-      print("Stop\n");
-    }
+    this.app.window.main_layout.boxButton.boxTop.btnStart.on_click_button();
   }
 
   public void on_update_status(bool is_surf_running) {
@@ -23,41 +20,64 @@ public class SystrayItemStart: Gtk.MenuItem {
       this.set_label("Start");
     }
   }
+
+  public void connect_anonsurf_button(AnonSurfApp app) {
+    this.app = app;
+  }
 }
 
 
 public class SystrayItemStatus: Gtk.MenuItem {
+  // TODO prevent this menu spawns multiple dialogs
+  private AnonSurfApp app;
+
   public SystrayItemStatus() {
     this.set_label("Status");
     this.activate.connect(on_click_check_status);
   }
 
   private void on_click_check_status() {
-    print("Clicked check status");
+    this.app.window.main_layout.boxButton.boxBottom.btnStatus.on_click_button();
+  }
+
+  public void connect_anonsurf_button(AnonSurfApp app) {
+    this.app = app;
   }
 }
 
 
 public class SystrayItemChangeId: Gtk.MenuItem {
+  private AnonSurfApp app;
+
   public SystrayItemChangeId() {
     this.set_label("Change Identity");
     this.activate.connect(on_click_change_id);
   }
 
   private void on_click_change_id() {
-    print("Clicked change id\n");
+    this.app.window.main_layout.boxButton.boxBottom.btnChangeID.on_click_button();
+  }
+
+  public void connect_anonsurf_button(AnonSurfApp app) {
+    this.app = app;
   }
 }
 
 
 public class SystrayItemCheckIP: Gtk.MenuItem {
+  private AnonSurfApp app;
+
   public SystrayItemCheckIP() {
     this.set_label("Check IP");
-    this.activate.connect(on_click_check_ip);
+    this.activate.connect(on_click_check_status);
   }
 
-  private void on_click_check_ip() {
-    print("Clicked check ip\n");
+  private void on_click_check_status() {
+    this.app.window.main_layout.boxButton.boxTop.btnMyIP.on_click_button();
+  }
+
+  public void connect_anonsurf_button(AnonSurfApp app) {
+    this.app = app;
   }
 }
 
@@ -135,12 +155,17 @@ public class AnonSurfSystrayIcon: StatusIcon {
     this.menu.popup_at_pointer();
   }
 
-  public void set_app_connection(AnonSurfApp app) {
-    this.app = app;
-  }
-
   private void on_left_click_systray() {
     this.app.activate();
+  }
+
+  public void set_app_connection(AnonSurfApp app) {
+    this.app = app;
+
+    this.menu.menu_item_start.connect_anonsurf_button(app);
+    this.menu.menu_item_status.connect_anonsurf_button(app);
+    this.menu.menu_item_change_id.connect_anonsurf_button(app);
+    this.menu.menu_item_check_ip.connect_anonsurf_button(app);
   }
 
   public void on_update_systray(bool is_surf_running) {

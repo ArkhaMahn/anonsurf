@@ -21,7 +21,7 @@ public class AnonSurfWindow: Gtk.Window {
 
 
 public class AnonSurfApp: GLib.Application {
-  private AnonSurfWindow window;
+  public AnonSurfWindow window;
   private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {

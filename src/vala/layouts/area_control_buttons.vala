@@ -17,7 +17,11 @@ public class ButtonStart: Button {
     }
   }
 
-  private void on_click_button() {
+  public void on_click_button() {
+    if (this.pool.get_num_threads() > 0) {
+      return;
+    }
+
     try {
       if (this.get_label() == "Start") {
         this.pool.add(new WorkerSystemdService(true));
@@ -50,7 +54,7 @@ public class ButtonMyIP: Button {
   public ButtonMyIP() {
     this.set_label("My IP");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
-    this.clicked.connect(on_click_myip);
+    this.clicked.connect(on_click_button);
     try {
       this.pool = new ThreadPool<WorkerCheckTor>.with_owned_data ((worker) => {
         worker.run ();
@@ -60,7 +64,10 @@ public class ButtonMyIP: Button {
     }
   }
 
-  private void on_click_myip() {
+  public void on_click_button() {
+    if (this.pool.get_num_threads() > 0) {
+      return;
+    }
     try {
       this.pool.add(new WorkerCheckTor());
     } catch (ThreadError e) {
@@ -78,33 +85,14 @@ public class ButtonMyIP: Button {
 }
 
 
-public class BoxTopButtons: Box {
-  public ButtonStart btnStart;
-  public ButtonMyIP btnMyIP;
-
-  public BoxTopButtons() {
-    GLib.Object(orientation: Orientation.HORIZONTAL);
-    btnStart = new ButtonStart();
-    btnMyIP = new ButtonMyIP();
-    this.pack_start(btnStart, false, true, 3);
-    this.pack_start(btnMyIP, false, true, 3);
-  }
-
-  public void refresh_box(bool is_surf_running) {
-    btnStart.update_button(is_surf_running);
-    btnMyIP.update_button();
-  }
-}
-
-
 public class ButtonChangeID: Button {
   public ButtonChangeID() {
     this.set_label("Change ID");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
-    this.clicked.connect(change_id);
+    this.clicked.connect(on_click_button);
   }
 
-  private void change_id() {
+  public void on_click_button() {
     // TODO changeid with socket. Value of port parses from config file
   }
 
@@ -125,10 +113,10 @@ public class ButtonStatus: Button {
     this.tor_status = new StatusDialog();
     this.set_label("Tor stat");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
-    this.clicked.connect(check_tor_connection);
+    this.clicked.connect(on_click_button);
   }
 
-  private void check_tor_connection() {
+  public void on_click_button() {
     this.tor_status.show_dialog();
   }
 
@@ -138,43 +126,5 @@ public class ButtonStatus: Button {
     } else {
       this.set_sensitive(false);
     }
-  }
-}
-
-
-public class BoxBottomButtons: Box {
-  public ButtonChangeID btnChangeID;
-  public ButtonStatus btnStatus;
-
-  public BoxBottomButtons() {
-    GLib.Object(orientation: Orientation.HORIZONTAL);
-    btnChangeID = new ButtonChangeID();
-    btnStatus = new ButtonStatus();
-    this.pack_start(btnStatus, false, true, 3);
-    this.pack_start(btnChangeID, false, true, 3);
-  }
-
-  public void refresh_box(bool is_surf_running) {
-    btnChangeID.update_button(is_surf_running);
-    btnStatus.update_button(is_surf_running);
-  }
-}
-
-
-public class BoxButtonArea: Box {
-  public BoxBottomButtons boxBottom;
-  public BoxTopButtons boxTop;
-
-  public BoxButtonArea() {
-    GLib.Object(orientation: Orientation.VERTICAL);
-    boxBottom = new BoxBottomButtons();
-    boxTop = new BoxTopButtons();
-    this.pack_start(boxTop, false, true, 3);
-    this.pack_start(boxBottom, false, true, 3);
-  }
-
-  public void refresh_box(bool is_surf_running) {
-    boxBottom.refresh_box(is_surf_running);
-    boxTop.refresh_box(is_surf_running);
   }
 }
