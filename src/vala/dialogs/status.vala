@@ -8,10 +8,13 @@ public class NyxTerminal: Terminal {
    */
   // public NyxTerminal(Dialog parent_dialog) {
   public NyxTerminal() {
-    // FIXME for some reason, nyx doesn't take the config when program starts (or service). Wrong spawn_async call?
     this.set_clear_background(true);
     this.set_cursor_blink_mode(ON);
     this.set_cursor_shape(UNDERLINE);
+  }
+
+  public void start_nyx_terminal() {
+    // FIXME for some reason, nyx doesn't take the config when program starts (or service). Wrong spawn_async call?
     this.spawn_async(
       DEFAULT, // https://valadoc.org/vte-2.91/Vte.PtyFlags.html
       null,
@@ -35,7 +38,7 @@ public class NyxTerminal: Terminal {
 
 
 public class StatusDialog: Dialog {
-  private Terminal term_status;
+  private NyxTerminal term_status;
   private Box content_area;
   private Box terminal_box;
 
@@ -44,7 +47,6 @@ public class StatusDialog: Dialog {
     this.set_resizable(false);
     this.set_icon_name("nyx-logo"); // FIXME must install this logo anyway
 
-    // term_status = new NyxTerminal(this);
     term_status = new NyxTerminal();
     terminal_box = new Box(Orientation.VERTICAL, 3);
     content_area = get_content_area() as Box;
@@ -55,6 +57,7 @@ public class StatusDialog: Dialog {
   }
 
   public void show_dialog() {
+    this.term_status.start_nyx_terminal(); // TODO double check to make sure nyx is killed when dialog closes
     this.show_all();
     this.run();
     this.hide();
