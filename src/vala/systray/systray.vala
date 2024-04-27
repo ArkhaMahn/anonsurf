@@ -1,8 +1,8 @@
 using Gtk;
 
 
-public class SystrayMenuStart: Gtk.MenuItem {
-  public SystrayMenuStart() {
+public class SystrayItemStart: Gtk.MenuItem {
+  public SystrayItemStart() {
     this.set_label("Start");
     this.activate.connect(on_click_main_action);
   }
@@ -26,8 +26,8 @@ public class SystrayMenuStart: Gtk.MenuItem {
 }
 
 
-public class SystrayMenuStatus: Gtk.MenuItem {
-  public SystrayMenuStatus() {
+public class SystrayItemStatus: Gtk.MenuItem {
+  public SystrayItemStatus() {
     this.set_label("Status");
     this.activate.connect(on_click_check_status);
   }
@@ -38,8 +38,20 @@ public class SystrayMenuStatus: Gtk.MenuItem {
 }
 
 
-public class SystrayMenuCheckIP: Gtk.MenuItem {
-  public SystrayMenuCheckIP() {
+public class SystrayItemChangeId: Gtk.MenuItem {
+  public SystrayItemChangeId() {
+    this.set_label("Change Identity");
+    this.activate.connect(on_click_change_id);
+  }
+
+  private void on_click_change_id() {
+    print("Clicked change id\n");
+  }
+}
+
+
+public class SystrayItemCheckIP: Gtk.MenuItem {
+  public SystrayItemCheckIP() {
     this.set_label("Check IP");
     this.activate.connect(on_click_check_ip);
   }
@@ -50,8 +62,8 @@ public class SystrayMenuCheckIP: Gtk.MenuItem {
 }
 
 
-public class SystrayMenuQuit: Gtk.MenuItem {
-  public SystrayMenuQuit() {
+public class SystrayItemQuit: Gtk.MenuItem {
+  public SystrayItemQuit() {
     this.set_label("Quit");
     this.activate.connect(Gtk.main_quit);
   }
@@ -59,23 +71,50 @@ public class SystrayMenuQuit: Gtk.MenuItem {
 
 
 public class AnonSurfSystrayMenu: Gtk.Menu {
-  public SystrayMenuStart menu_start;
-  public SystrayMenuStatus menu_status;
-  public SystrayMenuCheckIP menu_check_ip;
-  public SystrayMenuQuit menu_quit;
+  public SystrayItemStart menu_item_start;
+  public SystrayItemStatus menu_item_status;
+  public SystrayItemChangeId menu_item_change_id;
+  public SystrayItemCheckIP menu_item_check_ip;
+  public SystrayItemQuit menu_item_quit;
 
   public AnonSurfSystrayMenu() {
-    this.menu_start = new SystrayMenuStart();
-    this.menu_status = new SystrayMenuStatus();
-    this.menu_check_ip = new SystrayMenuCheckIP();
-    this.menu_quit = new SystrayMenuQuit();
+    this.create_menu_items();
+    this.show_menu_items();
+    // Refresher will be called by main Application so no need to call it here
+  }
 
-    // FIXME Incompatible pointer when append
-    this.append(this.menu_start);
-    this.append(this.menu_status);
-    this.append(this.menu_check_ip);
-    this.append(this.menu_quit);
-    this.show_all();
+  private void create_menu_items() {
+    this.menu_item_start = new SystrayItemStart();
+    this.menu_item_status = new SystrayItemStatus();
+    this.menu_item_change_id = new SystrayItemChangeId();
+    this.menu_item_check_ip = new SystrayItemCheckIP();
+    this.menu_item_quit = new SystrayItemQuit();
+
+    // FIXME Vala warns incompatible pointer when append
+    this.append(this.menu_item_start);
+    this.append(this.menu_item_status);
+    this.append(this.menu_item_change_id);
+    this.append(this.menu_item_check_ip);
+    this.append(this.menu_item_quit);
+  }
+
+  private void show_menu_items() {
+    /*
+    There are some items should be shown without checking AnonSurf's status
+    */
+    this.menu_item_start.show();
+    this.menu_item_check_ip.show();
+    this.menu_item_quit.show();
+  }
+
+  public void on_update_menu_list(bool is_surf_running) {
+    if (is_surf_running) {
+      this.menu_item_status.show();
+      this.menu_item_change_id.show();
+    } else {
+      this.menu_item_status.hide();
+      this.menu_item_change_id.hide();
+    }
   }
 }
 
@@ -105,6 +144,7 @@ public class AnonSurfSystrayIcon: StatusIcon {
   }
 
   public void on_update_systray(bool is_surf_running) {
-    this.menu.menu_start.on_update_status(is_surf_running);
+    this.menu.menu_item_start.on_update_status(is_surf_running);
+    this.menu.on_update_menu_list(is_surf_running);
   }
 }
