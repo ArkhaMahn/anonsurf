@@ -145,7 +145,6 @@ public class AnonSurfSystrayIcon: StatusIcon {
 
   public AnonSurfSystrayIcon() {
     this.menu = new AnonSurfSystrayMenu();
-    this.set_from_icon_name("anonsurf");
 
     this.activate.connect(on_left_click_systray);
     this.popup_menu.connect(on_right_click_systray);
@@ -171,5 +170,11 @@ public class AnonSurfSystrayIcon: StatusIcon {
   public void on_update_systray(bool is_surf_running) {
     this.menu.menu_item_start.on_update_status(is_surf_running);
     this.menu.on_update_menu_list(is_surf_running);
+
+    if (is_surf_running) {
+      this.set_from_icon_name("security-high");
+    } else {
+      this.set_from_icon_name("anonsurf");
+    }
   }
 }

@@ -4,7 +4,6 @@ using Gtk;
 
 
 public class AnonSurfWindow: Gtk.Window {
-  //   TODO: update icon of tray icon by status
   public BoxMainLayout main_layout;
   public AnonSurfTitleBar title_bar;
 
