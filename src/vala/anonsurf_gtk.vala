@@ -70,10 +70,13 @@ public class AnonSurfApp: GLib.Application {
 
   private bool refresh_gui() {
     bool is_surf_running = check_surf_running();
-
-    this.window.main_layout.update_layout(is_surf_running);
     this.sys_tray.on_update_systray(is_surf_running);
-    this.window.title_bar.on_update_title_bar(is_surf_running);
+
+    if (this.window.title_bar.get_visible()) {
+      this.window.main_layout.update_layout(is_surf_running);
+      this.window.title_bar.on_update_title_bar(is_surf_running);
+    }
+
     return true;
   }
 }
