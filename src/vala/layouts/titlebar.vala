@@ -30,18 +30,18 @@ public class ButtonShowAboutAnonSurf: Button {
 
 
 public class AnonSurfTitleBar: HeaderBar {
-  private ImageAnonSurfStatus icon;
+  private ImageAnonSurfStatus image_anonsurf_status;
   private ButtonShowAboutAnonSurf button_show_dialog_about;
 
   public AnonSurfTitleBar() {
-    icon = new ImageAnonSurfStatus();
+    image_anonsurf_status = new ImageAnonSurfStatus();
     button_show_dialog_about = new ButtonShowAboutAnonSurf();
 
     this.set_show_close_button(true);
     this.set_decoration_layout(":close");
     this.set_title("AnonSurf");
 
-    this.pack_start(icon);
+    this.pack_start(image_anonsurf_status);
     this.pack_end(button_show_dialog_about);
   }
 
