@@ -5,6 +5,6 @@ VALA-FLAGS = --pkg gtk+-3.0 --pkg libsoup-2.4 --pkg libnotify --vapidir /usr/sha
 all:
 	mkdir -p build/
 	valac $(VALA-FLAGS) anonsurf_gtk.vala -o build/anonsurf-gtk \
-	layouts/main_box.vala layouts/titlebar.vala layouts/area_boot_status.vala layouts/area_control_buttons.vala \
+	layouts/anonsurf_boot.vala layouts/anonsurf_controller.vala layouts/titlebar.vala \
 	system_interactions/notifications.vala system_interactions/system_tray_icon.vala system_interactions/system_tray_menu.vala system_interactions/threads.vala \
 	dialogs/about.vala dialogs/tor_controller.vala \

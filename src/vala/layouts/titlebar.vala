@@ -58,6 +58,6 @@ public class AnonSurfTitleBar: HeaderBar {
     if (this.get_visible()) {
       on_update_title(is_surf_running);
     }
-    this.icon.on_update_icon(is_surf_running);
+    this.image_anonsurf_status.on_update_icon(is_surf_running);
   }
 }

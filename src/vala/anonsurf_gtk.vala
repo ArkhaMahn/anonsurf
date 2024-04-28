@@ -1,6 +1,28 @@
 using Gtk;
 
 // TODO: if start supprocess, it's better to use absolute path of cmd service (check path exists first)
+public class BoxMainLayout: Box {
+  private BoxStatusBoot boxBoot;
+  public BoxButtonArea boxButton;
+
+  public BoxMainLayout() {
+    GLib.Object(orientation: Orientation.HORIZONTAL);
+    boxBoot = new BoxStatusBoot();
+    boxButton = new BoxButtonArea();
+    this.pack_start(boxBoot, true, true, 3);
+    this.pack_start(boxButton, false, true, 3);
+  }
+
+  // private bool check_tor_running() {
+  //   File file = File.new_for_path("/run/systemd/units/invocation:tor.service");
+  //   return file.query_exists();
+  // }
+
+  public void update_layout(bool is_surf_running) {
+    boxBoot.refresh_box();
+    boxButton.refresh_box(is_surf_running);
+  }
+}
 
 
 public class AnonSurfWindow: Gtk.Window {
