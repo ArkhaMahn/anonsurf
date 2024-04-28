@@ -4,7 +4,6 @@ public enum NotifyLevel {
   Error
 }
 
-// TODO make it be a class, only call by threads?
 
 public void send_notification(string title, string desc, NotifyLevel level) {
   string icon_name;
