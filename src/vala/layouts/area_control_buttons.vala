@@ -107,10 +107,10 @@ public class ButtonChangeID: Button {
 
 
 public class ButtonStatus: Button {
-  private StatusDialog tor_status;
+  private DialogTorController tor_status;
 
   public ButtonStatus() {
-    this.tor_status = new StatusDialog();
+    this.tor_status = new DialogTorController();
     this.set_label("Tor stat");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);

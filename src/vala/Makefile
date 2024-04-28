@@ -8,5 +8,5 @@ all:
 	layouts/main_box.vala layouts/titlebar.vala layouts/area_boot_status.vala layouts/area_control_buttons.vala \
 	systray/systray.vala \
 	notifications/notify.vala \
-	dialogs/about.vala dialogs/status.vala \
+	dialogs/about.vala dialogs/tor_controller.vala \
 	threads/threads.vala

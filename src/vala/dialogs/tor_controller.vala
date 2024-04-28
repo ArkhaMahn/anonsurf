@@ -1,3 +1,8 @@
+/*
+Create a Terminal with VTE module to call the app Nyx which can control
+Tor service
+*/
+
 using Vte;
 using Gtk;
 
@@ -37,12 +42,12 @@ public class NyxTerminal: Terminal {
 }
 
 
-public class StatusDialog: Dialog {
+public class DialogTorController: Dialog {
   private NyxTerminal term_status;
   private Box content_area;
   private Box terminal_box;
 
-  public StatusDialog() {
+  public DialogTorController() {
     this.set_title("Tor Status");
     this.set_resizable(false);
     this.set_icon_name("nyx-logo"); // FIXME must install this logo anyway
