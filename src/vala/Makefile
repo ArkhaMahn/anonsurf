@@ -6,7 +6,5 @@ all:
 	mkdir -p build/
 	valac $(VALA-FLAGS) anonsurf_gtk.vala -o build/anonsurf-gtk \
 	layouts/main_box.vala layouts/titlebar.vala layouts/area_boot_status.vala layouts/area_control_buttons.vala \
-	systray/systray.vala \
-	notifications/notify.vala \
+	system_interactions/notifications.vala system_interactions/system_tray_icon.vala system_interactions/system_tray_menu.vala system_interactions/threads.vala \
 	dialogs/about.vala dialogs/tor_controller.vala \
-	threads/threads.vala
