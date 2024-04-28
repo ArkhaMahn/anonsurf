@@ -2,14 +2,14 @@ using Gtk;
 
 
 public class ButtonStart: Button {
-  public ThreadPool<WorkerSystemdService> pool;
+  public ThreadPool<ThreadStartAnonSurf> pool;
 
   public ButtonStart() {
     this.set_label("Start");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     try {
-      this.pool = new ThreadPool<WorkerSystemdService>.with_owned_data ((worker) => {
+      this.pool = new ThreadPool<ThreadStartAnonSurf>.with_owned_data ((worker) => {
         worker.run();
       }, 1, false);
     } catch (GLib.Error error) {
@@ -24,9 +24,9 @@ public class ButtonStart: Button {
 
     try {
       if (this.get_label() == "Start") {
-        this.pool.add(new WorkerSystemdService(true));
+        this.pool.add(new ThreadStartAnonSurf(true));
       } else {
-        this.pool.add(new WorkerSystemdService(false));
+        this.pool.add(new ThreadStartAnonSurf(false));
       }
     } catch (ThreadError e) {
       print("ThreadError: %s\n", e.message);
@@ -49,14 +49,14 @@ public class ButtonStart: Button {
 
 
 public class ButtonMyIP: Button {
-  private ThreadPool<WorkerCheckTor> pool;
+  private ThreadPool<ThreadMyIP> pool;
 
   public ButtonMyIP() {
     this.set_label("My IP");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     try {
-      this.pool = new ThreadPool<WorkerCheckTor>.with_owned_data ((worker) => {
+      this.pool = new ThreadPool<ThreadMyIP>.with_owned_data ((worker) => {
         worker.run ();
       }, 1, false);
     } catch (GLib.Error error) {
@@ -69,7 +69,7 @@ public class ButtonMyIP: Button {
       return;
     }
     try {
-      this.pool.add(new WorkerCheckTor());
+      this.pool.add(new ThreadMyIP());
     } catch (ThreadError e) {
       print("ThreadError: %s\n", e.message);
     }

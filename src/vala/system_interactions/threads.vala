@@ -1,9 +1,9 @@
 
 
-public class WorkerSystemdService {
+public class ThreadStartAnonSurf {
   public bool is_action_start { private set; get; }
 
-  public WorkerSystemdService(bool is_action_start) {
+  public ThreadStartAnonSurf(bool is_action_start) {
     if (is_action_start) {
       this.is_action_start = true;
     } else {
@@ -54,11 +54,11 @@ public class WorkerSystemdService {
 }
 
 
-public class WorkerSystemdStartup {
+public class ThreadEnableAnonSurf {
   // TODO improve output messages
   public bool is_action_enable { private set; get; }
 
-  public WorkerSystemdStartup(bool is_action_enable) {
+  public ThreadEnableAnonSurf(bool is_action_enable) {
     if (is_action_enable) {
       this.is_action_enable = true;
     } else {
@@ -112,7 +112,7 @@ public class WorkerSystemdStartup {
 }
 
 
-public class WorkerCheckTor {
+public class ThreadMyIP {
   public void run() {
     /*
       https://wiki.gnome.org/Projects/Vala/LibSoupSample

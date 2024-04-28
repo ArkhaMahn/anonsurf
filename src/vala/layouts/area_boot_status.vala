@@ -16,13 +16,13 @@ public class LabelBootStatus: Label {
 
 
 public class ButtonBoot: Button {
-  public ThreadPool<WorkerSystemdStartup> pool;
+  public ThreadPool<ThreadEnableAnonSurf> pool;
 
   public ButtonBoot() {
     this.set_size_request(BUTTON_BOOT_SIZE_X, BUTTON_BOOT_SIZE_Y);
     this.clicked.connect(on_click_boot_action);
     try {
-      this.pool = new ThreadPool<WorkerSystemdStartup>.with_owned_data ((worker) => {
+      this.pool = new ThreadPool<ThreadEnableAnonSurf>.with_owned_data ((worker) => {
         worker.run();
       }, 1, false);
     } catch (GLib.Error error) {
@@ -33,9 +33,9 @@ public class ButtonBoot: Button {
   private void on_click_boot_action() {
     try {
       if (this.get_label() == "Enable") {
-        this.pool.add(new WorkerSystemdStartup(true));
+        this.pool.add(new ThreadEnableAnonSurf(true));
       } else {
-        this.pool.add(new WorkerSystemdStartup(false));
+        this.pool.add(new ThreadEnableAnonSurf(false));
       }
     } catch (ThreadError e) {
       print("ThreadError: %s\n", e.message);
