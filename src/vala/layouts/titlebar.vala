@@ -15,8 +15,8 @@ public class ImageAnonSurfStatus: Image {
 }
 
 
-public class ButtonAbout: Button {
-  public ButtonAbout() {
+public class ButtonShowAboutAnonSurf: Button {
+  public ButtonShowAboutAnonSurf() {
     this.set_image(new Image.from_icon_name("help-about", BUTTON));
     this.clicked.connect(on_click_about);
   }
@@ -31,18 +31,18 @@ public class ButtonAbout: Button {
 
 public class AnonSurfTitleBar: HeaderBar {
   private ImageAnonSurfStatus icon;
-  private ButtonAbout button_about;
+  private ButtonShowAboutAnonSurf button_show_dialog_about;
 
   public AnonSurfTitleBar() {
     icon = new ImageAnonSurfStatus();
-    button_about = new ButtonAbout();
+    button_show_dialog_about = new ButtonShowAboutAnonSurf();
 
     this.set_show_close_button(true);
     this.set_decoration_layout(":close");
     this.set_title("AnonSurf");
 
     this.pack_start(icon);
-    this.pack_end(button_about);
+    this.pack_end(button_show_dialog_about);
   }
 
   private void on_update_title(bool is_surf_running) {
