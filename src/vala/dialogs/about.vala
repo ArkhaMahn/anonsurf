@@ -1,3 +1,7 @@
+/*
+  Show AboutDialog on Title bar
+ */
+
 using Gtk;
 
 
@@ -22,9 +26,9 @@ public class AnonSurfDialogAbout: AboutDialog {
     this.set_artists(artists);
     this.set_authors(authors);
     this.set_comments("Anonymous Toolkit of ParrotOS");
-    this.set_copyright("Copyright © 2013 - 2020 Lorenzo \"Palinuro\" Faletra\nCopyright © 2022 Parrot Security CIC");
+    this.set_copyright("Copyright © 2013 - 2024 Lorenzo \"Palinuro\" Faletra\nCopyright © 2022 Parrot Security CIC");
     this.set_license_type(GPL_3_0);
-    this.set_website("https://nest.parrot.sh/packages/tools/anonsurf");
+    this.set_website("https://gitlab.com/parrotsec/packages/anonsurf/");
     this.set_website_label("Gitlab Source");
   }
 }
