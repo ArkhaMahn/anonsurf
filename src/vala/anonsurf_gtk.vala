@@ -2,14 +2,15 @@ using Gtk;
 
 // TODO: if start supprocess, it's better to use absolute path of cmd service (check path exists first)
 public class BoxMainLayout: Box {
-  private BoxStatusBoot boxBoot;
+  private BoxBootStatus box_boot_status;
   public BoxButtonArea boxButton;
 
   public BoxMainLayout() {
     GLib.Object(orientation: Orientation.HORIZONTAL);
-    boxBoot = new BoxStatusBoot();
+    box_boot_status = new BoxBootStatus();
     boxButton = new BoxButtonArea();
-    this.pack_start(boxBoot, true, true, 3);
+
+    this.pack_start(box_boot_status, true, true, 3);
     this.pack_start(boxButton, false, true, 3);
   }
 
@@ -19,7 +20,7 @@ public class BoxMainLayout: Box {
   // }
 
   public void update_layout(bool is_surf_running) {
-    boxBoot.refresh_box();
+    box_boot_status.update_boot_status();
     boxButton.refresh_box(is_surf_running);
   }
 }

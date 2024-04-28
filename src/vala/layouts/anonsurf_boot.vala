@@ -61,21 +61,20 @@ public class ButtonEnableBoot: Button {
 }
 
 
-public class BoxStatusBoot: Box {
+public class BoxBootStatus: Box {
   public LabelBootStatus label_boot_status;
   public ButtonEnableBoot button_enable_boot;
 
-  public BoxStatusBoot() {
+  public BoxBootStatus() {
     GLib.Object(orientation: Orientation.VERTICAL);
     create_box_layout();
-    refresh_box();
   }
 
   private void create_box_layout() {
     label_boot_status = new LabelBootStatus();
     button_enable_boot = new ButtonEnableBoot();
 
-    this.pack_start(label_boot_status, true, true, 3);
+    this.pack_start(label_boot_status, true, false, 3);
     this.pack_start(button_enable_boot, true, true, 3);
   }
 
@@ -89,7 +88,7 @@ public class BoxStatusBoot: Box {
     return file.query_exists();
   }
 
-  public void refresh_box() {
+  public void update_boot_status() {
     if (check_multi_user_unit() == false && check_default_target_unit() == false){
       label_boot_status.update_label(false);
       button_enable_boot.update_label(false);
