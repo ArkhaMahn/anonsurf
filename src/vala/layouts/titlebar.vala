@@ -1,7 +1,7 @@
 using Gtk;
 
 
-public class TitleStatusIcon: Image {
+public class ImageAnonSurfStatus: Image {
   public void on_update_icon(bool is_surf_running) {
     if (is_surf_running) {
       // this.from_icon_name("security-high"); // GTK 4 syntax
@@ -30,11 +30,11 @@ public class ButtonAbout: Button {
 
 
 public class AnonSurfTitleBar: HeaderBar {
-  private TitleStatusIcon icon;
+  private ImageAnonSurfStatus icon;
   private ButtonAbout button_about;
 
   public AnonSurfTitleBar() {
-    icon = new TitleStatusIcon();
+    icon = new ImageAnonSurfStatus();
     button_about = new ButtonAbout();
 
     this.set_show_close_button(true);
