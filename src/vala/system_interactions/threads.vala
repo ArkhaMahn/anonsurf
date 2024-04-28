@@ -1,3 +1,7 @@
+/*
+Create thread pools that start, stop AnonSurf; enable / disable AnonSurf at boot or
+Check current Public IP and see if it's under Tor network
+*/
 
 
 public class ThreadStartAnonSurf {
