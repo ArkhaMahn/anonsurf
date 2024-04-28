@@ -19,7 +19,7 @@ public class MenuItemStart: Gtk.MenuItem {
     this.app.window.main_layout.boxButton.boxTop.btnStart.on_click_button();
   }
 
-  public void on_update_status(bool is_surf_running) {
+  public void update_label(bool is_surf_running) {
     if (is_surf_running) {
       this.set_label("Stop");
     } else {
@@ -133,7 +133,7 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
     this.menu_item_quit.show();
   }
 
-  public void on_update_menu_list(bool is_surf_running) {
+  public void update_list_items(bool is_surf_running) {
     if (is_surf_running) {
       this.menu_item_tor_controller.show();
       this.menu_item_change_id.show();
