@@ -1,3 +1,7 @@
+/*
+Create area that shows current status if AnonSurf is enabled with system (via label)
+And a button to enable, disable it at boot
+*/
 using Gtk;
 
 
@@ -5,7 +9,7 @@ public class LabelBootStatus: Label {
   public LabelBootStatus() {
   }
 
-  public void on_update_label(bool is_enabled_boot) {
+  public void update_label(bool is_enabled_boot) {
     if (is_enabled_boot == false) {
       this.set_label("Disabled");
     } else {
@@ -42,7 +46,7 @@ public class ButtonEnableBoot: Button {
     }
   }
 
-  public void on_update_label(bool is_enabled_boot) {
+  public void update_label(bool is_enabled_boot) {
     if (this.pool.get_num_threads() > 0) {
       this.set_sensitive(false);
     } else {
@@ -58,8 +62,8 @@ public class ButtonEnableBoot: Button {
 
 
 public class BoxStatusBoot: Box {
-  public LabelBootStatus label_boot;
-  public ButtonEnableBoot btn_boot;
+  public LabelBootStatus label_boot_status;
+  public ButtonEnableBoot button_enable_boot;
 
   public BoxStatusBoot() {
     GLib.Object(orientation: Orientation.VERTICAL);
@@ -68,11 +72,11 @@ public class BoxStatusBoot: Box {
   }
 
   private void create_box_layout() {
-    label_boot = new LabelBootStatus();
-    btn_boot = new ButtonEnableBoot();
+    label_boot_status = new LabelBootStatus();
+    button_enable_boot = new ButtonEnableBoot();
 
-    this.pack_start(label_boot, true, true, 3);
-    this.pack_start(btn_boot, true, false, 3);
+    this.pack_start(label_boot_status, true, true, 3);
+    this.pack_start(button_enable_boot, true, true, 3);
   }
 
   private bool check_multi_user_unit() {
@@ -87,13 +91,11 @@ public class BoxStatusBoot: Box {
 
   public void refresh_box() {
     if (check_multi_user_unit() == false && check_default_target_unit() == false){
-      label_boot.on_update_label(false);
-      btn_boot.on_update_label(false);
-      // TODO update button
-      // TODO update label
+      label_boot_status.update_label(false);
+      button_enable_boot.update_label(false);
     } else {
-      label_boot.on_update_label(true);
-      btn_boot.on_update_label(true);
+      label_boot_status.update_label(true);
+      button_enable_boot.update_label(true);
     }
   }
 }
