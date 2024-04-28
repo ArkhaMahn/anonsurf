@@ -37,6 +37,7 @@ public class AnonSurfTitleBar: HeaderBar {
     image_anonsurf_status = new ImageAnonSurfStatus();
     button_show_dialog_about = new ButtonShowAboutAnonSurf();
 
+    this.set_title("AnonSurf");
     this.set_show_close_button(true);
     this.set_decoration_layout(":close");
 
