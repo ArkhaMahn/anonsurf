@@ -15,10 +15,10 @@ public class LabelBootStatus: Label {
 }
 
 
-public class ButtonBoot: Button {
+public class ButtonEnableBoot: Button {
   public ThreadPool<ThreadEnableAnonSurf> pool;
 
-  public ButtonBoot() {
+  public ButtonEnableBoot() {
     this.set_size_request(BUTTON_BOOT_SIZE_X, BUTTON_BOOT_SIZE_Y);
     this.clicked.connect(on_click_boot_action);
     try {
@@ -59,7 +59,7 @@ public class ButtonBoot: Button {
 
 public class BoxStatusBoot: Box {
   public LabelBootStatus label_boot;
-  public ButtonBoot btn_boot;
+  public ButtonEnableBoot btn_boot;
 
   public BoxStatusBoot() {
     GLib.Object(orientation: Orientation.VERTICAL);
@@ -69,7 +69,7 @@ public class BoxStatusBoot: Box {
 
   private void create_box_layout() {
     label_boot = new LabelBootStatus();
-    btn_boot = new ButtonBoot();
+    btn_boot = new ButtonEnableBoot();
 
     this.pack_start(label_boot, true, true, 3);
     this.pack_start(btn_boot, true, false, 3);
