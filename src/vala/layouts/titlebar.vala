@@ -22,7 +22,7 @@ public class ButtonAbout: Button {
   }
 
   private void on_click_about() {
-    var dialog_about = new AnonSurfDialogAbout();
+    var dialog_about = new DialogAboutAnonSurf();
     dialog_about.run();
     dialog_about.destroy();
   }

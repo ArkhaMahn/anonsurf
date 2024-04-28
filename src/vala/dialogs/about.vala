@@ -5,8 +5,8 @@
 using Gtk;
 
 
-public class AnonSurfDialogAbout: AboutDialog {
-  public AnonSurfDialogAbout() {
+public class DialogAboutAnonSurf: AboutDialog {
+  public DialogAboutAnonSurf() {
     const string authors[] = {
       "Lorenzo \"Palinuro\" Faletra",
       "Nong Hoang \"DmKnght\" Tu",
