@@ -1,11 +1,17 @@
+/*
+Create a menu when user right click on system tray's icon
+The items in the menu will be updated (hide or show)
+depend on AnonSurf's status
+TODO instead of only AnonSurf, the update should consider any error of Tor too
+*/
+
 using Gtk;
 
 
-public class SystrayItemStart: Gtk.MenuItem {
+public class MenuItemStart: Gtk.MenuItem {
   private AnonSurfApp app;
 
-  public SystrayItemStart() {
-    this.set_label("Start");
+  public MenuItemStart() {
     this.activate.connect(on_click_main_action);
   }
 
@@ -27,12 +33,12 @@ public class SystrayItemStart: Gtk.MenuItem {
 }
 
 
-public class SystrayItemStatus: Gtk.MenuItem {
+public class MenuItemTorController: Gtk.MenuItem {
   // TODO prevent this menu spawns multiple dialogs
   private AnonSurfApp app;
 
-  public SystrayItemStatus() {
-    this.set_label("Status");
+  public MenuItemTorController() {
+    this.set_label("Tor Controller");
     this.activate.connect(on_click_check_status);
   }
 
@@ -46,10 +52,10 @@ public class SystrayItemStatus: Gtk.MenuItem {
 }
 
 
-public class SystrayItemChangeId: Gtk.MenuItem {
+public class MenuItemItemChangeId: Gtk.MenuItem {
   private AnonSurfApp app;
 
-  public SystrayItemChangeId() {
+  public MenuItemItemChangeId() {
     this.set_label("Change Identity");
     this.activate.connect(on_click_change_id);
   }
@@ -64,10 +70,10 @@ public class SystrayItemChangeId: Gtk.MenuItem {
 }
 
 
-public class SystrayItemCheckIP: Gtk.MenuItem {
+public class MenuItemCheckIP: Gtk.MenuItem {
   private AnonSurfApp app;
 
-  public SystrayItemCheckIP() {
+  public MenuItemCheckIP() {
     this.set_label("Check IP");
     this.activate.connect(on_click_check_status);
   }
@@ -82,8 +88,8 @@ public class SystrayItemCheckIP: Gtk.MenuItem {
 }
 
 
-public class SystrayItemQuit: Gtk.MenuItem {
-  public SystrayItemQuit() {
+public class MenuItemQuit: Gtk.MenuItem {
+  public MenuItemQuit() {
     this.set_label("Quit");
     this.activate.connect(Gtk.main_quit);
   }
@@ -91,11 +97,11 @@ public class SystrayItemQuit: Gtk.MenuItem {
 
 
 public class AnonSurfSystrayMenu: Gtk.Menu {
-  public SystrayItemStart menu_item_start;
-  public SystrayItemStatus menu_item_status;
-  public SystrayItemChangeId menu_item_change_id;
-  public SystrayItemCheckIP menu_item_check_ip;
-  public SystrayItemQuit menu_item_quit;
+  public MenuItemStart menu_item_start;
+  public MenuItemTorController menu_item_tor_controller;
+  public MenuItemItemChangeId menu_item_change_id;
+  public MenuItemCheckIP menu_item_check_ip;
+  public MenuItemQuit menu_item_quit;
 
   public AnonSurfSystrayMenu() {
     this.create_menu_items();
@@ -104,15 +110,15 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
   }
 
   private void create_menu_items() {
-    this.menu_item_start = new SystrayItemStart();
-    this.menu_item_status = new SystrayItemStatus();
-    this.menu_item_change_id = new SystrayItemChangeId();
-    this.menu_item_check_ip = new SystrayItemCheckIP();
-    this.menu_item_quit = new SystrayItemQuit();
+    this.menu_item_start = new MenuItemStart();
+    this.menu_item_tor_controller = new MenuItemTorController();
+    this.menu_item_change_id = new MenuItemItemChangeId();
+    this.menu_item_check_ip = new MenuItemCheckIP();
+    this.menu_item_quit = new MenuItemQuit();
 
     // FIXME Vala warns incompatible pointer when append
     this.append(this.menu_item_start);
-    this.append(this.menu_item_status);
+    this.append(this.menu_item_tor_controller);
     this.append(this.menu_item_change_id);
     this.append(this.menu_item_check_ip);
     this.append(this.menu_item_quit);
@@ -129,10 +135,10 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
 
   public void on_update_menu_list(bool is_surf_running) {
     if (is_surf_running) {
-      this.menu_item_status.show();
+      this.menu_item_tor_controller.show();
       this.menu_item_change_id.show();
     } else {
-      this.menu_item_status.hide();
+      this.menu_item_tor_controller.hide();
       this.menu_item_change_id.hide();
     }
   }
