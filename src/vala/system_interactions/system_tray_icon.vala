@@ -29,7 +29,7 @@ public class AnonSurfSystrayIcon: StatusIcon {
     this.app = app;
 
     this.menu.menu_item_start.connect_anonsurf_button(app);
-    this.menu.menu_item_status.connect_anonsurf_button(app);
+    this.menu.menu_item_tor_controller.connect_anonsurf_button(app);
     this.menu.menu_item_change_id.connect_anonsurf_button(app);
     this.menu.menu_item_check_ip.connect_anonsurf_button(app);
   }
