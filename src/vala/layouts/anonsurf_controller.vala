@@ -16,7 +16,6 @@ public class ButtonStart: Button {
   public ThreadPool<ThreadStartAnonSurf> pool;
 
   public ButtonStart() {
-    this.set_label("Start");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     try {
@@ -44,17 +43,26 @@ public class ButtonStart: Button {
     }
   }
 
-  public void update_button(bool is_surf_running) {
+  public void check_thread_is_running() {
     if (this.pool.get_num_threads() > 0) {
       this.set_sensitive(false);
     } else {
       this.set_sensitive(true);
-      if (is_surf_running) {
-        this.set_label("Stop");
-      } else {
-        this.set_label("Start");
-      }
     }
+  }
+
+  public void set_surf_activated() {
+    /*
+      AnonSurf is activated. Change label to Stop
+    */
+    this.set_label("Stop");
+  }
+
+  public void set_surf_deactivated() {
+    /*
+      AnonSurf is deactivated. Change label to Start
+    */
+    this.set_label("Start");
   }
 }
 
@@ -86,7 +94,7 @@ public class ButtonMyIP: Button {
     }
   }
 
-  public void update_button() {
+  public void check_thread_is_running() {
     if (this.pool.get_num_threads() > 0) {
       this.set_sensitive(false);
     } else {
@@ -98,7 +106,7 @@ public class ButtonMyIP: Button {
 
 public class ButtonChangeID: Button {
   public ButtonChangeID() {
-    this.set_label("Change ID");
+    this.set_label("Change ID"); // TODO improve button name
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
   }
@@ -107,22 +115,29 @@ public class ButtonChangeID: Button {
     // TODO changeid with socket. Value of port parses from config file
   }
 
-  public void update_button(bool is_surf_running) {
-    if (is_surf_running) {
-      this.set_sensitive(true);
-    } else {
-      this.set_sensitive(false);
-    }
+  public void set_surf_activated() {
+    /*
+      AnonSurf is activated. Allow clicking on this
+    */
+    this.set_sensitive(true);
+  }
+
+
+  public void set_surf_deactivated() {
+    /*
+      AnonSurf is deactivated. Disable clicking
+    */
+    this.set_sensitive(false);
   }
 }
 
 
-public class ButtonStatus: Button {
+public class ButtonTorController: Button {
   private DialogTorController tor_status;
 
-  public ButtonStatus() {
+  public ButtonTorController() {
     this.tor_status = new DialogTorController();
-    this.set_label("Tor stat");
+    this.set_label("Tor stat"); // TODO improve button name
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
   }
@@ -131,69 +146,95 @@ public class ButtonStatus: Button {
     this.tor_status.show_dialog();
   }
 
-  public void update_button(bool is_surf_running) {
-    if (is_surf_running) {
-      this.set_sensitive(true);
-    } else {
-      this.set_sensitive(false);
-    }
+  public void set_surf_activated() {
+    /*
+      AnonSurf is activated. Allow clicking on this
+    */
+    this.set_sensitive(true);
+  }
+
+
+  public void set_surf_deactivated() {
+    /*
+      AnonSurf is deactivated. Disable clicking
+    */
+    this.set_sensitive(false);
   }
 }
 
 
-
 public class BoxTopButtons: Box {
-  public ButtonStart btnStart;
-  public ButtonMyIP btnMyIP;
+  public ButtonStart button_start;
+  public ButtonMyIP button_my_ip;
 
   public BoxTopButtons() {
     GLib.Object(orientation: Orientation.HORIZONTAL);
-    btnStart = new ButtonStart();
-    btnMyIP = new ButtonMyIP();
-    this.pack_start(btnStart, false, true, 3);
-    this.pack_start(btnMyIP, false, true, 3);
+    this.button_start = new ButtonStart();
+    this.button_my_ip = new ButtonMyIP();
+
+    this.pack_start(button_start, false, true, 3);
+    this.pack_start(button_my_ip, false, true, 3);
   }
 
-  public void refresh_box(bool is_surf_running) {
-    btnStart.update_button(is_surf_running);
-    btnMyIP.update_button();
+  public void set_surf_activated() {
+    this.button_start.set_surf_activated();
+    this.button_start.check_thread_is_running();
+    this.button_my_ip.check_thread_is_running();
+  }
+
+  public void set_surf_deactivated() {
+    this.button_start.set_surf_deactivated();
+    this.button_start.check_thread_is_running();
+    this.button_my_ip.check_thread_is_running();
   }
 }
 
 
 public class BoxBottomButtons: Box {
-  public ButtonChangeID btnChangeID;
-  public ButtonStatus btnStatus;
+  public ButtonChangeID button_change_id;
+  public ButtonTorController button_tor_controller;
 
   public BoxBottomButtons() {
     GLib.Object(orientation: Orientation.HORIZONTAL);
-    btnChangeID = new ButtonChangeID();
-    btnStatus = new ButtonStatus();
-    this.pack_start(btnStatus, false, true, 3);
-    this.pack_start(btnChangeID, false, true, 3);
+    this.button_change_id = new ButtonChangeID();
+    this.button_tor_controller = new ButtonTorController();
+
+    this.pack_start(this.button_tor_controller, false, true, 3);
+    this.pack_start(this.button_change_id, false, true, 3);
   }
 
-  public void refresh_box(bool is_surf_running) {
-    btnChangeID.update_button(is_surf_running);
-    btnStatus.update_button(is_surf_running);
+  public void set_surf_activated() {
+    this.button_change_id.set_surf_activated();
+    this.button_tor_controller.set_surf_activated();
+  }
+
+  public void set_surf_deactivated() {
+    this.button_change_id.set_surf_deactivated();
+    this.button_tor_controller.set_surf_deactivated();
   }
 }
 
 
-public class BoxButtonArea: Box {
-  public BoxBottomButtons boxBottom;
-  public BoxTopButtons boxTop;
+public class BoxButtonControl: Box {
+  public BoxBottomButtons box_bottom_buttons;
+  public BoxTopButtons box_top_buttons;
 
-  public BoxButtonArea() {
+  public BoxButtonControl() {
     GLib.Object(orientation: Orientation.VERTICAL);
-    boxBottom = new BoxBottomButtons();
-    boxTop = new BoxTopButtons();
-    this.pack_start(boxTop, false, true, 3);
-    this.pack_start(boxBottom, false, true, 3);
+    this.box_bottom_buttons = new BoxBottomButtons();
+    this.box_top_buttons = new BoxTopButtons();
+
+    this.pack_start(this.box_top_buttons, false, true, 3);
+    this.pack_start(this.box_bottom_buttons, false, true, 3);
   }
 
-  public void refresh_box(bool is_surf_running) {
-    boxBottom.refresh_box(is_surf_running);
-    boxTop.refresh_box(is_surf_running);
+  public void set_surf_activated() {
+    this.box_top_buttons.set_surf_activated();
+    this.box_bottom_buttons.set_surf_activated();
+  }
+
+  public void set_surf_deactivated() {
+    this.box_top_buttons.set_surf_deactivated();
+    this.box_bottom_buttons.set_surf_deactivated();
   }
 }

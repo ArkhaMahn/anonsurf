@@ -16,7 +16,7 @@ public class MenuItemStart: Gtk.MenuItem {
   }
 
   private void on_click_main_action() {
-    this.app.window.main_layout.boxButton.boxTop.btnStart.on_click_button();
+    this.app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
   }
 
   public void update_label(bool is_surf_running) {
@@ -43,7 +43,7 @@ public class MenuItemTorController: Gtk.MenuItem {
   }
 
   private void on_click_check_status() {
-    this.app.window.main_layout.boxButton.boxBottom.btnStatus.on_click_button();
+    this.app.window.main_layout.box_button_control.box_bottom_buttons.button_tor_controller.on_click_button();
   }
 
   public void connect_anonsurf_button(AnonSurfApp app) {
@@ -61,7 +61,7 @@ public class MenuItemItemChangeId: Gtk.MenuItem {
   }
 
   private void on_click_change_id() {
-    this.app.window.main_layout.boxButton.boxBottom.btnChangeID.on_click_button();
+    this.app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button();
   }
 
   public void connect_anonsurf_button(AnonSurfApp app) {
@@ -79,7 +79,7 @@ public class MenuItemCheckIP: Gtk.MenuItem {
   }
 
   private void on_click_check_status() {
-    this.app.window.main_layout.boxButton.boxTop.btnMyIP.on_click_button();
+    this.app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
   }
 
   public void connect_anonsurf_button(AnonSurfApp app) {

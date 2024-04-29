@@ -2,15 +2,12 @@ using Gtk;
 
 
 public class ImageAnonSurfStatus: Image {
-  public void on_update_icon(bool is_surf_running) {
-    if (is_surf_running) {
-      // this.from_icon_name("security-high"); // GTK 4 syntax
-      this.set_from_icon_name("security-high", DIALOG);
-    } else {
-      // this.from_icon_name("security-medium"); // GTK 4 syntax
-      this.set_from_icon_name("security-medium", DIALOG);
-    }
-    // TODO show error too
+  public void set_surf_activated() {
+    this.set_from_icon_name("security-high", DIALOG);
+  }
+
+  public void set_surf_deactivated() {
+    this.set_from_icon_name("security-medium", DIALOG);
   }
 }
 
@@ -45,19 +42,23 @@ public class AnonSurfTitleBar: HeaderBar {
     this.pack_end(button_show_dialog_about);
   }
 
-  private void on_update_title(bool is_surf_running) {
-    if (is_surf_running) {
-      this.set_subtitle("Activated");
-    } else {
-      this.set_subtitle("Deactivated");
-    }
-    // TODO show error too
+  private void set_surf_activated() {
+    this.set_subtitle("Activated");
+    this.image_anonsurf_status.set_surf_activated();
+  }
+
+  private void set_surf_deactivated() {
+    this.set_subtitle("Deactivated");
+    this.image_anonsurf_status.set_surf_deactivated();
   }
 
   public void on_update_title_bar(bool is_surf_running) {
-    if (this.get_visible()) {
-      on_update_title(is_surf_running);
+    // TODO optimize conditions so condition check wont be called multiple times
+    // TODO handle multiple errors from Tor service too
+    if (is_surf_running) {
+      this.set_surf_activated();
+    } else {
+      this.set_surf_deactivated();
     }
-    this.image_anonsurf_status.on_update_icon(is_surf_running);
   }
 }

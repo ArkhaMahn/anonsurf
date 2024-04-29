@@ -34,7 +34,7 @@ public class AnonSurfSystrayIcon: StatusIcon {
     this.menu.menu_item_check_ip.connect_anonsurf_button(app);
   }
 
-  public void on_update_systray(bool is_surf_running) {
+  public void update_menu_and_icon(bool is_surf_running) {
     this.menu.menu_item_start.update_label(is_surf_running);
     this.menu.update_list_items(is_surf_running);
 
