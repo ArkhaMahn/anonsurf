@@ -30,7 +30,7 @@ public class ButtonEnableBoot: Button {
         worker.run();
       }, 1, false);
     } catch (GLib.Error error) {
-      print("Failed to create thread: %s\n", error.message);
+      send_notification("Thread error", error.message, NotifyLevel.Error);
     }
   }
 
@@ -41,8 +41,8 @@ public class ButtonEnableBoot: Button {
       } else {
         this.pool.add(new ThreadEnableAnonSurf(false));
       }
-    } catch (ThreadError e) {
-      print("ThreadError: %s\n", e.message);
+    } catch (ThreadError error) {
+      send_notification("Thread error", error.message, NotifyLevel.Error);
     }
   }
 

@@ -23,7 +23,7 @@ public class ButtonStart: Button {
         worker.run();
       }, 1, false);
     } catch (GLib.Error error) {
-      print("Failed to create thread: %s\n", error.message);
+      send_notification("Thread error", error.message, NotifyLevel.Error);
     }
   }
 
@@ -38,8 +38,8 @@ public class ButtonStart: Button {
       } else {
         this.pool.add(new ThreadStartAnonSurf(false));
       }
-    } catch (ThreadError e) {
-      print("ThreadError: %s\n", e.message);
+    } catch (ThreadError error) {
+      send_notification("Thread error", error.message, NotifyLevel.Error);
     }
   }
 
@@ -79,7 +79,7 @@ public class ButtonMyIP: Button {
         worker.run ();
       }, 1, false);
     } catch (GLib.Error error) {
-      print("Failed to create thread: %s\n", error.message);
+      send_notification("Thread error", error.message, NotifyLevel.Error);
     }
   }
 
@@ -89,8 +89,8 @@ public class ButtonMyIP: Button {
     }
     try {
       this.pool.add(new ThreadMyIP());
-    } catch (ThreadError e) {
-      print("ThreadError: %s\n", e.message);
+    } catch (ThreadError error) {
+      send_notification("Thread error", error.message, NotifyLevel.Error);
     }
   }
 
