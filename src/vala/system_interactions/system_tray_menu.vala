@@ -69,7 +69,7 @@ public class MenuItemItemChangeId: Gtk.MenuItem {
   }
 
   private void on_click_change_id() {
-    this.app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button();
+    this.app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
   }
 
   public void connect_anonsurf_button(AnonSurfApp app) {
