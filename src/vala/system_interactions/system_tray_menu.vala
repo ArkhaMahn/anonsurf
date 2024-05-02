@@ -141,16 +141,6 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
     this.menu_item_quit.show();
   }
 
-  public void update_list_items(bool is_surf_running) {
-    if (is_surf_running) {
-      this.menu_item_tor_controller.show();
-      this.menu_item_change_id.show();
-    } else {
-      this.menu_item_tor_controller.hide();
-      this.menu_item_change_id.hide();
-    }
-  }
-
   public void set_surf_activated() {
     this.menu_item_tor_controller.show();
     this.menu_item_change_id.show();
