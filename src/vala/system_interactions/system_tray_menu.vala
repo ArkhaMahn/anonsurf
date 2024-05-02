@@ -105,11 +105,11 @@ public class MenuItemQuit: Gtk.MenuItem {
 
 
 public class AnonSurfSystrayMenu: Gtk.Menu {
-  public MenuItemStart menu_item_start;
-  public MenuItemTorController menu_item_tor_controller;
-  public MenuItemItemChangeId menu_item_change_id;
-  public MenuItemCheckIP menu_item_check_ip;
-  public MenuItemQuit menu_item_quit;
+  private MenuItemStart menu_item_start;
+  private MenuItemTorController menu_item_tor_controller;
+  private MenuItemItemChangeId menu_item_change_id;
+  private MenuItemCheckIP menu_item_check_ip;
+  private MenuItemQuit menu_item_quit;
 
   public AnonSurfSystrayMenu() {
     this.create_menu_items();
@@ -139,6 +139,13 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
     this.menu_item_start.show();
     this.menu_item_check_ip.show();
     this.menu_item_quit.show();
+  }
+
+  public void set_app_connection(AnonSurfApp app) {
+    this.menu_item_start.connect_anonsurf_button(app);
+    this.menu_item_tor_controller.connect_anonsurf_button(app);
+    this.menu_item_change_id.connect_anonsurf_button(app);
+    this.menu_item_check_ip.connect_anonsurf_button(app);
   }
 
   public void set_surf_activated() {
