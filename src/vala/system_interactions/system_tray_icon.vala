@@ -34,14 +34,13 @@ public class AnonSurfSystrayIcon: StatusIcon {
     this.menu.menu_item_check_ip.connect_anonsurf_button(app);
   }
 
-  public void update_menu_and_icon(bool is_surf_running) {
-    this.menu.menu_item_start.update_label(is_surf_running);
-    this.menu.update_list_items(is_surf_running);
+  public void set_surf_activated() {
+    this.set_from_icon_name("security-high");
+    this.menu.set_surf_activated();
+  }
 
-    if (is_surf_running) {
-      this.set_from_icon_name("security-high");
-    } else {
-      this.set_from_icon_name("anonsurf");
-    }
+  public void set_surf_deactivated() {
+    this.set_from_icon_name("anonsurf");
+    this.menu.set_surf_deactivated();
   }
 }

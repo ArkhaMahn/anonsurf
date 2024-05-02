@@ -30,6 +30,14 @@ public class MenuItemStart: Gtk.MenuItem {
   public void connect_anonsurf_button(AnonSurfApp app) {
     this.app = app;
   }
+
+  public void set_surf_activated() {
+    this.set_label("Stop");
+  }
+
+  public void set_surf_deactivated() {
+    this.set_label("Start");
+  }
 }
 
 
@@ -141,5 +149,17 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
       this.menu_item_tor_controller.hide();
       this.menu_item_change_id.hide();
     }
+  }
+
+  public void set_surf_activated() {
+    this.menu_item_tor_controller.show();
+    this.menu_item_change_id.show();
+    this.menu_item_start.set_surf_activated();
+  }
+
+  public void set_surf_deactivated() {
+    this.menu_item_tor_controller.hide();
+    this.menu_item_change_id.hide();
+    this.menu_item_start.set_surf_deactivated();
   }
 }

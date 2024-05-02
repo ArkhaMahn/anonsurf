@@ -109,7 +109,7 @@ public class AnonSurfApp: GLib.Application {
     // }
     bool is_surf_running = check_surf_running();
     if (is_surf_running) {
-      this.sys_tray.update_menu_and_icon(is_surf_running); // TODO replace here
+      this.sys_tray.set_surf_activated();
 
       if (!this.window.title_bar.get_visible()) {
         return true;
@@ -118,7 +118,7 @@ public class AnonSurfApp: GLib.Application {
       this.window.main_layout.set_surf_activated(); // TODO thing about checking tor's conditions too
 
     } else {
-      this.sys_tray.update_menu_and_icon(is_surf_running); // TODO replace here
+      this.sys_tray.set_surf_deactivated();
       if (!this.window.title_bar.get_visible()) {
         return true;
       }
