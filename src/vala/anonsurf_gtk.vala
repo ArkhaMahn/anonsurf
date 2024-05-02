@@ -2,7 +2,7 @@ using Gtk;
 
 // TODO: if start supprocess, it's better to use absolute path of cmd service (check path exists first)
 public class BoxMainLayout: Box {
-  private BoxBootStatus box_boot_status;
+  public BoxBootStatus box_boot_status;
   public BoxButtonControl box_button_control;
 
   public BoxMainLayout() {
@@ -19,7 +19,7 @@ public class BoxMainLayout: Box {
   //   return file.query_exists();
   // }
   public void update_boot_status() {
-    // TODO complete here
+    this.box_boot_status.update_boot_status();
   }
 
   public void set_surf_activated() {
@@ -58,8 +58,10 @@ public class AnonSurfApp: GLib.Application {
 
   public override void activate() {
     this.window = new AnonSurfWindow();
-    this.refresh_gui();
+    // There's a small delay if show_all is called after refresh gui.
+    // Use show_all first will avoid that delay
     this.window.show_all();
+    this.refresh_gui();
 
     Timeout.add(200, refresh_gui);
     Gtk.main();
@@ -80,33 +82,6 @@ public class AnonSurfApp: GLib.Application {
     If visible:
     - Update title bar and main layout
     */
-
-    /*
-      TODO
-      if is_surf_running:
-        update_systray
-        if not get_visible:
-          return true
-        update_boot_status
-        update_titlebar
-        update_layout
-      else:
-        update_systray
-        if not get_visible:
-          return true
-        update_boot_status
-        update_titlebar
-        update_layout
-      return true
-    */
-    // bool is_surf_running = check_surf_running();
-    // this.sys_tray.update_menu_and_icon(is_surf_running);
-    // // TODO optimize conditions to avoid same code in multiple small branches
-
-    // if (this.window.title_bar.get_visible()) {
-    //   this.window.main_layout.update_layout(is_surf_running);
-    //   this.window.title_bar.on_update_title_bar(is_surf_running);
-    // }
     bool is_surf_running = check_surf_running();
     if (is_surf_running) {
       this.sys_tray.set_surf_activated();
@@ -118,7 +93,7 @@ public class AnonSurfApp: GLib.Application {
       // TODO thing about checking tor's conditions too
       this.window.main_layout.set_surf_activated();
       this.window.title_bar.set_surf_activated();
-
+      this.window.main_layout.box_boot_status.update_boot_status();
     } else {
       this.sys_tray.set_surf_deactivated();
       if (!this.window.title_bar.get_visible()) {
@@ -127,6 +102,7 @@ public class AnonSurfApp: GLib.Application {
       // TODO thing about checking tor's conditions too
       this.window.main_layout.set_surf_deactivated();
       this.window.title_bar.set_surf_deactivated();
+      this.window.main_layout.box_boot_status.update_boot_status();
     }
 
     return true;
