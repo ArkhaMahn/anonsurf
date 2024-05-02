@@ -9,6 +9,10 @@ public class ImageAnonSurfStatus: Image {
   public void set_surf_deactivated() {
     this.set_from_icon_name("security-medium", DIALOG);
   }
+
+  public void set_failed() {
+    this.set_from_icon_name("security-low", DIALOG);
+  }
 }
 
 
@@ -50,5 +54,10 @@ public class AnonSurfTitleBar: HeaderBar {
   public void set_surf_deactivated() {
     this.set_subtitle("Deactivated");
     this.image_anonsurf_status.set_surf_deactivated();
+  }
+
+  public void set_tor_service_not_running() {
+    this.set_subtitle("Tor service failed to run");
+    this.image_anonsurf_status.set_failed();
   }
 }

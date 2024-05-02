@@ -77,8 +77,8 @@ public class AnonSurfApp: GLib.Application {
     return file.query_exists();
   }
 
-  private bool set_tor_failed_to_run() {
-    // TODO complete here
+  private void set_tor_failed_to_run() {
+    this.window.title_bar.set_tor_service_not_running();
   }
 
   private void set_surf_activated() {
@@ -107,7 +107,6 @@ public class AnonSurfApp: GLib.Application {
     bool is_surf_running = check_surf_running();
     if (is_surf_running) {
       this.sys_tray.set_surf_activated();
-
       if (!this.window.title_bar.get_visible()) {
         return true;
       }
