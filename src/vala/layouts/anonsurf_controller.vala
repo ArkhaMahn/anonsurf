@@ -105,14 +105,42 @@ public class ButtonMyIP: Button {
 
 
 public class ButtonChangeID: Button {
+  private InetSocketAddress inet_address;
+
   public ButtonChangeID() {
     this.set_label("Change ID"); // TODO improve button name
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
+    InetAddress address = new InetAddress.loopback(SocketFamily.IPV4);
+		this.inet_address = new InetSocketAddress(address, 9051); // TODO dynamic port based on config file?
   }
 
-  public void on_click_button() {
-    // TODO changeid with socket. Value of port parses from config file
+  public async void on_click_button() {
+    try {
+      SocketClient client = new SocketClient();
+      SocketConnection conn = yield client.connect_async(this.inet_address);
+      string message = "authenticate \"iDvvWZctaGaNSESKH\"\n"; // TODO password parser here
+      DataInputStream input;
+
+      yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
+      input = new DataInputStream(conn.input_stream);
+      message = yield input.read_line_async();
+
+      if (message == "250 OK\x0d") {
+        message = "signal newnym\n"; // NOTICE original command was "signal newnym\nquit\n"
+        yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
+        message = yield input.read_line_async();
+        if (message == "250 OK\x0d") {
+          send_notification("New ID", "You got new ID", NotifyLevel.Ok); // TODO improve message
+        } else {
+          send_notification("Failed new ID", message, NotifyLevel.Error); // TODO improve message
+        }
+      } else {
+        send_notification("Authentication failed", message, NotifyLevel.Error);
+      }
+    } catch (Error error) {
+      send_notification("Socket error", error.message, NotifyLevel.Error);
+    }
   }
 
   public void set_surf_activated() {
