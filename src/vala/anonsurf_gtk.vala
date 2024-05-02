@@ -14,10 +14,6 @@ public class BoxMainLayout: Box {
     this.pack_start(this.box_button_control, false, true, 3);
   }
 
-  // private bool check_tor_running() {
-  //   File file = File.new_for_path("/run/systemd/units/invocation:tor.service");
-  //   return file.query_exists();
-  // }
   public void update_boot_status() {
     this.box_boot_status.update_boot_status();
   }
@@ -76,6 +72,32 @@ public class AnonSurfApp: GLib.Application {
     return file.query_exists();
   }
 
+  private bool check_tor_running() {
+    File file = File.new_for_path("/run/systemd/units/invocation:tor.service");
+    return file.query_exists();
+  }
+
+  private bool set_tor_failed_to_run() {
+    // TODO complete here
+  }
+
+  private void set_surf_activated() {
+    /*
+    When AnonSurf is activated, it's necessary to check Tor's status as well.
+    */
+    if (!this.check_tor_running()) {
+      this.set_tor_failed_to_run();
+    } else {
+      this.window.main_layout.set_surf_activated();
+      this.window.title_bar.set_surf_activated();
+    }
+  }
+
+  private void set_surf_deactivated() {
+    this.window.main_layout.set_surf_deactivated();
+    this.window.title_bar.set_surf_deactivated();
+  }
+
   private bool refresh_gui() {
     /*
     Update system tray
@@ -89,22 +111,16 @@ public class AnonSurfApp: GLib.Application {
       if (!this.window.title_bar.get_visible()) {
         return true;
       }
-
-      // TODO thing about checking tor's conditions too
-      this.window.main_layout.set_surf_activated();
-      this.window.title_bar.set_surf_activated();
+      this.set_surf_activated();
       this.window.main_layout.box_boot_status.update_boot_status();
     } else {
       this.sys_tray.set_surf_deactivated();
       if (!this.window.title_bar.get_visible()) {
         return true;
       }
-      // TODO thing about checking tor's conditions too
-      this.window.main_layout.set_surf_deactivated();
-      this.window.title_bar.set_surf_deactivated();
+      this.set_surf_deactivated();
       this.window.main_layout.box_boot_status.update_boot_status();
     }
-
     return true;
   }
 }
