@@ -42,23 +42,13 @@ public class AnonSurfTitleBar: HeaderBar {
     this.pack_end(button_show_dialog_about);
   }
 
-  private void set_surf_activated() {
+  public void set_surf_activated() {
     this.set_subtitle("Activated");
     this.image_anonsurf_status.set_surf_activated();
   }
 
-  private void set_surf_deactivated() {
+  public void set_surf_deactivated() {
     this.set_subtitle("Deactivated");
     this.image_anonsurf_status.set_surf_deactivated();
-  }
-
-  public void on_update_title_bar(bool is_surf_running) {
-    // TODO optimize conditions so condition check wont be called multiple times
-    // TODO handle multiple errors from Tor service too
-    if (is_surf_running) {
-      this.set_surf_activated();
-    } else {
-      this.set_surf_deactivated();
-    }
   }
 }

@@ -115,14 +115,18 @@ public class AnonSurfApp: GLib.Application {
         return true;
       }
 
-      this.window.main_layout.set_surf_activated(); // TODO thing about checking tor's conditions too
+      // TODO thing about checking tor's conditions too
+      this.window.main_layout.set_surf_activated();
+      this.window.title_bar.set_surf_activated();
 
     } else {
       this.sys_tray.set_surf_deactivated();
       if (!this.window.title_bar.get_visible()) {
         return true;
       }
+      // TODO thing about checking tor's conditions too
       this.window.main_layout.set_surf_deactivated();
+      this.window.title_bar.set_surf_deactivated();
     }
 
     return true;
