@@ -105,21 +105,42 @@ public class ButtonMyIP: Button {
 
 
 public class ButtonChangeID: Button {
-  private InetSocketAddress inet_address;
+  private InetAddress address;
 
   public ButtonChangeID() {
     this.set_label("Change ID"); // TODO improve button name
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
-    InetAddress address = new InetAddress.loopback(SocketFamily.IPV4);
-		this.inet_address = new InetSocketAddress(address, 9051); // TODO dynamic port based on config file?
+    this.address = new InetAddress.loopback(SocketFamily.IPV4);
+  }
+
+  private string get_tor_password() {
+    // TODO it's better to use other method instead of password
+    File file = File.new_for_path ("/etc/anonsurf/nyxrc");
+    try {
+      FileInputStream @is = file.read();
+      DataInputStream dis = new DataInputStream(@is);
+      string line = dis.read_line();
+      @is.close();
+      return line.split(" ", 2)[1];
+    } catch (Error error) {
+      send_notification("Error reading nyx's config", error.message, NotifyLevel.Error);
+      return "";
+    }
   }
 
   public async void on_click_button() {
     try {
+      string password = this.get_tor_password();
+
+      if (password == "") {
+        return;
+      }
+      // TODO dynamic port based on config file?
+      InetSocketAddress inet_address = new InetSocketAddress(this.address, 9051);
       SocketClient client = new SocketClient();
-      SocketConnection conn = yield client.connect_async(this.inet_address);
-      string message = "authenticate \"iDvvWZctaGaNSESKH\"\n"; // TODO password parser here
+      SocketConnection conn = yield client.connect_async(inet_address);
+      string message = "authenticate \"" + password + "\"\n";
       DataInputStream input;
 
       yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
@@ -127,17 +148,22 @@ public class ButtonChangeID: Button {
       message = yield input.read_line_async();
 
       if (message == "250 OK\x0d") {
-        message = "signal newnym\n"; // NOTICE original command was "signal newnym\nquit\n"
+        message = "signal newnym\n";
         yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
         message = yield input.read_line_async();
+
         if (message == "250 OK\x0d") {
           send_notification("New ID", "You got new ID", NotifyLevel.Ok); // TODO improve message
         } else {
           send_notification("Failed new ID", message, NotifyLevel.Error); // TODO improve message
         }
+
+        message = "quit\n"; // Close connection
+        yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
       } else {
         send_notification("Authentication failed", message, NotifyLevel.Error);
       }
+      conn.close();
     } catch (Error error) {
       send_notification("Socket error", error.message, NotifyLevel.Error);
     }
