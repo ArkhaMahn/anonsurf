@@ -52,12 +52,12 @@ proc stop_anonsurf(): int =
 ]#
 proc cli_anonsurf_stop*() =
   if not is_anonsurf_running():
-    echo "Anonsurf is not. No need to stop it"
+    cli_send_msg(Err, "AnonSurf is not running", "AnonSurf is stopped already. Nothing to stop")
   else:
     if stop_anonsurf() == 0:
-      echo "Anonsurf started"
+      cli_send_msg(Ok, "AnonSurf is deativated", "AnonSurf is stopped. System is back to normal mode")
     else:
-      echo "Failed to start anonsurf"
+      cli_send_msg(Err, "AnonSurf failed to stop", "Error while stopping AnonSurf")
 
 
 #[
