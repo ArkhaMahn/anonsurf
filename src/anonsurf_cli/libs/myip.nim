@@ -21,13 +21,16 @@ proc check_status_from_tor_server(ip_addr, status: var string): bool =
     target = "https://check.torproject.org/"
   var
     client = newHttpClient()
+
   try:
-    let
-      resp = client.get(target)
+    let resp = client.get(target)
     parseIPFromTorServer(resp.body, ip_addr, status)
     return true
   except Exception:
+    cli_send_msg(Err, "Check IP error", getCurrentExceptionMsg())
     return false
+  finally:
+    client.close()
 
 #[
   Check IP via tor
@@ -37,6 +40,7 @@ proc cli_check_current_ip*() =
     ip_addr, status: string
 
   if check_status_from_tor_server(ip_addr, status):
-    cli_send_msg(Info, status, ip_addr)
-  else:
-    cli_send_msg(Err, "Check IP error", "An error happened when check IP address")
+    if "Sorry" in status:
+      cli_send_msg(Warn, "Your public IP is " & ip_addr, "You are not under Tor network ")
+    else:
+      cli_send_msg(Ok, "Your public IP is " & ip_addr, "You are under Tor network")
