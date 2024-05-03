@@ -164,13 +164,13 @@ public class ButtonTorController: Button {
   private DialogTorController tor_status;
 
   public ButtonTorController() {
-    this.tor_status = new DialogTorController();
     this.set_label("Tor stat"); // TODO improve button name
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
   }
 
   public void on_click_button() {
+    this.tor_status = new DialogTorController();
     this.tor_status.show_dialog();
   }
 
