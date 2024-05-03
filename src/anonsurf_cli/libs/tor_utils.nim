@@ -20,6 +20,15 @@ proc is_anonsurf_running(): bool =
   return false
 
 
+proc sock_get_str(s: Socket): string =
+  while true:
+    var
+      buff: string
+    discard s.recv(buff, 1)
+    result &= buff
+    if not s.hasDataBuffered():
+      return result
+
 #[
   Start anonsurf using systemctl
 ]#
@@ -95,6 +104,7 @@ proc change_identity_from_tor_sock() =
   if scanf(readFile(conf_file), "$w $w", tmp, passwd):
     var
       control_port: string
+      recv_msg: string
 
     if not parse_torrc_control_port(control_port):
       cli_send_msg(Err, "Tor's config error", "Unable to find control port")
@@ -105,14 +115,20 @@ proc change_identity_from_tor_sock() =
     else:
       sock.connect("127.0.0.1", Port(parseInt(control_port)))
 
-    sock.send("authenticate \"" & passwd & "\"\nsignal newnym\nquit\n")
-    let
-      sock_data = sock.recv(256).split("\n")
+    sock.send("authenticate \"" & passwd & "\"\n")
+    recv_msg = sock.sock_get_str()
+    if recv_msg != "250 OK\c\n":
+      cli_send_msg(Err, "Failed to change identity", recv_msg)
+      return
 
-    if sock_data[0] != "250 OK\c" or sock_data[1] != "250 OK\c":
-      cli_send_msg(Err, "Failed to change identity", "Tor didn't change Identity")
-    else:
-      cli_send_msg(Ok, "Identity changed", "You have a new Identity from Tor")
+    sock.send("signal newnym\n")
+    recv_msg = sock.sock_get_str()
+    if recv_msg != "250 OK\c\n":
+      cli_send_msg(Err, "Failed to change identity", recv_msg)
+      return
+
+    cli_send_msg(Ok, "Identity changed", "You have a new Identity from Tor")
+    sock.send("quit\n") # Send a command to Tor's control port to stop current session
     sock.close()
 
 
