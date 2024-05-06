@@ -11,13 +11,18 @@ import cli_utils
 #[
   Check if anonsurfd is running using a symlink in /run/
 ]#
-proc is_anonsurf_running(): bool =
+proc is_anonsurf_running*(): bool =
   var
     file_stat: Stat
 
   if lstat(cstring("/run/systemd/units/invocation:anonsurfd.service"), file_stat) == 0:
     return true
   return false
+
+
+# proc is_tor_running*(): bool =
+#   discard
+# # TODO complete here
 
 
 proc sock_get_str(s: Socket): string =

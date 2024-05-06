@@ -4,7 +4,6 @@ import strutils
 import .. / cli / print
 import sequtils
 import net
-import .. / .. / anonsurf / cores / commons / services_status
 
 
 proc convert_seq_addr_to_string(addresses: seq[string]): string =
@@ -48,14 +47,6 @@ proc system_has_only_localhost_or_empty_dns*(): bool =
   if len(addresses) == 0:
     return true
   return has_only_localhost(addresses) 
-
-
-proc anonsurf_is_running*(): bool =
-  return getServStatus("anonsurfd")
-
-
-proc tor_is_running*(): bool =
-  return getServStatus("tor")
 
 
 proc create_backup*() =

@@ -1,6 +1,6 @@
 import options / [option_objects, option_generator, option_handler]
 import os
-import cli / ansurf_cli_print
+import .. / dnstool / cli / print
 
 
 proc maketorrc_remove_nyx() =
@@ -65,8 +65,8 @@ proc main() =
     return
   if paramStr(1) == "restore":
     maketorrc_restore_system_config()
-  elif paramStr(1) == "new-config":
-    maketorrc_get_new_config()
+  # elif paramStr(1) == "new-config":
+  #   maketorrc_get_new_config()
   elif paramStr(1) == "new-torrc":
     maketorrc_create_new_config()
 

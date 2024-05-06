@@ -5,6 +5,7 @@ import resolvconf
 import dhclient
 import utils
 import hook_scripts
+import .. / .. / anonsurf_cli / libs / tor_utils
 
 
 proc handle_create_resolvconf_symlink() =
@@ -55,7 +56,7 @@ proc dnst_show_status*() =
 
   if len(addresses) == 0:
     print_error_resolv_empty()
-  elif anonsurf_is_running():
+  elif is_anonsurf_running():
     if has_only_localhost(addresses):
       print_under_tor_dns()
     else:
