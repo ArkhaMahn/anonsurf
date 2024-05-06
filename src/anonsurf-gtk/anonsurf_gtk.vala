@@ -6,11 +6,11 @@ public class BoxMainLayout: Box {
   public BoxButtonControl box_button_control;
 
   public BoxMainLayout() {
-    GLib.Object(orientation: Orientation.HORIZONTAL);
+    GLib.Object(orientation: Orientation.VERTICAL);
     this.box_boot_status = new BoxBootStatus();
     this.box_button_control = new BoxButtonControl();
 
-    this.pack_start(this.box_boot_status, true, true, 3);
+    this.pack_end(this.box_boot_status, true, true, 3);
     this.pack_start(this.box_button_control, false, true, 3);
   }
 
