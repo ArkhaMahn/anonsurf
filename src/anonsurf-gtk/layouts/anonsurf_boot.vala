@@ -7,14 +7,7 @@ using Gtk;
 
 public class LabelBootStatus: Label {
   public LabelBootStatus() {
-  }
-
-  public void update_label(bool is_enabled_boot) {
-    if (is_enabled_boot == false) {
-      this.set_label("Disabled");
-    } else {
-      this.set_label("Enabled");
-    }
+    this.set_label("Boot status");
   }
 }
 
@@ -85,7 +78,7 @@ public class ButtonEnableBoot: Switch {
 
 
 public class BoxBootStatus: Box {
-  // public LabelBootStatus label_boot_status;
+  public LabelBootStatus label_boot_status;
   public ButtonEnableBoot button_enable_boot;
 
   public BoxBootStatus() {
@@ -94,11 +87,11 @@ public class BoxBootStatus: Box {
   }
 
   private void create_box_layout() {
-    // label_boot_status = new LabelBootStatus();
+    label_boot_status = new LabelBootStatus();
     button_enable_boot = new ButtonEnableBoot();
 
-    // this.pack_start(label_boot_status, true, false, 3);
-    this.pack_start(button_enable_boot, false, true, 3);
+    this.pack_start(label_boot_status, true, false, 3);
+    this.pack_start(button_enable_boot, false, false, 3);
   }
 
   private bool check_multi_user_unit() {
@@ -113,10 +106,8 @@ public class BoxBootStatus: Box {
 
   public void update_boot_status() {
     if (check_multi_user_unit() == false && check_default_target_unit() == false){
-      // label_boot_status.update_label(false);
       button_enable_boot.update_label(false);
     } else {
-      // label_boot_status.update_label(true);
       button_enable_boot.update_label(true);
     }
   }
