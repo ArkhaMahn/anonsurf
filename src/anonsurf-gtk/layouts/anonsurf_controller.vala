@@ -19,7 +19,7 @@ public class ButtonStart: Button {
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     try {
-      this.pool = new ThreadPool<ThreadStartAnonSurf>.with_owned_data ((worker) => {
+      this.pool = new ThreadPool<ThreadStartAnonSurf>.with_owned_data((worker) => {
         worker.run();
       }, 1, false);
     } catch (GLib.Error error) {
@@ -75,7 +75,7 @@ public class ButtonMyIP: Button {
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     try {
-      this.pool = new ThreadPool<ThreadMyIP>.with_owned_data ((worker) => {
+      this.pool = new ThreadPool<ThreadMyIP>.with_owned_data((worker) => {
         worker.run ();
       }, 1, false);
     } catch (GLib.Error error) {
