@@ -18,12 +18,13 @@ public class ButtonEnableBoot: Switch {
   public ButtonEnableBoot() {
     this.notify["active"].connect(() => {
       /*
-        When "activate" signal is sent, there are multiple actual signals here
-        By debug, normal fresher gives signal 128 or the other. Meanwhile, click
-        on Switch object gives signal either 2178 or 130.
-        - Signal 2178: Switch from Disable to enable
-        - Signal 130: Switch from Enable to disable
-        From this.get_state_flags().to_string(), both values are GTK_STATE_FLAG_PRELIGHT
+        When a signal is sent, this code block is called.
+        To check if user clicked on the switch button, get_state_flags() must be used
+        StateFlags:
+        - GTK_STATE_FLAG_PRELIGHT: User clicked
+          + Int value 130: Switch from enable to disable
+          + Int value 2178: Switch from disable to enable
+        - GTK_STATE_FLAG_BACKDROP: Value of "State" is changed using set_state
       */
       switch (this.get_state_flags()) {
         case 2178: // Click enable
@@ -69,6 +70,7 @@ public class ButtonEnableBoot: Switch {
       return;
     }
 
+    // StateFlags: GTK_STATE_FLAG_BACKDROP
     if (is_enabled_boot == true) {
       this.set_state(true);
     } else {
