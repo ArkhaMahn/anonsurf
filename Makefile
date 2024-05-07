@@ -46,10 +46,10 @@ install:
 	mkdir -p $(DESTDIR)/lib/systemd/system/
 
 	# Copy binaries to system
-	cp bin/anonsurf $(DESTDIR)/usr/bin/anonsurf
-	cp bin/anonsurf-gtk $(DESTDIR)/usr/bin/anonsurf-gtk
-	cp bin/dnstool $(DESTDIR)/usr/bin/dnstool
-	cp bin/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
+	cp build/release/anonsurf $(DESTDIR)/usr/bin/anonsurf
+	cp build/release/anonsurf-gtk $(DESTDIR)/usr/bin/anonsurf-gtk
+	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
+	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
 	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
 
 	# Copy launchers
