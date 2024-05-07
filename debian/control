@@ -6,7 +6,7 @@ Uploaders: Lorenzo "Palinuro" Faletra <palinuro@parrotsec.org>,
            Lisetta "Sheireen" Ferrero <sheireen@autistiche.org>
            Nong Hoang "Dmknght" Tu <dmknght@parrotsec.org>
 Standards-Version: 4.5.0
-Build-Depends: debhelper-compat (= 12), nim, gcc, bash-completion, libnim-gintro-dev
+Build-Depends: debhelper-compat (= 12), nim, gcc, bash-completion
 Build-Depends-Indep: pkg-config
 Homepage: https://www.parrotsec.org/
 
@@ -28,7 +28,7 @@ Description: Anonymization toolkit for Parrot Security OS
 Package: anonsurf-gtk
 Architecture: any
 Priority: optional
-Depends: anonsurf, libc6, nyx, libpcre3
+Depends: anonsurf, libc6, nyx
 Recommends: parrot-menu
 Description: Graphic Interface for AnonSurf
  AnonSurf's graphic user interface and
