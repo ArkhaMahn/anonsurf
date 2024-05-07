@@ -24,16 +24,26 @@ public class ButtonEnableBoot: Switch {
         - Signal 2178: Switch from Disable to enable
         - Signal 130: Switch from Enable to disable
       */
-      int state_flag = this.get_state_flags();
+      switch (this.get_state_flags()) {
+        case 2178: // Click enable
+          on_enable_boot();
+          break;
+        case 130: // Click disable
+          on_disable_boot();
+          break;
+        default:
+          break;
+      }
 
       // Only call function when signal is correct
-      if ((state_flag == 2178) || (state_flag == 130)) {
-        if (this.state) {
-          on_enable_boot();
-        } else {
-          on_disable_boot();
-        }
-      }
+      // int state_flag = this.get_state_flags();
+      // if ((state_flag == 2178) || (state_flag == 130)) {
+      //   if (this.state) {
+      //     on_enable_boot();
+      //   } else {
+      //     on_disable_boot();
+      //   }
+      // }
     });
 
     try {
