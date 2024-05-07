@@ -23,6 +23,7 @@ public class ButtonEnableBoot: Switch {
         on Switch object gives signal either 2178 or 130.
         - Signal 2178: Switch from Disable to enable
         - Signal 130: Switch from Enable to disable
+        From this.get_state_flags().to_string(), both values are GTK_STATE_FLAG_PRELIGHT
       */
       switch (this.get_state_flags()) {
         case 2178: // Click enable
@@ -34,16 +35,6 @@ public class ButtonEnableBoot: Switch {
         default:
           break;
       }
-
-      // Only call function when signal is correct
-      // int state_flag = this.get_state_flags();
-      // if ((state_flag == 2178) || (state_flag == 130)) {
-      //   if (this.state) {
-      //     on_enable_boot();
-      //   } else {
-      //     on_disable_boot();
-      //   }
-      // }
     });
 
     try {
