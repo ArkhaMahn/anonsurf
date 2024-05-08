@@ -37,21 +37,7 @@ make-torrc:
 
 build: anonsurf-cli anonsurf-gtk dnstool make-torrc
 
-install:
-	# Create all folders
-	mkdir -p $(DESTDIR)/etc/anonsurf/
-	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
-	mkdir -p $(DESTDIR)/usr/bin/
-	mkdir -p $(DESTDIR)/usr/share/applications/
-	mkdir -p $(DESTDIR)/lib/systemd/system/
-
-	# Copy binaries to system
-	cp build/release/anonsurf $(DESTDIR)/usr/bin/anonsurf
-	cp build/release/anonsurf-gtk $(DESTDIR)/usr/bin/anonsurf-gtk
-	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
-	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
-	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
-
+inst-launchers:
 	# Copy launchers
 	os_name = "$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
 
@@ -65,12 +51,31 @@ install:
 		cp launchers/non-native/*.desktop $(DESTDIR)/usr/share/applications/; \
 	fi
 
+inst-configs:
 	# Copy configs
 	cp configs/bridges.txt $(DESTDIR)/etc/anonsurf/.
 	cp configs/onion.pac $(DESTDIR)/etc/anonsurf/.
 
 	# Copy daemon service
 	cp sys-units/anonsurfd.service $(DESTDIR)/lib/systemd/system/anonsurfd.service
+
+inst-bins:
+	# Copy binaries to system
+	cp build/release/anonsurf $(DESTDIR)/usr/bin/anonsurf
+	cp build/release/anonsurf-gtk $(DESTDIR)/usr/bin/anonsurf-gtk
+	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
+	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
+	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
+
+mk-folders:
+	# Create all folders
+	mkdir -p $(DESTDIR)/etc/anonsurf/
+	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
+	mkdir -p $(DESTDIR)/usr/bin/
+	mkdir -p $(DESTDIR)/usr/share/applications/
+	mkdir -p $(DESTDIR)/lib/systemd/system/
+
+install: mk-folders inst-bins inst-configs inst-launchers
 
 uninstall:
 	# Remove config files
