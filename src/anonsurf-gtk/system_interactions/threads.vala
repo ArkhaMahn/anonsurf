@@ -24,7 +24,7 @@ public class ThreadStartAnonSurf {
       if (exit_code == 0) {
         send_notification("Activated", "AnonSurf is activated", NotifyLevel.Ok);
       } else {
-        send_notification("Failed to activated", "AnonSurf couldn't start", NotifyLevel.Error);
+        send_notification("Failed to activated", "AnonSurf couldn't start. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
       send_notification("Failed to activated", error.message, NotifyLevel.Error);
@@ -41,7 +41,7 @@ public class ThreadStartAnonSurf {
       if (exit_code == 0) {
         send_notification("Deactivated", "AnonSurf is deactivated", NotifyLevel.Warn);
       } else {
-        send_notification("Failed to deactivate", "AnonSurf couldn't stop", NotifyLevel.Error);
+        send_notification("Failed to deactivate", "AnonSurf couldn't stop. Exit code: "  + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
       send_notification("Failed to deactivate", error.message, NotifyLevel.Error);
@@ -83,7 +83,7 @@ public class ThreadEnableAnonSurf {
       if (exit_code == 0) {
         send_notification("Enabled", "AnonSurf is enabled at boot", NotifyLevel.Ok);
       } else {
-        send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
+        send_notification("Failed to Disable", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
       send_notification("Failed to enable", error.message, NotifyLevel.Error);
@@ -99,7 +99,7 @@ public class ThreadEnableAnonSurf {
       if (exit_code == 0) {
         send_notification("Disabled", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
       } else {
-        send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
+        send_notification("Failed to Disable", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
       send_notification("Failed to Disable", error.message, NotifyLevel.Error);
