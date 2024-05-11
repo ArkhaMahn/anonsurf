@@ -1,6 +1,6 @@
 using Gtk;
 
-// TODO: if start supprocess, it's better to use absolute path of cmd service (check path exists first)
+
 public class BoxMainLayout: Box {
   public BoxBootStatus box_boot_status;
   public BoxButtonControl box_button_control;
@@ -127,13 +127,31 @@ public class AnonSurfApp: GLib.Application {
 
 int main(string[] args) {
   Gtk.init(ref args);
+  Notify.init("AnonSurf GTK");
 
   AnonSurfApp app = new AnonSurfApp();
-  AnonSurfSystrayIcon sys_tray = new AnonSurfSystrayIcon();
+  // FIXME app is not unique
 
-  sys_tray.set_app_connection(app);
-  app.set_systray_connection(sys_tray);
+  if (args.length == 1) {
+    AnonSurfSystrayIcon sys_tray = new AnonSurfSystrayIcon();
 
-  Notify.init("AnonSurf GTK");
-  return app.run(args);
+    sys_tray.set_app_connection(app);
+    app.set_systray_connection(sys_tray);
+
+    return app.run(args);
+  } else {
+    // It supposes to create a "headless" version that can control anonsurf
+    // Crashes when method is called
+    // if (args[1] == "start" || args[1] == "stop") {
+    //   app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
+    // } else if (args[1] == "myip") {
+    //   app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
+    // } else if (args[1] == "changeid") {
+    //   app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
+    // } else {
+    //   send_notification("Invalid option", "Option " + args[1] + " is invalid", NotifyLevel.Error);
+    //   return 1;
+    // }
+    return 0;
+  }
 }
