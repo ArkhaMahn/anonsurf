@@ -27,7 +27,7 @@ public class ThreadStartAnonSurf {
         send_notification("Failed to activated", "AnonSurf couldn't start", NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to activated", "AnonSurf couldn't start", NotifyLevel.Error);
+      send_notification("Failed to activated", error.message, NotifyLevel.Error);
     }
   }
 
@@ -44,7 +44,7 @@ public class ThreadStartAnonSurf {
         send_notification("Failed to deactivate", "AnonSurf couldn't stop", NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to deactivate", "AnonSurf couldn't stop", NotifyLevel.Error);
+      send_notification("Failed to deactivate", error.message, NotifyLevel.Error);
     }
   }
 
@@ -86,7 +86,7 @@ public class ThreadEnableAnonSurf {
         send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to enable", "AnonSurf couldn't be enabled at boot", NotifyLevel.Error);
+      send_notification("Failed to enable", error.message, NotifyLevel.Error);
     }
   }
 
@@ -102,7 +102,7 @@ public class ThreadEnableAnonSurf {
         send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to Disable", "AnonSurf failed to disable at boot", NotifyLevel.Error);
+      send_notification("Failed to Disable", error.message, NotifyLevel.Error);
     }
   }
 
