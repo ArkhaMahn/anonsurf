@@ -42,13 +42,9 @@ inst-launchers:
 	os_name = "$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
 
 	if [ os_name = "parrot" ]; then \
-		cp launchers/anon-change-identity.desktop $(DESTDIR)/usr/share/applications/; \
-		cp launchers/anon-surf-start.desktop $(DESTDIR)/usr/share/applications/; \
-		cp launchers/anon-surf-stop.desktop $(DESTDIR)/usr/share/applications/; \
-		cp launchers/anon-check-ip.desktop $(DESTDIR)/usr/share/applications/; \
-		cp launchers/anon-gui.desktop $(DESTDIR)/usr/share/applications/; \
+		cp launchers/parrot/*.desktop $(DESTDIR)/usr/share/applications/; \
 	else \
-		cp launchers/non-native/*.desktop $(DESTDIR)/usr/share/applications/; \
+		cp launchers/debian/*.desktop $(DESTDIR)/usr/share/applications/; \
 	fi
 
 inst-configs:
