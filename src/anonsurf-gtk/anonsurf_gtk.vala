@@ -44,22 +44,24 @@ public class AnonSurfWindow: Gtk.Window {
 }
 
 
-public class AnonSurfApp: GLib.Application {
+public class AnonSurfApp: Gtk.Application {
   public AnonSurfWindow window;
   private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {
     Object(application_id: "org.parrot.anonsurf.gui");
+    // Call window here to fix unique app problem
+    this.window = new AnonSurfWindow();
   }
 
   public override void activate() {
-    this.window = new AnonSurfWindow();
     // There's a small delay if show_all is called after refresh gui.
     // Use show_all first will avoid that delay
     this.window.show_all();
     this.refresh_gui();
 
-    Timeout.add(200, refresh_gui);
+    // Improve me: delay time should be better
+    Timeout.add(400, refresh_gui);
     Gtk.main();
   }
 
@@ -127,10 +129,9 @@ public class AnonSurfApp: GLib.Application {
 
 int main(string[] args) {
   Gtk.init(ref args);
-  Notify.init("AnonSurf GTK");
 
   AnonSurfApp app = new AnonSurfApp();
-  // FIXME app is not unique
+  Notify.init("AnonSurf GTK");
 
   if (args.length == 1) {
     AnonSurfSystrayIcon sys_tray = new AnonSurfSystrayIcon();
@@ -140,6 +141,7 @@ int main(string[] args) {
 
     return app.run(args);
   } else {
+    // TODO: if app is unique, then would this run?
     // It supposes to create a "headless" version that can control anonsurf
     // Crashes when method is called
     // if (args[1] == "start" || args[1] == "stop") {
