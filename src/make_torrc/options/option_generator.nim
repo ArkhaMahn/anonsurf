@@ -70,11 +70,11 @@ proc option_enable_bridge(settings: var string) =
 proc option_set_bridge_addr(settings: var string, bridge_addr: string) =
   # https://sigvids.gitlab.io/create-tor-private-obfs4-bridges.html
   # https://community.torproject.org/relay/setup/bridge/debian-ubuntu/
-  settings &= "Bridge " & bridge_addr & "\n"
+  settings &= "\nBridge " & bridge_addr & "\n"
 
 
 proc option_set_torrc_hash(settings: var string, hash: string) =
-  settings &= "HashedControlPassword " & hash & "\n"
+  settings &= "\nHashedControlPassword " & hash & "\n"
 
 
 proc option_set_safe_sock(settings: var string) =
@@ -87,7 +87,7 @@ proc option_set_plain_port(settings: var string, level: PlainPortMode) =
   if level == LevelWarn:
     settings &= "WarnPlaintextPorts 23,109,110,143,80"
   else:
-    settings &= " RejectPlaintextPorts 23,109,110,143,80"
+    settings &= "RejectPlaintextPorts 23,109,110,143,80"
 
 
 proc ansurf_options_generate_common_settings(settings: var string, password: string) =
