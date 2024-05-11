@@ -49,10 +49,6 @@ proc maketorrc_restore_system_config() =
   maketorrc_restore_torrc_backup()
 
 
-proc maketorrc_get_new_config() =
-  ansurf_option_readp()
-
-
 proc main() =
   if paramCount() == 0:
     #[

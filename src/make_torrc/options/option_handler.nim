@@ -16,25 +16,8 @@ proc ansurf_options_config_file_exists(): bool =
   return fileExists(ansurf_config_path)
 
 
-proc set_value(config: var Config, key: string, value: auto) =
-  config.setSectionKey("AnonSurfConfig", key, $value)
-
-
 proc get_value(config: Config, key: string): string =
   return config.getSectionValue("AnonSurfConfig", key)
-
-
-proc ansurf_options_to_config(user_options: SurfConfig): Config =
-  var
-    surfOptions = newConfig()
-  surfOptions.set_value("use_sandbox", user_options.option_sandbox)
-  # surfOptions.set_value("bypass_firewall", user_options.option_bypass_firewall)
-  surfOptions.set_value("use_bridge", user_options.option_bridge_mode)
-  surfOptions.set_value("bridge_address", user_options.option_bridge_address)
-  surfOptions.set_value("safe_sock", user_options.option_safe_sock)
-  surfOptions.set_value("plain_port", user_options.option_plain_port)
-
-  return surfOptions
 
 
 proc ansurf_options_read_config_from_disk(): Config =
@@ -82,25 +65,6 @@ proc ansurf_options_handle_load_config*(): SurfConfig =
   return system_config
 
 
-proc ansurf_options_handle_write_config*(options: JsonNode) =
-  #[
-    Save config from GUI to /etc/anonsurf/anonsurf.cfg
-  ]#
-  try:
-    let
-      to_surf_config = SurfConfig(
-        option_sandbox: getBool(options["option_sandbox"]),
-        option_bridge_mode: parseEnum[BridgeMode](getStr(options["option_bridge_mode"])),
-        option_bridge_address: getStr(options["option_bridge_address"]),
-        option_safe_sock: getBool(options["option_safe_sock"]),
-        option_plain_port: parseEnum[PlainPortMode](getStr(options["option_plain_port"]))
-      )
-      system_config = ansurf_options_to_config(to_surf_config)
-    system_config.writeConfig(ansurf_config_path)
-  except:
-    echo "Failed to parse config from stdin"
-
-
 proc ansurf_option_sendp*(user_options: SurfConfig) =
   #[
     Send data using pipe
@@ -113,14 +77,3 @@ proc ansurf_option_sendp*(user_options: SurfConfig) =
   process_stream.write($(%user_options))
   process_stream.close()
   discard waitForExit(process)
-
-
-proc ansurf_option_readp*() =
-  #[
-    Read data from pipe
-  ]#
-  let
-    config_from_stdin = readLine(stdin)
-    config = parseJson(config_from_stdin)
-
-  ansurf_options_handle_write_config(config)
