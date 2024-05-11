@@ -50,13 +50,14 @@ public class AnonSurfApp: Gtk.Application {
 
   public AnonSurfApp() {
     Object(application_id: "org.parrot.anonsurf.gui");
-    // Call window here to fix unique app problem
-    this.window = new AnonSurfWindow();
+    // Call window here to fix unique app problem?
+    // this.window = new AnonSurfWindow();
   }
 
   public override void activate() {
     // There's a small delay if show_all is called after refresh gui.
     // Use show_all first will avoid that delay
+    this.window = new AnonSurfWindow();
     this.window.show_all();
     this.refresh_gui();
 
