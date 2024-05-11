@@ -13,13 +13,14 @@ Copyright:
 License: GPL-3.0+
 
 Files:
+  build/*
   sys-units/*
   src/*
   configs/*
   Makefile
   README.md
   scripts/*
-Copyright: 2020, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
+Copyright: 2020-2024, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
 License: GPL-3.0+
 
 Files:
