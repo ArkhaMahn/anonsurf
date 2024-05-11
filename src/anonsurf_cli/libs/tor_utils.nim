@@ -154,4 +154,7 @@ proc cli_anonsurf_change_id*() =
   Call nyx to show Tor's bandwith
 ]#
 proc cli_anonsurf_tor_status*() =
-  discard execShellCmd("/usr/bin/nyx --config /etc/anonsurf/nyxrc")
+  if not is_anonsurf_running():
+    cli_send_msg(Info, "AnonSurf is not running", "Your are not under Tor network")
+  else:
+    discard execShellCmd("/usr/bin/nyx --config /etc/anonsurf/nyxrc")
