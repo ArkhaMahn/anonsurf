@@ -17,24 +17,24 @@ public class ThreadStartAnonSurf {
 
   private void start_anonsurf() {
     try {
-      Subprocess action_start_anonsurf = new Subprocess.newv({"service", "anonsurfd", "start"}, NONE);
+      Subprocess action_start_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "start"}, NONE);
       action_start_anonsurf.wait();
 
       int exit_code = action_start_anonsurf.get_exit_status();
       if (exit_code == 0) {
         send_notification("Activated", "AnonSurf is activated", NotifyLevel.Ok);
       } else {
-        send_notification("Failed to activated", "AnonSurf couldn't start. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
+        send_notification("Failed to activate", "AnonSurf couldn't start. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to activated", error.message, NotifyLevel.Error);
+      send_notification("Failed to activate", error.message, NotifyLevel.Error);
     }
   }
 
 
   private void stop_anonsurf() {
     try {
-      Subprocess action_stop_anonsurf = new Subprocess.newv({"service", "anonsurfd", "stop"}, NONE);
+      Subprocess action_stop_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "stop"}, NONE);
       action_stop_anonsurf.wait();
 
       int exit_code = action_stop_anonsurf.get_exit_status();
@@ -76,7 +76,7 @@ public class ThreadEnableAnonSurf {
 
   private void enable_anonsurf() {
     try {
-      Subprocess action_enable_anonsurf = new Subprocess.newv({"systemctl", "enable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
+      Subprocess action_enable_anonsurf = new Subprocess.newv({"/usr/bin/systemctl", "enable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
       action_enable_anonsurf.wait();
 
       int exit_code = action_enable_anonsurf.get_exit_status();
@@ -92,7 +92,7 @@ public class ThreadEnableAnonSurf {
 
   private void disable_anonsurf() {
     try {
-      Subprocess action_disable_anonsurf = new Subprocess.newv({"systemctl", "disable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
+      Subprocess action_disable_anonsurf = new Subprocess.newv({"/usr/bin/systemctl", "disable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
       action_disable_anonsurf.wait();
 
       int exit_code = action_disable_anonsurf.get_exit_status();
