@@ -1,11 +1,9 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: AnonSurf
 Upstream-Contact: Nong Hoang "DmKnght" Tu dmknght@parrotsec.org
-Source: https://nest.parrot.sh/packages/tools/anonsurf
+Source: https://gitlab.com/parrotsec/packages/anonsurf/
 
 Files:
-  torrc
-  onion.pac
   debian/*
   launchers/*
 Copyright:
@@ -15,19 +13,12 @@ Copyright:
 License: GPL-3.0+
 
 Files:
-  debian/changelog
-  debian/anonsurf.1
-  daemon/anondaemon
-  binaries/anonsurf
-  sys-units/anonsurfd
-  sys-units/anonsurfd.service
-  AnonSurfGUI.nimble
-  launcher/anon-gui.desktop
+  sys-units/*
   src/*
   configs/*
   Makefile
   README.md
-  scripts/safekill
+  scripts/*
 Copyright: 2020, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
 License: GPL-3.0+
 
@@ -39,33 +30,6 @@ Copyright:
 License: GPL-3.0+
 
 Files:
-  icons/boot-off.svg
-  icons/boot-on.svg
-  icons/sec-low.svg
-  icons/sec-warn.svg
-  icons/sec-high.svg
-  icons/sec-med.svg
-  icons/exit.png
-  icons/reload.png
-  icons/help-about.png
-Copyright:
-  2015 - 2020, David "mcder3" Linares
-License: LGPL-3.0
-
-Files:
-  icons/nyx-log.png
-Copyright: 2022, Dario "danterolle" Camonita
-License: LGPL-3.0
-
-Files:
-  icons/boot-off.svg
-  icons/boot-on.svg
-Copyright:
-  2020, Manuel "Serverket" Hernandez
-License: GPL-3.0+
-
-Files:
-  icons/anon-about.svg
   icons/nyx-logo.png
 Copyright: 2020, Federica "marafed" Marasà
 License: GPL-3.0+

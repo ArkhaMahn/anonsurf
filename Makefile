@@ -10,7 +10,7 @@ VALA-SRC-LAYOUTS = $(VALA-SRC-DIR)/layouts
 VALA-SRC-DIALOGS = $(VALA-SRC-DIR)/dialogs
 VALA-SRC-SYS = $(VALA-SRC-DIR)/system_interactions
 
-NIM-FLAGS = c --nimcache:build/tmpcache -d:ssl -d:release
+NIM-FLAGS = c --nimcache:/tmp/tmpcache -d:ssl -d:release
 
 .PHONY: build
 
