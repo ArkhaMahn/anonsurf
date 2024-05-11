@@ -10,7 +10,8 @@ VALA-SRC-LAYOUTS = $(VALA-SRC-DIR)/layouts
 VALA-SRC-DIALOGS = $(VALA-SRC-DIR)/dialogs
 VALA-SRC-SYS = $(VALA-SRC-DIR)/system_interactions
 
-NIM-FLAGS = c --nimcache:/tmp/tmpcache -d:ssl -d:release
+NIM-FLAGS = c --nimcache:/tmp/ -d:ssl -d:release
+BUILD-DEST = build/release
 
 .PHONY: build
 
@@ -24,16 +25,16 @@ anonsurf-gtk:
 	$(VALA-SRC-LAYOUTS)/anonsurf_boot.vala $(VALA-SRC-LAYOUTS)/anonsurf_controller.vala $(VALA-SRC-LAYOUTS)/titlebar.vala \
 	$(VALA-SRC-DIALOGS)/about.vala $(VALA-SRC-DIALOGS)/tor_controller.vala \
 	$(VALA-SRC-SYS)/notifications.vala $(VALA-SRC-SYS)/system_tray_icon.vala $(VALA-SRC-SYS)/system_tray_menu.vala $(VALA-SRC-SYS)/threads.vala \
-	-o build/release/anonsurf-gtk
+	-o $(BUILD-DEST)/anonsurf-gtk
 
 anonsurf-cli:
-	nim $(NIM-FLAGS) --out:build/release/anonsurf src/anonsurf_cli/anonsurf_cli.nim
+	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/anonsurf src/anonsurf_cli/anonsurf_cli.nim
 
 dnstool:
-	nim $(NIM-FLAGS) --out:build/release/dnstool src/dnstool/dnstool.nim
+	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/dnstool src/dnstool/dnstool.nim
 
 make-torrc:
-	nim $(NIM-FLAGS) --out:build/release/make-torrc src/make_torrc/make_torrc.nim
+	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/make-torrc src/make_torrc/make_torrc.nim
 
 build: anonsurf-cli anonsurf-gtk dnstool make-torrc
 
