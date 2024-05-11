@@ -1,2 +1,6 @@
-bin/anonsurf-gtk usr/bin/
+build/release/anonsurf-gtk usr/bin/
 launchers/anon-gui.desktop usr/share/applications/
+launchers/anon-change-identity.desktop usr/share/applications/
+launchers/anon-surf-start.desktop usr/share/applications/
+launchers/anon-surf-stop.desktop usr/share/applications/
+launchers/anon-check-ip.desktop usr/share/applications/
