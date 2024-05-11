@@ -22,7 +22,7 @@ public class AnonSurfSystrayIcon: StatusIcon {
   }
 
   private void on_left_click_systray() {
-    this.app.activate();
+    this.app.activate_from_systray();
   }
 
   public void set_app_connection(AnonSurfApp app) {

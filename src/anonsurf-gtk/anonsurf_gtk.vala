@@ -28,7 +28,7 @@ public class BoxMainLayout: Box {
 }
 
 
-public class AnonSurfWindow: Gtk.ApplicationWindow {
+public class AnonSurfWindow: Gtk.Window {
   public BoxMainLayout main_layout;
   public AnonSurfTitleBar title_bar;
 
@@ -49,23 +49,30 @@ public class AnonSurfApp: GLib.Application {
   private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {
-    Object(application_id: "org.parrot.anonsurf.gui");
+    this.set_application_id("org.parrot.anonsurf.gui");
     /*
       Create a new window if app is activate
       Fix app created multiple windows
       Fix headless commands crashed because objects are not created
     */
     this.window = new AnonSurfWindow();
+    this.activate.connect(activate_application);
   }
 
-  public override void activate() {
+  public void activate_from_systray() {
+    this.window = new AnonSurfWindow();
+    this.window.show_all();
+    this.refresh_gui();
+  }
+
+  private void activate_application() {
     /*
       When app is activated (left clicked from system tray menu), signal is_active is true
       Create new ApplicationWindow to fix error empty Application
     */
-    if (this.window.is_active) {
-      this.window = new AnonSurfWindow();
-    }
+    // if (this.window.is_active) {
+    //   this.window = new AnonSurfWindow();
+    // }
 
     /*
       There's a small delay if show_all is called after refresh gui.
@@ -149,8 +156,7 @@ int main(string[] args) {
   Notify.init("AnonSurf GTK");
 
   if (args.length == 1) {
-    // FIXME call sys_tray here will cause overlap systray icon
-    // FIXME app activate creates new sys tray icon
+    // FIXME when double click on app (systray only, program crashes)
     AnonSurfSystrayIcon sys_tray = new AnonSurfSystrayIcon();
 
     sys_tray.set_app_connection(app);
