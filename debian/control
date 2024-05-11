@@ -6,7 +6,7 @@ Uploaders: Lorenzo "Palinuro" Faletra <palinuro@parrotsec.org>,
            Lisetta "Sheireen" Ferrero <sheireen@autistiche.org>
            Nong Hoang "Dmknght" Tu <dmknght@parrotsec.org>
 Standards-Version: 4.5.0
-Build-Depends: debhelper-compat (= 12), nim, gcc, bash-completion, valac, libsoup2.4-dev, libnotify-dev, libvte-2.91-dev
+Build-Depends: debhelper-compat (= 12), nim, gcc (>= 10), bash-completion, valac, libsoup2.4-dev, libnotify-dev, libvte-2.91-dev
 Build-Depends-Indep: pkg-config
 Homepage: https://www.parrotsec.org/
 
