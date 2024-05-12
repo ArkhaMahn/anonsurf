@@ -28,7 +28,7 @@ public class BoxMainLayout: Box {
 }
 
 
-public class AnonSurfWindow: Gtk.Window {
+public class AnonSurfWindow: Gtk.ApplicationWindow {
   public BoxMainLayout main_layout;
   public AnonSurfTitleBar title_bar;
 
@@ -59,31 +59,35 @@ public class AnonSurfApp: GLib.Application {
     this.activate.connect(activate_application);
   }
 
-  public void activate_from_systray() {
+  private void create_new_window() {
     this.window = new AnonSurfWindow();
     this.window.show_all();
     this.refresh_gui();
+  }
+
+  public void activate_from_systray() {
+    /*
+      When left click on systray, this method is invoked
+      Fix an other systray will be created, overlapping current systray when left click (bug happens when use activate application)
+    */
+    this.create_new_window();
   }
 
   private void activate_application() {
     /*
       When app is activated (left clicked from system tray menu), signal is_active is true
       Create new ApplicationWindow to fix error empty Application
+      Fix the problem that systray only crashes when user runs anonsurf-gtk again
+      Fix if user starts application, no window shows
     */
-    // if (this.window.is_active) {
-    //   this.window = new AnonSurfWindow();
-    // }
+    this.create_new_window();
 
     /*
       There's a small delay if show_all is called after refresh gui.
       Use show_all first will avoid that delay
     */
-    this.window.show_all();
-    // this.window.present();
-    this.refresh_gui();
 
-    // Improve me: delay time should be better
-    Timeout.add(400, refresh_gui);
+    Timeout.add(400, refresh_gui); // Improve me: delay time should be better
     Gtk.main();
   }
 
@@ -155,8 +159,8 @@ int main(string[] args) {
   AnonSurfApp app = new AnonSurfApp();
   Notify.init("AnonSurf GTK");
 
-  if (args.length == 1) {
-    // FIXME when double click on app (systray only, program crashes)
+  if (args.length == 1 && !app.window.is_active) {
+    // FIXME activate multiple app still creates multiple systray layout
     AnonSurfSystrayIcon sys_tray = new AnonSurfSystrayIcon();
 
     sys_tray.set_app_connection(app);
