@@ -62,11 +62,11 @@ public class DialogTorController: Dialog {
 
     terminal_box.pack_start(vte_tor_controller, false, true, 3);
     content_area.pack_start(terminal_box, false, true, 3);
-    // NOTICEME: when use show_all here, the dialog starts when program starts.
   }
 
   public void show_dialog() {
     this.vte_tor_controller.start_nyx_terminal();
+    // Only show things when click on dialog. Fix problem dialog prompts when program start
     this.show_all();
   }
 }
