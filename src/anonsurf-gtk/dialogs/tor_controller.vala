@@ -50,7 +50,11 @@ public class DialogTorController: Dialog {
   public DialogTorController() {
     this.set_title("Tor Status");
     this.set_resizable(false);
-    this.set_icon_name("nyx-logo"); // FIXME must install this logo anyway
+    try {
+      this.set_icon_from_file("/usr/share/icons/nyx-logo.png");
+    } catch {
+      this.set_icon_name("nyx-logo.png");
+    }
 
     vte_tor_controller = new NyxTerminal(this);
     terminal_box = new Box(Orientation.VERTICAL, 3);
@@ -62,7 +66,7 @@ public class DialogTorController: Dialog {
   }
 
   public void show_dialog() {
-    this.vte_tor_controller.start_nyx_terminal(); // TODO double check to make sure nyx is killed when dialog closes
+    this.vte_tor_controller.start_nyx_terminal();
     this.show_all();
   }
 }
