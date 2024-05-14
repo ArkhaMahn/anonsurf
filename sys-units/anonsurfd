@@ -55,7 +55,6 @@ do_stop() {
 
 
 do_restart() {
-	# TODO if anondaemon is not started, return -1, else
 	/usr/lib/anonsurf/anondaemon restart
 }
 
