@@ -47,7 +47,6 @@ public class DialogTorController: Dialog {
   private Box terminal_box;
 
   public DialogTorController() {
-    // TODO prevent this menu spawns multiple dialogs
     this.set_title("Tor Status");
     this.set_resizable(false);
     try {

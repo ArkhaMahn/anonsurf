@@ -187,7 +187,7 @@ public class ButtonChangeID: Button {
 
 
 public class ButtonTorController: Button {
-  private DialogTorController tor_status;
+  public DialogTorController tor_status;
 
   public ButtonTorController() {
     this.set_label("Tor stat"); // TODO improve button name
@@ -196,8 +196,11 @@ public class ButtonTorController: Button {
   }
 
   public void on_click_button() {
-    this.tor_status = new DialogTorController();
-    this.tor_status.show_dialog();
+    // Prevent creating multiple dialogs when click on button
+    if (this.tor_status == null) {
+      this.tor_status = new DialogTorController();
+      this.tor_status.show_dialog();
+    }
   }
 
   public void set_surf_activated() {
