@@ -50,16 +50,14 @@ public class AnonSurfApp: GLib.Application {
 
   public AnonSurfApp() {
     this.set_application_id("org.parrot.anonsurf.gui");
-    /*
-      Create a new window if app is activate
-      Fix headless commands crashed because objects are not created
-    */
     this.create_window();
     this.activate.connect(restore_window);
   }
 
   private void create_window() {
     /*
+      Create a new window when Application is created
+      Fix headless commands crashed because objects are not created
       FIXME: multiple windows are created
       FIXME: multiple system tray icons are created
     */
