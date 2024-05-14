@@ -52,12 +52,21 @@ public class AnonSurfApp: GLib.Application {
     this.set_application_id("org.parrot.anonsurf.gui");
     /*
       Create a new window if app is activate
-      Fix app created multiple windows
       Fix headless commands crashed because objects are not created
     */
+    this.create_window();
+    this.activate.connect(restore_window);
+  }
+
+  private void create_window() {
+    /*
+      FIXME: multiple windows are created
+      FIXME: multiple system tray icons are created
+    */
     this.window = new AnonSurfWindow();
+    this.window.show_all();
     this.create_system_tray();
-    this.activate.connect(activate_application);
+    this.refresh_gui();
 
     /*
       There's a small delay if show_all is called after refresh gui.
@@ -65,22 +74,16 @@ public class AnonSurfApp: GLib.Application {
       ImproveMe: delay time should be better
     */
     Timeout.add(400, refresh_gui);
-  }
-
-  private void create_new_window() {
     /*
-      Fix: Create multiple windows when app is showing on screen
+      Gtk.main is gonna to create a new system tray icon
     */
-    if (!this.window.title_bar.get_visible()) {
-      this.window = new AnonSurfWindow();
-    }
-    this.window.show_all();
-    this.refresh_gui();
+    Gtk.main();
+
+    // if (this.window == null) {
+    // }
   }
 
   private void create_system_tray() {
-    // FIXME activate multiple app still creates multiple systray layout
-
     if (this.sys_tray == null) {
       this.sys_tray = new AnonSurfSystrayIcon();
 
@@ -89,24 +92,21 @@ public class AnonSurfApp: GLib.Application {
     }
   }
 
-  public void activate_from_systray() {
+  public void restore_window() {
     /*
-      When left click on systray, this method is invoked
-      Fix an other systray will be created, overlapping current systray when left click (bug happens when use activate application)
+      GTK application gets "activate" signal when
+        1. User do left click on system tray icon
+        2. When window is closed, and user runs anonsurf-gtk
+      This function restores the main window
+      Create a new AnonSurfWindow object fixes:
+        - Starts anonsurf-gtk when window was closed causes a crash, or show empty dialog
+        - Create an other window when user left click on system tray icon
     */
-    this.create_new_window();
-  }
-
-  private void activate_application() {
-    /*
-      When app is activated (left clicked from system tray menu), signal is_active is true
-      Create new ApplicationWindow to fix error empty Application
-      Fix the problem that systray only crashes when user runs anonsurf-gtk again
-      Fix if user starts application, no window shows
-    */
-    this.create_new_window();
-
-    Gtk.main();
+    if (!this.window.title_bar.get_visible()) {
+      this.window = new AnonSurfWindow();
+      this.window.show_all();
+      this.refresh_gui();
+    }
   }
 
   public void set_systray_connection(AnonSurfSystrayIcon systray) {
@@ -177,7 +177,7 @@ int main(string[] args) {
   AnonSurfApp app = new AnonSurfApp();
   Notify.init("AnonSurf GTK");
 
-  if (args.length == 1 && !app.window.is_active) {
+  if (args.length == 1) {
     return app.run(args);
   } else {
     if (args[1] == "start" || args[1] == "stop") {
