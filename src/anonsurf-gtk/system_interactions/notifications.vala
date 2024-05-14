@@ -15,7 +15,7 @@ public void send_notification(string title, string desc, NotifyLevel level) {
   } else {
     icon_name = "security-low";
   }
-  Notify.Notification noti = new Notify.Notification (title, desc, icon_name);
+  Notify.Notification noti = new Notify.Notification(title, desc, icon_name);
   try {
     noti.show();
   } catch (GLib.Error error) {
