@@ -125,14 +125,15 @@ public class ThreadMyIP {
     var message = new Soup.Message("GET", "https://check.torproject.org/");
 
     session.send_message(message);
+    string recv_data = (string)message.response_body.data;
 
-    if (((string)message.response_body.data).contains("Congratulations. This browser is configured to use Tor.")) {
+    if (recv_data.contains("Congratulations. This browser is configured to use Tor.")) {
       send_notification("Connection is secured", "Your connection is under Tor network", NotifyLevel.Ok);
     }
-    else if (((string)message.response_body.data).contains("Sorry. You are not using Tor.")) {
+    else if (recv_data.contains("Sorry. You are not using Tor.")) {
       send_notification("Connection is not secured", "Your connection is not under Tor network", NotifyLevel.Warn);
     } else {
-      send_notification("Check Error", "Unexpected error while checking network connection", NotifyLevel.Error);
+      send_notification("Check Error", "Unexpected response data", NotifyLevel.Error);
     }
   }
 }
