@@ -121,8 +121,8 @@ public class ThreadMyIP {
     /*
       https://wiki.gnome.org/Projects/Vala/LibSoupSample
     */
-    var session = new Soup.Session();
-    var message = new Soup.Message("GET", "https://check.torproject.org/");
+    Soup.Session session = new Soup.Session();
+    Soup.Message message = new Soup.Message("GET", "https://check.torproject.org/");
 
     session.send_message(message);
     string recv_data = (string)message.response_body.data;
