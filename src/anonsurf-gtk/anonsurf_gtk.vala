@@ -75,10 +75,12 @@ public class AnonSurfApp: GLib.Application {
       ImproveMe: delay time should be better
     */
     Timeout.add(400, refresh_gui);
-    /*
-      Gtk.main is gonna to create a new system tray icon
-    */
     Gtk.main();
+  }
+
+  public void create_headless_mode() {
+    this.window = new AnonSurfWindow();
+    // this.refresh_gui(); // Update status? But likely crash due to systray == null
   }
 
   private void create_system_tray() {
@@ -173,22 +175,23 @@ int main(string[] args) {
   Gtk.init(ref args);
 
   Notify.init("AnonSurf GTK");
+  AnonSurfApp app = new AnonSurfApp();
 
   if (args.length == 1) {
-    AnonSurfApp app = new AnonSurfApp();
     return app.run(args);
   } else {
-    // TODO rework on the logic of AnonSurf headless. It crashes again
-    // if (args[1] == "start" || args[1] == "stop") {
-    //   app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
-    // } else if (args[1] == "myip") {
-    //   app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
-    // } else if (args[1] == "changeid") {
-    //   app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
-    // } else {
-    //   send_notification("Invalid option", "Option " + args[1] + " is invalid", NotifyLevel.Error);
-    //   return 1;
-    // }
+    app.create_headless_mode();
+    // FIXME: current functions don't work
+    if (args[1] == "start" || args[1] == "stop") {
+      app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
+    } else if (args[1] == "myip") {
+      app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
+    } else if (args[1] == "changeid") {
+      app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
+    } else {
+      send_notification("Invalid option", "Option " + args[1] + " is invalid", NotifyLevel.Error);
+      return 1;
+    }
     return 0;
   }
 }
