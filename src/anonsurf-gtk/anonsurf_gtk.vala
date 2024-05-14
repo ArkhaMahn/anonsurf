@@ -56,13 +56,37 @@ public class AnonSurfApp: GLib.Application {
       Fix headless commands crashed because objects are not created
     */
     this.window = new AnonSurfWindow();
+    this.create_system_tray();
     this.activate.connect(activate_application);
+
+    /*
+      There's a small delay if show_all is called after refresh gui.
+      Use show_all first will avoid that delay
+      ImproveMe: delay time should be better
+    */
+    Timeout.add(400, refresh_gui);
   }
 
   private void create_new_window() {
-    this.window = new AnonSurfWindow();
+    /*
+      Fix: Create multiple windows when app is showing on screen
+    */
+    if (!this.window.title_bar.get_visible()) {
+      this.window = new AnonSurfWindow();
+    }
     this.window.show_all();
     this.refresh_gui();
+  }
+
+  private void create_system_tray() {
+    // FIXME activate multiple app still creates multiple systray layout
+
+    if (this.sys_tray == null) {
+      this.sys_tray = new AnonSurfSystrayIcon();
+
+      this.sys_tray.set_app_connection(this);
+      this.set_systray_connection(this.sys_tray);
+    }
   }
 
   public void activate_from_systray() {
@@ -82,12 +106,6 @@ public class AnonSurfApp: GLib.Application {
     */
     this.create_new_window();
 
-    /*
-      There's a small delay if show_all is called after refresh gui.
-      Use show_all first will avoid that delay
-    */
-
-    Timeout.add(400, refresh_gui); // Improve me: delay time should be better
     Gtk.main();
   }
 
@@ -160,12 +178,6 @@ int main(string[] args) {
   Notify.init("AnonSurf GTK");
 
   if (args.length == 1 && !app.window.is_active) {
-    // FIXME activate multiple app still creates multiple systray layout
-    AnonSurfSystrayIcon sys_tray = new AnonSurfSystrayIcon();
-
-    sys_tray.set_app_connection(app);
-    app.set_systray_connection(sys_tray);
-
     return app.run(args);
   } else {
     if (args[1] == "start" || args[1] == "stop") {
