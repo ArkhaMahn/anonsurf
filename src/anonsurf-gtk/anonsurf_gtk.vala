@@ -49,17 +49,20 @@ public class AnonSurfApp: GLib.Application {
   private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {
+    /*
+      Create a new Application
+      Startup signal will create an unique application, which fixed:
+        1. multiple windows are created
+        2. multiple system tray icons are created
+    */
     this.set_application_id("org.parrot.anonsurf.gui");
-    this.create_window();
+    this.startup.connect(create_window);
     this.activate.connect(restore_window);
   }
 
   private void create_window() {
     /*
       Create a new window when Application is created
-      Fix headless commands crashed because objects are not created
-      FIXME: multiple windows are created
-      FIXME: multiple system tray icons are created
     */
     this.window = new AnonSurfWindow();
     this.window.show_all();
@@ -76,9 +79,6 @@ public class AnonSurfApp: GLib.Application {
       Gtk.main is gonna to create a new system tray icon
     */
     Gtk.main();
-
-    // if (this.window == null) {
-    // }
   }
 
   private void create_system_tray() {
@@ -172,22 +172,23 @@ public class AnonSurfApp: GLib.Application {
 int main(string[] args) {
   Gtk.init(ref args);
 
-  AnonSurfApp app = new AnonSurfApp();
   Notify.init("AnonSurf GTK");
 
   if (args.length == 1) {
+    AnonSurfApp app = new AnonSurfApp();
     return app.run(args);
   } else {
-    if (args[1] == "start" || args[1] == "stop") {
-      app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
-    } else if (args[1] == "myip") {
-      app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
-    } else if (args[1] == "changeid") {
-      app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
-    } else {
-      send_notification("Invalid option", "Option " + args[1] + " is invalid", NotifyLevel.Error);
-      return 1;
-    }
+    // TODO rework on the logic of AnonSurf headless. It crashes again
+    // if (args[1] == "start" || args[1] == "stop") {
+    //   app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
+    // } else if (args[1] == "myip") {
+    //   app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
+    // } else if (args[1] == "changeid") {
+    //   app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
+    // } else {
+    //   send_notification("Invalid option", "Option " + args[1] + " is invalid", NotifyLevel.Error);
+    //   return 1;
+    // }
     return 0;
   }
 }
