@@ -6,7 +6,6 @@ Tor service
 using Vte;
 using Gtk;
 
-// FIXME(anonsurf-gtk:367494): VTE-WARNING **: 18:17:01.056: (../src/vtepty.cc:810):void vte_pty_spawn_with_fds_async(VtePty*, const char*, const char* const*, const char* const*, const int*, int, const int*, int, GSpawnFlags, GSpawnChildSetupFunc, gpointer, GDestroyNotify, int, GCancellable*, GAsyncReadyCallback, gpointer): runtime check failed: ((spawn_flags & ignored_spawn_flags()) == 0)
 
 public class NyxTerminal: Terminal {
   /*
@@ -27,7 +26,7 @@ public class NyxTerminal: Terminal {
       null,
       {"/usr/bin/nyx", "--config", "/etc/anonsurf/nyxrc"}, // TODO remove nyx password
       {},
-      CHILD_INHERITS_STDIN, // https://valadoc.org/glib-2.0/GLib.SpawnFlags.html
+      SEARCH_PATH, // https://valadoc.org/glib-2.0/GLib.SpawnFlags.html. Fix runtime VTE flag warn https://lists.debian.org/debian-boot/2021/05/msg00107.html
       null,
       -1,
       null, // callback?
@@ -48,6 +47,7 @@ public class DialogTorController: Dialog {
   private Box terminal_box;
 
   public DialogTorController() {
+    // TODO prevent this menu spawns multiple dialogs
     this.set_title("Tor Status");
     this.set_resizable(false);
     try {
