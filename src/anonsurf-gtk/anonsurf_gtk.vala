@@ -57,7 +57,7 @@ public class AnonSurfApp: GLib.Application {
     */
     this.set_application_id("org.parrot.anonsurf.gui");
     this.startup.connect(create_window);
-    this.activate.connect(restore_window);
+    // this.activate.connect(restore_window);
   }
 
   private void create_window() {
@@ -68,6 +68,8 @@ public class AnonSurfApp: GLib.Application {
     this.window.show_all();
     this.create_system_tray();
     this.refresh_gui();
+
+    this.activate.connect(restore_window);
 
     /*
       There's a small delay if show_all is called after refresh gui.
@@ -80,7 +82,25 @@ public class AnonSurfApp: GLib.Application {
 
   public void create_headless_mode() {
     this.window = new AnonSurfWindow();
-    // this.refresh_gui(); // Update status? But likely crash due to systray == null
+
+    /*
+      Only update status of the controller buttons. So when user launches
+      program from menu (quick start / stop) -> program automatically decides start / stop service
+    */
+    if (check_surf_running()) {
+      this.set_surf_activated();
+    } else {
+      this.set_surf_deactivated();
+    }
+
+    // this.window.show_all();
+    // // this.create_system_tray();
+    // if (check_surf_running()) {
+    //   this.set_surf_activated();
+    // } else {
+    //   this.set_surf_deactivated();
+    // }
+    // Gtk.main();
   }
 
   private void create_system_tray() {
@@ -102,7 +122,7 @@ public class AnonSurfApp: GLib.Application {
         - Starts anonsurf-gtk when window was closed causes a crash, or show empty dialog
         - Create an other window when user left click on system tray icon
     */
-    if (!this.window.title_bar.get_visible()) {
+    if (!this.window.get_visible()) {
       this.window = new AnonSurfWindow();
       this.window.show_all();
       this.refresh_gui();
@@ -153,14 +173,14 @@ public class AnonSurfApp: GLib.Application {
     bool is_surf_running = check_surf_running();
     if (is_surf_running) {
       this.sys_tray.set_surf_activated();
-      if (!this.window.title_bar.get_visible()) {
+      if (!this.window.get_visible()) {
         return true;
       }
       this.set_surf_activated();
       this.window.main_layout.box_boot_status.update_boot_status();
     } else {
       this.sys_tray.set_surf_deactivated();
-      if (!this.window.title_bar.get_visible()) {
+      if (!this.window.get_visible()) {
         return true;
       }
       this.set_surf_deactivated();
@@ -181,12 +201,12 @@ int main(string[] args) {
     return app.run(args);
   } else {
     app.create_headless_mode();
-    // FIXME: current functions don't work
-    if (args[1] == "start" || args[1] == "stop") {
+
+    if (args[1] == "start" || args[1] == "stop") { // This is working without notification
       app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
-    } else if (args[1] == "myip") {
+    } else if (args[1] == "myip") { // FIXME: this doesn't work (both notifi & function)
       app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
-    } else if (args[1] == "changeid") {
+    } else if (args[1] == "changeid") { // Likely it's working without notification
       app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
     } else {
       send_notification("Invalid option", "Option " + args[1] + " is invalid", NotifyLevel.Error);
