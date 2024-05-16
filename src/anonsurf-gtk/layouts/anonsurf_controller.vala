@@ -76,7 +76,7 @@ public class ButtonMyIP: Button {
     this.clicked.connect(on_click_button);
     try {
       this.pool = new ThreadPool<ThreadMyIP>.with_owned_data((worker) => {
-        worker.run ();
+        worker.run();
       }, 1, false);
     } catch (GLib.Error error) {
       send_notification("Thread error", error.message, NotifyLevel.Error);
