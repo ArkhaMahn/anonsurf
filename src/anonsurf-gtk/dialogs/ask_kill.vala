@@ -2,6 +2,8 @@ using Gtk;
 
 
 class ButtonKillYes: Button {
+  Dialog parent_dialog;
+
   public ButtonKillYes() {
     this.set_label("Kill");
     this.clicked.connect(on_confirm_kill);
@@ -15,6 +17,12 @@ class ButtonKillYes: Button {
     } catch (GLib.Error error) {
       send_notification("Failed to do clear cache", error.message, NotifyLevel.Error);
     }
+
+    this.parent_dialog.destroy();
+  }
+
+  public void set_dialog_relationship(Dialog d) {
+    this.parent_dialog = d;
   }
 }
 
@@ -56,6 +64,7 @@ class DialogAskKill: Dialog {
     this.yes_button = new ButtonKillYes();
     this.no_button = new ButtonKillNo();
 
+    this.yes_button.set_dialog_relationship(this);
     this.no_button.set_dialog_relationship(this);
 
     this.content_area = get_content_area() as Box;
