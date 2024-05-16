@@ -104,12 +104,10 @@ public class AnonSurfApp: GLib.Application {
   }
 
   private void create_system_tray() {
-    if (this.sys_tray == null) {
-      this.sys_tray = new AnonSurfSystrayIcon();
+    this.sys_tray = new AnonSurfSystrayIcon();
 
-      this.sys_tray.set_app_connection(this);
-      this.set_systray_connection(this.sys_tray);
-    }
+    this.sys_tray.set_app_connection(this);
+    this.set_systray_connection(this.sys_tray);
   }
 
   public void restore_window() {
