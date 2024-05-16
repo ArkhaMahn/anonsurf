@@ -35,25 +35,22 @@ public class ButtonStart: Button {
 
     // Create a dialog to ask if user want to kill some processes and remove cache
     this.dialog_ask_kill = new DialogAskKill();
+    dialog_ask_kill.start_dialog();
 
-    if (this.get_label() == "Start") {
-      dialog_ask_kill.start_dialog();
-      this.dialog_ask_kill.destroy.connect(() => {
-        try {
-          this.pool.add(new ThreadStartAnonSurf(true));
-        } catch (ThreadError error) {
-          send_notification("Error while starting AnonSurf", error.message, NotifyLevel.Error);
-        }
-      });
-    } else {
+    // When dialog closes, start creating thread to either start or stop AnonSurf
+    // Kill processes spawns before AnonSurf starts or stops
+    // The kill proccess is handled by dialog, before kill signal is called
+    this.dialog_ask_kill.destroy.connect(() => {
       try {
-        this.pool.add(new ThreadStartAnonSurf(false));
-        // When stop, ask kill should be called after AnonSurf stop
-        dialog_ask_kill.start_dialog();
+        if (this.get_label() == "Start") {
+          this.pool.add(new ThreadStartAnonSurf(true));
+        } else {
+          this.pool.add(new ThreadStartAnonSurf(false));
+        }
       } catch (ThreadError error) {
         send_notification("Error while stopping AnonSurf", error.message, NotifyLevel.Error);
       }
-    }
+    });
   }
 
   public void check_thread_is_running() {
