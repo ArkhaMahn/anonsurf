@@ -206,8 +206,14 @@ public class ButtonTorController: Button {
   }
 
   public void on_click_button() {
+    /*
+      Create a dialog that shows a VTE with nyx
+      - Check DialogTorController == null meant to prevent user creates multiple VTE (of nyx) windows
+        However, it also prevents user starts VTE again (close and start) because Dialog is now not null anymore
+      - Check !this.tor_status.get_visible() to show dialog from second time
+    */
     // Prevent creating multiple dialogs when click on button
-    if (this.tor_status == null) {
+    if (this.tor_status == null || !this.tor_status.get_visible()) {
       this.tor_status = new DialogTorController();
       this.tor_status.show_dialog();
     }
