@@ -36,7 +36,7 @@ public class NyxTerminal: Terminal {
   }
 
   private void on_nyx_exit() {
-    this.parent_dialog.hide();
+    this.parent_dialog.destroy();
   }
 }
 
@@ -44,7 +44,6 @@ public class NyxTerminal: Terminal {
 public class DialogTorController: Dialog {
   private NyxTerminal vte_tor_controller;
   private Box content_area;
-  private Box terminal_box;
 
   public DialogTorController() {
     this.set_title("Tor Status");
@@ -54,16 +53,13 @@ public class DialogTorController: Dialog {
     } catch {
       this.set_icon_name("nyx-logo.png");
     }
-
-    vte_tor_controller = new NyxTerminal(this);
-    terminal_box = new Box(Orientation.VERTICAL, 3);
-    content_area = get_content_area() as Box;
-
-    terminal_box.pack_start(vte_tor_controller, false, true, 3);
-    content_area.pack_start(terminal_box, false, true, 3);
   }
 
   public void show_dialog() {
+    vte_tor_controller = new NyxTerminal(this);
+    content_area = get_content_area() as Box;
+
+    content_area.pack_start(vte_tor_controller, false, true, 3);
     this.vte_tor_controller.start_nyx_terminal();
     // Only show things when click on dialog. Fix problem dialog prompts when program start
     this.show_all();
