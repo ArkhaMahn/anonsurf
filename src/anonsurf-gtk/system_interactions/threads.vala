@@ -17,7 +17,7 @@ public class ThreadStartAnonSurf {
 
   private void start_anonsurf() {
     try {
-      Subprocess action_start_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "start"}, NONE);
+      Subprocess action_start_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "start"}, STDOUT_SILENCE | STDERR_SILENCE);
       action_start_anonsurf.wait();
 
       int exit_code = action_start_anonsurf.get_exit_status();
@@ -34,7 +34,7 @@ public class ThreadStartAnonSurf {
 
   private void stop_anonsurf() {
     try {
-      Subprocess action_stop_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "stop"}, NONE);
+      Subprocess action_stop_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "stop"}, STDOUT_SILENCE | STDERR_SILENCE);
       action_stop_anonsurf.wait();
 
       int exit_code = action_stop_anonsurf.get_exit_status();
