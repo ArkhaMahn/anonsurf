@@ -46,6 +46,7 @@ public class DialogTorController: Dialog {
   private Box content_area;
 
   public DialogTorController() {
+    this.vte_tor_controller = new NyxTerminal(this);
     this.set_title("Tor Status");
     this.set_resizable(false);
     try {
@@ -56,10 +57,8 @@ public class DialogTorController: Dialog {
   }
 
   public void show_dialog() {
-    vte_tor_controller = new NyxTerminal(this);
     content_area = get_content_area() as Box;
-
-    content_area.pack_start(vte_tor_controller, false, true, 3);
+    content_area.pack_start(this.vte_tor_controller, false, true, 3);
     this.vte_tor_controller.start_nyx_terminal();
     // Only show things when click on dialog. Fix problem dialog prompts when program start
     this.show_all();
