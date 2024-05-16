@@ -14,6 +14,7 @@ public enum AnonSurfStatusErr {
 
 public class ButtonStart: Button {
   public ThreadPool<ThreadStartAnonSurf> pool;
+  private DialogAskKill dialog_ask_kill;
 
   public ButtonStart() {
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
@@ -32,14 +33,26 @@ public class ButtonStart: Button {
       return;
     }
 
-    try {
-      if (this.get_label() == "Start") {
-        this.pool.add(new ThreadStartAnonSurf(true));
-      } else {
+    // Create a dialog to ask if user want to kill some processes and remove cache
+    this.dialog_ask_kill = new DialogAskKill();
+
+    if (this.get_label() == "Start") {
+      dialog_ask_kill.start_dialog();
+      this.dialog_ask_kill.destroy.connect(() => {
+        try {
+          this.pool.add(new ThreadStartAnonSurf(true));
+        } catch (ThreadError error) {
+          send_notification("Error while starting AnonSurf", error.message, NotifyLevel.Error);
+        }
+      });
+    } else {
+      try {
         this.pool.add(new ThreadStartAnonSurf(false));
+        // When stop, ask kill should be called after AnonSurf stop
+        dialog_ask_kill.start_dialog();
+      } catch (ThreadError error) {
+        send_notification("Error while stopping AnonSurf", error.message, NotifyLevel.Error);
       }
-    } catch (ThreadError error) {
-      send_notification("Thread error", error.message, NotifyLevel.Error);
     }
   }
 
