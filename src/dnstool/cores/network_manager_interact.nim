@@ -5,6 +5,12 @@ import dnstool_const
 import .. / cli / print
 
 
+proc nm_reload_service*() =
+  # TODO check if reload or restart is better
+  if execCmd("/usr/bin/systemctl reload NetworkManager") != 0:
+    print_error("Failed to restart NetworkManager service")
+
+
 proc nm_get_dns_servers*(): seq[string] =
   #[
     Get DNS addresses from DHCP server. This function parses output from command
@@ -26,11 +32,10 @@ proc nm_create_hook_script*() =
     try:
       writeFile(nm_hook_script, nm_hook_data)
       setFilePermissions(nm_hook_script, {fpUserExec, fpUserRead, fpGroupExec, fpGroupRead, fpOthersRead, fpOthersExec})
-      discard execCmd("/usr/bin/systemctl reload NetworkManager")
+      nm_reload_service()
     except:
       print_error("Failed to write hook script to " & nm_hook_script)
-  else:
-    print_error("Hook script " & nm_hook_script & " already existed")
+  # else: When user changes DNS multiple times, this case always happens. Skip showing error
 
 
 proc nm_remove_hook_script*() =
@@ -38,4 +43,3 @@ proc nm_remove_hook_script*() =
     print_error("Failed to remove hook script at " & nm_hook_script)
     return
 
-  discard execCmd("/usr/bin/systemctl reload NetworkManager")
