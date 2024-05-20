@@ -40,7 +40,7 @@ proc print_desc(keyword = "", descr = "") =
 proc show_banner() =
   echo("DNS Tool: A CLI tool to change DNS settings quickly")
   echo("Developer: Nong Hoang \"DmKnght\" Tu <dmknght@parrotsec.org>")
-  echo("Gitlab: https://nest.parrot.sh/packages/tools/anonsurf")
+  echo("Gitlab: https://gitlab.com/parrotsec/packages/anonsurf/")
   echo("License: GPL3\n")
 
 
