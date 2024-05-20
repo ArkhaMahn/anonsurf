@@ -22,13 +22,13 @@ proc has_only_localhost*(list_addr: seq[string]): bool =
 
 
 proc system_dns_file_is_symlink*(): bool =
-  if getFileInfo(system_dns_file, followSymlink = false).kind == pcLinkToFile:
+  if getFileInfo(resolv_conf_path, followSymlink = false).kind == pcLinkToFile:
     return true
   return false
 
 
 proc parse_dns_addresses*(): seq[string] =
-  for line in lines(system_dns_file):
+  for line in lines(resolv_conf_path):
     if line.startsWith("nameserver"):
       result.add(line.split(" ")[1])
 
@@ -40,45 +40,15 @@ proc system_has_only_localhost*(): bool =
   return has_only_localhost(addresses)
 
 
-proc system_has_only_localhost_or_empty_dns*(): bool =
-  let
-    addresses = parse_dns_addresses()
-
-  if len(addresses) == 0:
-    return true
-  return has_only_localhost(addresses) 
-
-
-proc create_backup*() =
-  try:
-    copyFile(system_dns_file, system_dns_backup)
-  except:
-    print_error("Failed to create backup file")
-
-
-proc restore_backup*() =
-  try:
-    moveFile(system_dns_backup, system_dns_file)
-  except:
-    print_error("Failed to restore backup")
-
-
-proc do_restore_backup*() =
-  if not tryRemoveFile(system_dns_file):
-    print_error("Failed to remove " & system_dns_file & " to restore backup.")
-  if fileExists(system_dns_backup):
-    restore_backup()
-
-
 proc resolv_config_is_not_symlink*(): bool =
-  return if getFileInfo(system_dns_file, followSymlink = false).kind == pcLinkToFile: false else: true
+  return if getFileInfo(resolv_conf_path, followSymlink = false).kind == pcLinkToFile: false else: true
 
 
 proc check_system_dns_is_static*() =
   print_file_static(resolv_config_is_not_symlink())
 
 
-proc write_dns_addr_to_file*(file_path: string, list_dns_addr: seq[string]) =
+proc write_dns_to_system*(list_dns_addr: seq[string]) =
   let
     deduplicated_list_addr = deduplicate(list_dns_addr)
   if len(deduplicated_list_addr) == 0:
@@ -88,19 +58,24 @@ proc write_dns_addr_to_file*(file_path: string, list_dns_addr: seq[string]) =
   let
     dns_addr = convert_seq_addr_to_string(deduplicated_list_addr)
   try:
-    writeFile(file_path, "# Written by DNSTool\n" & dns_addr)
+    writeFile(resolv_conf_path, "# Written by DNSTool\n" & dns_addr)
   except:
-    print_error("Error while writing DNS address to " & file_path)
+    print_error("Error while writing DNS address to " & resolv_conf_path)
 
 
-proc write_dns_to_system*(list_dns_addr: seq[string]) =
-  write_dns_addr_to_file(system_dns_file, list_dns_addr)
+proc get_list_valid_addresses*(list_addr: seq[string]): seq[string] =
+  for each_addr in list_addr:
+    if isIpAddress(each_addr):
+      result.add(each_addr)
+
+  return result
 
 
 proc parse_addr_from_params*(params: seq[string]): AddrFromParams =
-  var param_result = AddrFromParams(
-    has_dhcp_flag: false
-  )
+  var
+    param_result = AddrFromParams(
+      has_dhcp_flag: false
+    )
 
   for value in params:
     if value == "dhcp":
@@ -112,4 +87,4 @@ proc parse_addr_from_params*(params: seq[string]): AddrFromParams =
 
 
 proc system_resolvconf_exists*(): bool =
-  return fileExists(system_dns_file)
+  return fileExists(resolv_conf_path)

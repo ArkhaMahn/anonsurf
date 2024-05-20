@@ -1,17 +1,11 @@
 const
-  system_dns_file* = "/etc/resolv.conf"
-  system_dns_backup* = "/etc/resolv.conf.bak"
-  resolvconf_dns_file* = "/run/resolvconf/resolv.conf"
-  dhclient_dns_file* = "/var/lib/dhcp/dhclient.leases"
-  resolvconf_tail_file* = "/etc/resolvconf/resolv.conf.d/tail"
+  resolv_conf_path* = "/etc/resolv.conf"
+  resolv_conf_backup* = "/etc/anonsurf/resolv.conf.bak"
   dhclient_binary* = "/usr/sbin/dhclient"
-  hook_script_dhcp_path* = "/etc/dhcp/dhclient-enter-hooks.d/dnstool"
-  hook_script_dhcp_data* = "make_resolv_conf() { :; }"
+
   # https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/manually-configuring-the-etc-resolv-conf-file_configuring-and-managing-networking
-  hook_script_nm_path* = "/etc/NetworkManager/conf.d/90-dns-none.conf"
-  hook_script_nm_data* = "[main]\ndns=none\n"
-  # https://www.cyberciti.biz/faq/dhclient-etcresolvconf-hooks/
-  # This path only works with Debian based
+  nm_hook_script* = "/etc/NetworkManager/conf.d/90-dns-none.conf"
+  nm_hook_data* = "[main]\ndns=none\n"
 
 type
   AddrFromParams* = object

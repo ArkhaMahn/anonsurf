@@ -13,7 +13,6 @@ proc nm_get_dns_servers*(): seq[string] =
       IP4.DNS[1]:                             192.168.58.1,1.1.1.1
     https://infotechys.com/change-dns-settings-using-the-nmcli-utility/
   ]#
-  # FIXME handle seq contains only 1 empty addr like @[""]
   return execProcess("/usr/bin/nmcli dev show | grep DNS").replace("\n", "").split(" ")[^1].split(",")
 
 
@@ -37,3 +36,6 @@ proc nm_create_hook_script*() =
 proc nm_remove_hook_script*() =
   if not tryRemoveFile(nm_hook_script):
     print_error("Failed to remove hook script at " & nm_hook_script)
+    return
+
+  discard execCmd("/usr/bin/systemctl reload NetworkManager")
