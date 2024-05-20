@@ -28,14 +28,11 @@ proc nm_create_hook_script*() =
     https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/8/html/configuring_and_managing_networking/manually-configuring-the-etc-resolv-conf-file_configuring-and-managing-networking
     Create new hook script that has exec in file's permissions, and then restart NetworkManager service
   ]#
-  if not fileExists(nm_hook_script):
-    try:
-      writeFile(nm_hook_script, nm_hook_data)
-      setFilePermissions(nm_hook_script, {fpUserExec, fpUserRead, fpGroupExec, fpGroupRead, fpOthersRead, fpOthersExec})
-      nm_reload_service()
-    except:
-      print_error("Failed to write hook script to " & nm_hook_script)
-  # else: When user changes DNS multiple times, this case always happens. Skip showing error
+  try:
+    writeFile(nm_hook_script, nm_hook_data)
+    setFilePermissions(nm_hook_script, {fpUserWrite, fpUserRead, fpGroupWrite, fpGroupRead, fpOthersRead})
+  except:
+    print_error("Failed to write hook script to " & nm_hook_script)
 
 
 proc nm_remove_hook_script*() =
