@@ -1,11 +1,11 @@
 import os
-import cores / [utils, dnstool_const, network_manager_interact]
+import cores / [utils, dnstool_const, network_manager_interact, resolv_conf_interact]
 import cli / [help, print]
 import .. / anonsurf_cli / libs / tor_utils
 
 
 proc dnst_show_status*() =
-  if not system_resolvconf_exists():
+  if not fileExists(resolv_conf_path):
     print_error_resolv_not_found()
     return
 
@@ -32,7 +32,7 @@ proc dnst_restore_backup() =
   #[
     Restore backup of /etc/resolv.conf from /etc/anonsurf/resolv.conf.bak
     If this file doesn't exists, trigger getting DNS addresses from DHCP server via nmcli
-    # TODO review code logic here
+    # TODO review code logic here, move all code that handles resolv.conf to resolv_conf_interact
   ]#
 
   if fileExists(resolv_conf_backup):
@@ -45,7 +45,7 @@ proc dnst_restore_backup() =
         print_error("Failed to restore backup")
 
   # If called by hook script and AnonSurf is not running, restore backup
-  elif not system_resolvconf_exists():
+  elif not fileExists(resolv_conf_path):
     nm_remove_hook_script()
 
   dnst_show_status()
@@ -56,33 +56,13 @@ proc dnst_create_backup() =
     Backup /etc/resolv.conf
     But if this file is a symlink, skip doing it. Restore backup will create a new file using addr from DHCP
   ]#
-  if not system_resolvconf_exists():
-    print_error("Skip creating backup file. Missing " & resolv_conf_path)
+
+  if is_anonsurf_running():
+    # TODO error because anonsurf starts daemon?
+    print_error("AnonSurf is running. Skipping create backup")
     return
 
-  if system_has_only_localhost():
-    print_error("Skip creating backup file. System has only localhost.")
-    return
-
-  if fileExists(resolv_conf_backup):
-    if not tryRemoveFile(resolv_conf_backup):
-      print_error("Failed to remove " & resolv_conf_backup & " to create new one.")
-      return
-
-  if system_dns_file_is_symlink():
-    #[
-      /etc/resolv.conf is a symlink of resolvconf which is at
-      /run/resolvconf/resolv.conf so we don't create backup here
-      When there's no backup, dnstool will try create DHCP's DNS
-      which should create a symlink if resolvconf is installed
-    ]#
-    print_error("Skip creating backup file because " & resolv_conf_path & " is a symlink.")
-    return
-
-  try:
-    copyFile(resolv_conf_path, resolv_conf_backup)
-  except:
-    print_error("Failed to create backup file")
+  resov_make_backup()
 
 
 proc dnst_write_addresses(has_dhcp: bool, list_addr: seq[string]) =
@@ -94,32 +74,14 @@ proc dnst_write_addresses(has_dhcp: bool, list_addr: seq[string]) =
 
   if has_dhcp: # If user provides keyword "dhcp" in list of addrs
     if len(list_addr) == 0: # If only DHCP, make system use's settings by NetworkManager
-      nm_remove_hook_script()
+      resolv_create_dhcp_only()
     else: # parse addr from nmclient and merge to addresses
       var
         addr_from_dhcp = get_list_valid_addresses(nm_get_dns_servers())
 
-      if len(addr_from_dhcp) != 0:
-        addr_from_dhcp = addr_from_dhcp & list_addr
-      else:
-        addr_from_dhcp = addr_from_dhcp
-        discard
-
-      if not tryRemoveFile(resolv_conf_path):
-        print_error("Failed to remove " & resolv_conf_path & " to create new one.")
-        return
-
-      write_dns_to_system(addr_from_dhcp)
+      resolv_create_addrs(list_addr & addr_from_dhcp)
   else:
-    if len(list_addr) == 0:
-      print_error("No valid addresses was provided")
-      return
-    else:
-      if not tryRemoveFile(resolv_conf_path):
-        print_error("Failed to remove " & resolv_conf_path & " to create new one.")
-        return
-
-      write_dns_to_system(list_addr)
+    resolv_create_addrs(list_addr)
 
   echo "\n[*] Applied DNS settings"
   dnst_show_status()

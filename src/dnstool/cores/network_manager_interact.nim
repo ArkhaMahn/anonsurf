@@ -5,10 +5,10 @@ import dnstool_const
 import .. / cli / print
 
 
-proc nm_reload_service*() =
-  # TODO check if reload or restart is better
-  if execCmd("/usr/bin/systemctl reload NetworkManager") != 0:
-    print_error("Failed to restart NetworkManager service")
+# proc nm_reload_service*() =
+#   # TODO check if reload or restart is better
+#   if execCmd("/usr/bin/systemctl reload NetworkManager") != 0:
+#     print_error("Failed to restart NetworkManager service")
 
 
 proc nm_get_dns_servers*(): seq[string] =
