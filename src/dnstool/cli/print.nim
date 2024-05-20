@@ -18,11 +18,11 @@ proc print_under_tor_dns*() =
 
 
 proc print_error_resolv_not_found*() =
-  echo "[\e[91mDNS error: \e[91m" & resolv_conf_path & "\e[0m not found"
+  echo "[\e[91mDNS error\e[0m] \e[94m" & resolv_conf_path & "\e[0m not found"
 
 
 proc print_error_resolv_empty*() =
-  echo "[\e[91mDNS error\e[0m] " & resolv_conf_path & " empty"
+  echo "[\e[91mDNS error\e[0m] \e[94m" & resolv_conf_path & "\e[0m is empty"
 
 
 proc print_error_local_host*() =
