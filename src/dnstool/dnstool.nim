@@ -32,19 +32,12 @@ proc dnst_restore_backup() =
   #[
     Restore backup of /etc/resolv.conf from /etc/anonsurf/resolv.conf.bak
     If this file doesn't exists, trigger getting DNS addresses from DHCP server via nmcli
-    # TODO review code logic here, move all code that handles resolv.conf to resolv_conf_interact
   ]#
 
   if fileExists(resolv_conf_backup):
-    if not tryRemoveFile(resolv_conf_path):
-      print_error("Failed to remove " & resolv_conf_path & " to restore backup.")
-    if fileExists(resolv_conf_backup):
-      try:
-        moveFile(resolv_conf_backup, resolv_conf_path)
-      except:
-        print_error("Failed to restore backup")
+    resov_restore_from_backup()
 
-  # If called by hook script and AnonSurf is not running, restore backup
+  # If backup doesn't exists, create DHCP instead
   elif not fileExists(resolv_conf_path):
     nm_remove_hook_script()
 
@@ -56,12 +49,6 @@ proc dnst_create_backup() =
     Backup /etc/resolv.conf
     But if this file is a symlink, skip doing it. Restore backup will create a new file using addr from DHCP
   ]#
-
-  if is_anonsurf_running():
-    # TODO error because anonsurf starts daemon?
-    print_error("AnonSurf is running. Skipping create backup")
-    return
-
   resov_make_backup()
 
 

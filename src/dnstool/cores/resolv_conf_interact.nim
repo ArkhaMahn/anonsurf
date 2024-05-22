@@ -27,19 +27,35 @@ proc resolv_create_addrs*(list_addr: seq[string]) =
   nm_create_hook_script()
 
 
+proc resov_restore_from_backup*() =
+  #[
+    Remove /etc/resolv.conf
+    Move backup file to /etc/resolv.conf
+  ]#
+  if not tryRemoveFile(resolv_conf_path):
+    print_error("Restore backup: Failed to remove " & resolv_conf_path & " to restore backup.")
+    # It might cause error depends on file type. Return instead?
+
+  if fileExists(resolv_conf_backup):
+    try:
+      moveFile(resolv_conf_backup, resolv_conf_path)
+    except:
+      print_error("Restore backup: Failed to restore backup")
+
+
 proc resov_make_backup*() =
   # TODO review code logic here, move all code that handles resolv.conf to resolv_conf_interact
   if not fileExists(resolv_conf_path):
-    print_error("Skip creating backup file. Missing " & resolv_conf_path)
+    print_error("Create backup: Skip creating backup file. Missing " & resolv_conf_path)
     return
 
   if system_has_only_localhost():
-    print_error("Skip creating backup file. System has only localhost.")
+    print_error("Create backup: Skip creating backup file. Only found localhost nameserver.")
     return
 
   if fileExists(resolv_conf_backup):
     if not tryRemoveFile(resolv_conf_backup):
-      print_error("Failed to remove " & resolv_conf_backup & " to create new one.")
+      print_error("Create backup: Failed to remove " & resolv_conf_backup & " to create new one.")
       return
 
   if system_dns_file_is_symlink():
@@ -49,10 +65,10 @@ proc resov_make_backup*() =
       When there's no backup, dnstool will try create DHCP's DNS
       which should create a symlink if resolvconf is installed
     ]#
-    print_error("Skip creating backup file because " & resolv_conf_path & " is a symlink.")
+    print_error("Create backup: Skip creating backup file because " & resolv_conf_path & " is a symlink.")
     return
 
   try:
     copyFile(resolv_conf_path, resolv_conf_backup)
   except:
-    print_error("Failed to create backup file")
+    print_error("Create backup: Failed to create backup file")
