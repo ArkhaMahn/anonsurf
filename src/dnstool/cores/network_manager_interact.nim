@@ -5,7 +5,7 @@ import dnstool_const
 import .. / cli / print
 
 
-proc nm_reload_service*() =
+proc nm_reload_service() =
   if execCmd("/usr/bin/systemctl reload NetworkManager") != 0:
     print_error("Failed to reload NetworkManager service")
 
@@ -30,6 +30,7 @@ proc nm_create_hook_unmanage*() =
   try:
     writeFile(nm_hook_script, nm_hook_dont_manage_resolvconf)
     setFilePermissions(nm_hook_script, {fpUserWrite, fpUserRead, fpGroupWrite, fpGroupRead, fpOthersRead})
+    nm_reload_service()
   except:
     print_error("Failed to write hook script to " & nm_hook_script)
 
@@ -43,12 +44,6 @@ proc nm_create_hook_dhcp*() =
   try:
     writeFile(nm_hook_script, nm_hook_handle_resolvconf)
     setFilePermissions(nm_hook_script, {fpUserWrite, fpUserRead, fpGroupWrite, fpGroupRead, fpOthersRead})
+    nm_reload_service()
   except:
     print_error("Failed to write hook script to " & nm_hook_script)
-
-
-proc nm_remove_hook_script*() =
-  if not tryRemoveFile(nm_hook_script):
-    print_error("Failed to remove hook script at " & nm_hook_script)
-    return
-

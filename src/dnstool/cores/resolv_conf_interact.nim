@@ -10,7 +10,6 @@ proc resolv_create_dhcp_only*() =
     print_error("Failed to remove current DNS settings")
     return
   nm_create_hook_dhcp()
-  nm_reload_service()
 
 
 proc resolv_create_addrs*(list_addr: seq[string]) =
@@ -24,7 +23,6 @@ proc resolv_create_addrs*(list_addr: seq[string]) =
 
   write_dns_to_system(list_addr)
   nm_create_hook_unmanage()
-  nm_reload_service()
 
 
 proc resov_restore_from_backup*() =

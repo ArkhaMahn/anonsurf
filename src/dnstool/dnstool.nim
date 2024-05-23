@@ -37,7 +37,7 @@ proc dnst_restore_backup() =
 
   # If backup doesn't exists, create DHCP instead
   elif not fileExists(resolv_conf_path):
-    nm_remove_hook_script()
+    nm_create_hook_dhcp()
 
   dnst_show_status()
 
