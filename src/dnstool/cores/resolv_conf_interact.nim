@@ -24,6 +24,7 @@ proc resolv_create_addrs*(list_addr: seq[string]) =
 
   write_dns_to_system(list_addr)
   nm_create_hook_unmanage()
+  nm_reload_service()
 
 
 proc resov_restore_from_backup*() =
