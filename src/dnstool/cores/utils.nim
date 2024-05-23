@@ -40,14 +40,6 @@ proc system_has_only_localhost*(): bool =
   return has_only_localhost(addresses)
 
 
-proc resolv_config_is_not_symlink*(): bool =
-  return if getFileInfo(resolv_conf_path, followSymlink = false).kind == pcLinkToFile: false else: true
-
-
-proc check_system_dns_is_static*() =
-  print_file_static(resolv_config_is_not_symlink())
-
-
 proc write_dns_to_system*(list_dns_addr: seq[string]) =
   let
     deduplicated_list_addr = deduplicate(list_dns_addr)

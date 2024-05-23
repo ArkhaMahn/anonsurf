@@ -9,8 +9,6 @@ proc dnst_show_status*() =
     print_error_resolv_not_found()
     return
 
-  check_system_dns_is_static()
-
   let
     addresses = parse_dns_addresses()
 
