@@ -68,7 +68,7 @@ proc dnst_write_addresses(has_dhcp: bool, list_addr: seq[string]) =
   else:
     resolv_create_addrs(list_addr)
 
-  echo "\n[*] Applied DNS settings"
+  echo "[*] Applied DNS settings"
   dnst_show_status()
 
 
