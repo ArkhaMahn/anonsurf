@@ -6,12 +6,11 @@ import ../ cli / print
 
 
 proc resolv_create_dhcp_only*() =
-  # FIXME: if not remove resolv.conf, all addrs are kept, meanwhile remove it cause missing file
-  # if not try_remove_file(resolv_conf_path):
-  #   print_error("Failed to remove current DNS settings")
-  #   return
-  nm_remove_hook_script()
-  # nm_reload_service()
+  if not try_remove_file(resolv_conf_path):
+    print_error("Failed to remove current DNS settings")
+    return
+  nm_create_hook_dhcp()
+  nm_reload_service()
 
 
 proc resolv_create_addrs*(list_addr: seq[string]) =
@@ -24,7 +23,7 @@ proc resolv_create_addrs*(list_addr: seq[string]) =
     return
 
   write_dns_to_system(list_addr)
-  nm_create_hook_script()
+  nm_create_hook_unmanage()
 
 
 proc resov_restore_from_backup*() =
@@ -44,7 +43,6 @@ proc resov_restore_from_backup*() =
 
 
 proc resov_make_backup*() =
-  # TODO review code logic here, move all code that handles resolv.conf to resolv_conf_interact
   if not fileExists(resolv_conf_path):
     print_error("Create backup: Skip creating backup file. Missing " & resolv_conf_path)
     return
