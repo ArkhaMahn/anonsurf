@@ -134,6 +134,9 @@ public class AnonSurfApp: GLib.Application {
 
   private void set_tor_failed_to_run() {
     this.window.title_bar.set_tor_service_not_running();
+    // When surf is running, but Tor doesn't run, button Stop needs to be there anyway.
+    // Fix problem GUI basically in a hang mode
+    this.window.main_layout.box_button_control.box_top_buttons.button_start.set_surf_activated();
   }
 
   private void set_surf_activated() {
