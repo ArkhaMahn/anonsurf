@@ -1,5 +1,6 @@
 using Gtk;
 
+// FIXME title bar changes the size of app
 
 public class BoxMainLayout: Box {
   public BoxBootStatus box_boot_status;
@@ -137,6 +138,7 @@ public class AnonSurfApp: GLib.Application {
     // When surf is running, but Tor doesn't run, button Stop needs to be there anyway.
     // Fix problem GUI basically in a hang mode
     this.window.main_layout.box_button_control.box_top_buttons.button_start.set_surf_activated();
+    this.window.main_layout.box_button_control.box_top_buttons.button_start.set_sensitive(true);
   }
 
   private void set_surf_activated() {
