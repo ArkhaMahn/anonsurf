@@ -57,7 +57,7 @@ public class AnonSurfTitleBar: HeaderBar {
   }
 
   public void set_tor_service_not_running() {
-    this.set_subtitle("Tor service failed to run");
+    this.set_subtitle("Tor failed to run");
     this.image_anonsurf_status.set_failed();
   }
 }
