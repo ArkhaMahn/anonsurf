@@ -10,8 +10,8 @@ public class BoxMainLayout: Box {
     this.box_boot_status = new BoxBootStatus();
     this.box_button_control = new BoxButtonControl();
 
+    this.pack_start(this.box_button_control, false, false, 3);
     this.pack_end(this.box_boot_status, false, false, 3);
-    this.pack_start(this.box_button_control, true, true, 3);
   }
 
   public void update_boot_status() {
@@ -92,15 +92,6 @@ public class AnonSurfApp: GLib.Application {
     } else {
       this.set_surf_deactivated();
     }
-
-    // this.window.show_all();
-    // // this.create_system_tray();
-    // if (check_surf_running()) {
-    //   this.set_surf_activated();
-    // } else {
-    //   this.set_surf_deactivated();
-    // }
-    // Gtk.main();
   }
 
   private void create_system_tray() {
