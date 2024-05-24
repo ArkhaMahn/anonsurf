@@ -13,6 +13,8 @@ VALA-SRC-SYS = $(VALA-SRC-DIR)/system_interactions
 NIM-FLAGS = c --nimcache:/tmp/ -d:ssl -d:release
 BUILD-DEST = build/release
 
+os_name="$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
+
 .PHONY: build
 
 all: build install
@@ -40,9 +42,7 @@ build: anonsurf-cli anonsurf-gtk dnstool make-torrc
 
 inst-launchers:
 	# Copy launchers
-	os_name="$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
-
-	if [ ${os_name} = "parrot" ]; then \
+	if [ $(os_name) = "parrot" ]; then \
 		cp launchers/parrot/*.desktop $(DESTDIR)/usr/share/applications/; \
 	else \
 		cp launchers/debian/*.desktop $(DESTDIR)/usr/share/applications/; \
