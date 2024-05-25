@@ -75,7 +75,7 @@ mk-folders:
 	mkdir -p $(DESTDIR)/usr/share/applications/
 	mkdir -p $(DESTDIR)/lib/systemd/system/
 
-install: mk-folders inst-bins inst-configs inst-launchers
+install: mk-folders inst-bins inst-configs inst-launchers inst-icons
 
 uninstall:
 	# Remove config files
