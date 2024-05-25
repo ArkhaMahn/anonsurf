@@ -64,6 +64,9 @@ inst-bins:
 	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
 	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
 
+inst-icons:
+	cp icons/*.png $(DESTDIR)/usr/share/icons/.
+
 mk-folders:
 	# Create all folders
 	mkdir -p $(DESTDIR)/etc/anonsurf/

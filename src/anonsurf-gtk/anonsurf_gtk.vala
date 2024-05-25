@@ -38,8 +38,14 @@ public class AnonSurfWindow: Gtk.ApplicationWindow {
     this.main_layout = new BoxMainLayout();
 
     this.set_titlebar(this.title_bar);
-    this.set_icon_name("anonsurf");
     this.set_resizable(false);
+
+    try {
+      this.set_icon_from_file("/usr/share/icons/anonsurf.png");
+    } catch {
+      this.set_icon_name("anonsurf");
+    }
+
     this.add(this.main_layout);
   }
 }
