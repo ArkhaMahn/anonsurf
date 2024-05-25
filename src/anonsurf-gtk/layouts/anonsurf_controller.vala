@@ -245,8 +245,8 @@ public class BoxTopButtons: Box {
     this.button_start = new ButtonStart();
     this.button_my_ip = new ButtonMyIP();
 
-    this.pack_start(button_start, false, true, 3);
-    this.pack_start(button_my_ip, false, true, 3);
+    this.pack_start(button_start, false, true, 10);
+    this.pack_start(button_my_ip, false, true, 10);
   }
 
   public void set_surf_activated() {
@@ -272,8 +272,8 @@ public class BoxBottomButtons: Box {
     this.button_change_id = new ButtonChangeID();
     this.button_tor_controller = new ButtonTorController();
 
-    this.pack_start(this.button_tor_controller, false, true, 3);
-    this.pack_start(this.button_change_id, false, true, 3);
+    this.pack_start(this.button_tor_controller, false, true, 10);
+    this.pack_start(this.button_change_id, false, true, 10);
   }
 
   public void set_surf_activated() {
