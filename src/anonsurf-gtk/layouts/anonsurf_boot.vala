@@ -94,7 +94,7 @@ public class BoxBootStatus: Box {
     button_enable_boot = new ButtonEnableBoot();
 
     this.pack_start(label_boot_status, true, false, 3);
-    this.pack_start(button_enable_boot, false, false, 3);
+    this.pack_start(button_enable_boot, true, false, 3);
   }
 
   private bool check_multi_user_unit() {
