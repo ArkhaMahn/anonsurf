@@ -11,7 +11,7 @@ public class BoxMainLayout: Box {
     this.box_boot_status = new BoxBootStatus();
     this.box_button_control = new BoxButtonControl();
 
-    this.pack_start(this.box_button_control, false, false, 3);
+    this.pack_start(this.box_button_control, false, false, 6);
     this.pack_end(this.box_boot_status, false, false, 3);
   }
 
