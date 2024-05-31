@@ -87,20 +87,6 @@ public class AnonSurfApp: GLib.Application {
     Gtk.main();
   }
 
-  public void create_headless_mode() {
-    this.window = new AnonSurfWindow();
-
-    /*
-      Only update status of the controller buttons. So when user launches
-      program from menu (quick start / stop) -> program automatically decides start / stop service
-    */
-    if (check_surf_running()) {
-      this.set_surf_activated();
-    } else {
-      this.set_surf_deactivated();
-    }
-  }
-
   private void create_system_tray() {
     this.sys_tray = new AnonSurfSystrayIcon();
 
@@ -196,22 +182,5 @@ int main(string[] args) {
 
   Notify.init("AnonSurf GTK");
   AnonSurfApp app = new AnonSurfApp();
-
-  if (args.length == 1) {
-    return app.run(args);
-  } else {
-    app.create_headless_mode();
-
-    if (args[1] == "start" || args[1] == "stop") { // This is working without notification
-      app.window.main_layout.box_button_control.box_top_buttons.button_start.on_click_button();
-    } else if (args[1] == "myip") { // FIXME: this doesn't work (both notifi & function)
-      app.window.main_layout.box_button_control.box_top_buttons.button_my_ip.on_click_button();
-    } else if (args[1] == "changeid") { // Likely it's working without notification
-      app.window.main_layout.box_button_control.box_bottom_buttons.button_change_id.on_click_button.begin();
-    } else {
-      send_notification("Invalid option", "Option " + args[1] + " is invalid", NotifyLevel.Error);
-      return 1;
-    }
-    return 0;
-  }
+  return app.run(args);
 }

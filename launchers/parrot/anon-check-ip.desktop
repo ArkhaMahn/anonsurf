@@ -1,9 +1,0 @@
-[Desktop Entry]
-Version=1.0
-Type=Application
-Terminal=false
-Exec=anonsurf-gtk myip
-Name=Check IP address
-Comment=Print the current IP address
-Icon=network-server
-Categories=anonsurf;
