@@ -3,14 +3,21 @@ import posix
 import strscans
 import net
 import strutils
-import cli_utils
+import print_utils
 
-
-# TODO kill apps
 
 #[
   Check if anonsurfd is running using a symlink in /run/
 ]#
+
+
+proc ask_kill_app*() =
+  echo "Do you want to kill dangerous apps? [Y/n]"
+  let selected = readLine(stdin)
+  if selected == "y" or selected == "Y":
+    discard execShellCmd("/usr/lib/anonsurf/safekill")
+
+
 proc is_anonsurf_running*(): bool =
   var
     file_stat: Stat
@@ -18,11 +25,6 @@ proc is_anonsurf_running*(): bool =
   if lstat(cstring("/run/systemd/units/invocation:anonsurfd.service"), file_stat) == 0:
     return true
   return false
-
-
-# proc is_tor_running*(): bool =
-#   discard
-# # TODO complete here
 
 
 proc sock_get_str(s: Socket): string =
@@ -48,6 +50,7 @@ proc cli_anonsurf_start*() =
   if is_anonsurf_running():
     cli_send_msg(Err, "AnonSurf is running", "AnonSurf is started already. No need to start it again")
   else:
+    ask_kill_app()
     if start_anonsurf() == 0:
       cli_send_msg(Ok, "AnonSurf is activated", "AnonSurf started. Your traffic goes through Tor")
     else:

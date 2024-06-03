@@ -1,5 +1,5 @@
 import os
-import cli_utils
+import print_utils
 
 
 proc is_anonsurf_enabled_systemd(): bool =

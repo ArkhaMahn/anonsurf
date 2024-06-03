@@ -1,5 +1,5 @@
 import os
-import libs / [cli_utils, boot_utils, myip, tor_utils]
+import libs / [print_utils, boot_utils, myip, tor_utils]
 
 #[
   Check user's options

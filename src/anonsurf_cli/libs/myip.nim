@@ -2,7 +2,7 @@ import httpclient
 import xmltree
 import htmlparser
 import strutils
-import cli_utils
+import print_utils
 
 
 proc parseIPFromTorServer*(data: string, ip_addr, status: var string) =
