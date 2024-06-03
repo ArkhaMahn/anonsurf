@@ -63,6 +63,8 @@ inst-bins:
 	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
 	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
 	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
+	chmod +x $(DESTDIR)/usr/lib/anonsurf/make-torrc
+	chmod +x $(DESTDIR)/usr/lib/anonsurf/safekill
 
 inst-icons:
 	cp icons/*.png $(DESTDIR)/usr/share/icons/.
