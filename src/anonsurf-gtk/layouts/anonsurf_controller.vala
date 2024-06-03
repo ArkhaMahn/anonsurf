@@ -125,7 +125,6 @@ public class ButtonChangeID: Button {
   }
 
   private string get_tor_password() {
-    // TODO it's better to use other method instead of password
     File file = File.new_for_path ("/etc/anonsurf/nyxrc");
     try {
       FileInputStream @is = file.read();
@@ -146,7 +145,7 @@ public class ButtonChangeID: Button {
       if (password == "") {
         return;
       }
-      // TODO dynamic port based on config file?
+
       InetSocketAddress inet_address = new InetSocketAddress(this.address, 9051);
       SocketClient client = new SocketClient();
       SocketConnection conn = yield client.connect_async(inet_address);
@@ -163,9 +162,9 @@ public class ButtonChangeID: Button {
         message = yield input.read_line_async();
 
         if (message == "250 OK\x0d") {
-          send_notification("New ID", "You got new ID", NotifyLevel.Ok); // TODO improve message
+          send_notification("Tor's ID", "ID successfully changed", NotifyLevel.Ok); // TODO improve message
         } else {
-          send_notification("Failed new ID", message, NotifyLevel.Error); // TODO improve message
+          send_notification("Failed to change ID", message, NotifyLevel.Error);
         }
 
         message = "quit\n"; // Close connection
