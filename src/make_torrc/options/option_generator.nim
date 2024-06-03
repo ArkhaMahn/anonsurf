@@ -7,18 +7,6 @@ import option_objects
 randomize()
 
 
-proc ansurf_options_gen_random_password*(): string =
-  #[
-    Generate random string
-  ]#
-  let randLen = rand(8..16)
-  var password = ""
-  for i in 0 .. randLen:
-    password = password & sample(strutils.Letters)
-
-  return password
-
-
 proc ansurf_options_parse_tor_hash*(password: string): string =
   #[
     Generate tor hash by calling tor command
@@ -73,10 +61,6 @@ proc option_set_bridge_addr(settings: var string, bridge_addr: string) =
   settings &= "\nBridge " & bridge_addr & "\n"
 
 
-proc option_set_torrc_hash(settings: var string, hash: string) =
-  settings &= "\nHashedControlPassword " & hash & "\n"
-
-
 proc option_set_safe_sock(settings: var string) =
   settings &= "\n# Set SafeSocks\n"
   settings &= "SafeSocks 1\n"
@@ -90,19 +74,10 @@ proc option_set_plain_port(settings: var string, level: PlainPortMode) =
     settings &= "RejectPlaintextPorts 23,109,110,143,80"
 
 
-proc ansurf_options_generate_common_settings(settings: var string, password: string) =
-  let
-    tor_hash = ansurf_options_parse_tor_hash(password)
-
-  settings = ansurf_config_torrc_default
-  settings.option_set_torrc_hash(tor_hash)
-
-
-proc ansurf_options_generate_torrc*(user_options: SurfConfig, password: string): string =
+proc ansurf_options_generate_torrc*(user_options: SurfConfig): string =
   var
     settings: string
 
-  settings.ansurf_options_generate_common_settings(password)
   settings.option_set_plain_port(user_options.option_plain_port)
 
 

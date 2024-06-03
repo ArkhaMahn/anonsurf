@@ -1,6 +1,7 @@
 using Gtk;
 
 // FIXME title bar changes the size of app
+// TODO Use Gnome-keyring or something to stop asking authorization everytime
 
 public class BoxMainLayout: Box {
   public BoxBootStatus box_boot_status;

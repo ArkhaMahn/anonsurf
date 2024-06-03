@@ -25,7 +25,7 @@ public class NyxTerminal: Terminal {
     this.spawn_async(
       DEFAULT, // https://valadoc.org/vte-2.91/Vte.PtyFlags.html
       null,
-      {"/usr/bin/nyx", "--config", "/etc/anonsurf/nyxrc"}, // TODO remove nyx password
+      {"/usr/bin/nyx", "--config", "/etc/anonsurf/nyxrc"},
       {},
       SEARCH_PATH, // https://valadoc.org/glib-2.0/GLib.SpawnFlags.html. Fix runtime VTE flag warn https://lists.debian.org/debian-boot/2021/05/msg00107.html
       null,

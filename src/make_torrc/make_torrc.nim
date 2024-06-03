@@ -15,9 +15,9 @@ proc maketorrc_restore_torrc_backup() =
     print_error("Failed to restore torrc")
 
 
-proc maketorrc_create_nyx(password: string) =
+proc maketorrc_create_nyx_configs() =
   try:
-    writeFile(ansurf_nyx_config_path, "password " & password & "\n")
+    writeFile(ansurf_nyx_config_path,"tor_chroot /var/run/tor/control")
     echo "New nyxrc created"
   except:
     print_error("Failed to create new nyxrc")
@@ -32,11 +32,10 @@ proc maketorrc_create_torrc_backup() =
 
 proc maketorrc_create_new_config() =
   let
-    password = ansurf_options_gen_random_password()
     config = ansurf_options_handle_load_config()
-    config_to_torrc = ansurf_options_generate_torrc(config, password)
+    config_to_torrc = ansurf_options_generate_torrc(config)
 
-  maketorrc_create_nyx(password)
+  maketorrc_create_nyx_configs()
   maketorrc_create_torrc_backup()
   try:
     writeFile(ansurf_torrc_default_path, config_to_torrc)
@@ -61,8 +60,6 @@ proc main() =
     return
   if paramStr(1) == "restore":
     maketorrc_restore_system_config()
-  # elif paramStr(1) == "new-config":
-  #   maketorrc_get_new_config()
   elif paramStr(1) == "new-torrc":
     maketorrc_create_new_config()
 
