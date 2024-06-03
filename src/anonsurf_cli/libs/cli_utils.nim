@@ -7,7 +7,7 @@ const
   B_CYAN = "\e[96m"
   B_BLUE = "\e[94m"
   RESET = "\e[0m"
-  version = "0.1.0" # TODO edit here place holder
+  version = "5.0.0"
 
 
 type
