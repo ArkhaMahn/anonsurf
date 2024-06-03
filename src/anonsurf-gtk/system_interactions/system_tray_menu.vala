@@ -42,7 +42,6 @@ public class MenuItemStart: Gtk.MenuItem {
 
 
 public class MenuItemTorController: Gtk.MenuItem {
-  // TODO prevent this menu spawns multiple dialogs
   private AnonSurfApp app;
 
   public MenuItemTorController() {
