@@ -4,9 +4,14 @@
   https://2019.www.torproject.org/docs/tor-manual.html.en
 ]#
 import strutils
+import os
+import load_sys_config
+import .. / .. / dnstool / cli / print
 
 const
-  config_torrc_base* = staticRead("../../../configs/torrc.base")
+  config_torrc_base = staticRead("../../../configs/torrc.base")
+  path_torrc_config = "/etc/tor/torrc"
+  path_torrc_backup = "/etc/tor/torrc.bak"
 
 
 proc maketorrc_set_sandbox(base_setting: var string, use_sandbox: bool) =
@@ -68,5 +73,45 @@ proc maketorrc_set_disable_swap(base_setting: var string, disable_swapp: bool) =
   base_setting &= "\n# Set DisableAllSwap\nDisableAllSwap " & intToStr(int(disable_swapp)) & "\n"
 
 #[
-  reject_plain_port*: bool
+  TODO reject_plain_port*: bool
 ]#
+
+proc maketorrc_settings_from_config_file(setting: var string) =
+  let
+    config = maketorrc_get_system_config()
+
+  setting.maketorrc_set_sandbox(config.use_sandbox)
+  # setting.maketorrc_set_bridge(config.)
+  setting.maketorrc_set_safe_sock(config.use_safe_sock)
+  setting.maketorrc_set_disable_network(config.disable_network)
+  setting.maketorrc_set_disable_swap(config.disable_all_swap)
+
+
+proc maketorrc_create_tor_backup() =
+  try:
+    copyFile(path_torrc_config, path_torrc_backup)
+  except:
+    print_error("Failed to create new torrc backup")
+
+
+proc maketorrc_write_setting(setting: string) =
+  try:
+    writeFile(path_torrc_config, setting)
+  except:
+    print_error("Failed to create new torrc")
+
+
+proc maketorrc_generate_torrc_config*() =
+  var
+    setting = config_torrc_base
+
+  maketorrc_create_tor_backup()
+  maketorrc_settings_from_config_file(setting)
+  maketorrc_write_setting(setting)
+
+
+proc makettorc_restore_torrc_backup*() =
+  try:
+    moveFile(path_torrc_backup, path_torrc_config)
+  except:
+    print_error("Failed to restore torrc")

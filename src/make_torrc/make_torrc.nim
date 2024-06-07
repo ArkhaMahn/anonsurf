@@ -1,66 +1,26 @@
-import options / [option_objects, option_generator, option_handler]
 import os
-import .. / dnstool / cli / print
-
-
-proc maketorrc_remove_nyx() =
-  if not tryRemoveFile(ansurf_nyx_config_path):
-    print_error("Error while removing nyx config")
-
-
-proc maketorrc_restore_torrc_backup() =
-  try:
-    moveFile(ansurf_torrc_backup_path, ansurf_torrc_default_path)
-  except:
-    print_error("Failed to restore torrc")
-
-
-proc maketorrc_create_nyx_configs() =
-  try:
-    writeFile(ansurf_nyx_config_path,"tor_chroot /var/run/tor/control")
-    echo "New nyxrc created"
-  except:
-    print_error("Failed to create new nyxrc")
-
-
-proc maketorrc_create_torrc_backup() =
-  try:
-    copyFile(ansurf_torrc_default_path, ansurf_torrc_backup_path)
-  except:
-    print_error("Failed to create new torrc backup")
-
-
-proc maketorrc_create_new_config() =
-  let
-    config = ansurf_options_handle_load_config()
-    config_to_torrc = ansurf_options_generate_torrc(config)
-
-  maketorrc_create_nyx_configs()
-  maketorrc_create_torrc_backup()
-  try:
-    writeFile(ansurf_torrc_default_path, config_to_torrc)
-  except:
-    print_error("Failed to create new torrc")
-
-
-proc maketorrc_restore_system_config() =
-  maketorrc_remove_nyx()
-  maketorrc_restore_torrc_backup()
+import libs / [generate_torrc, generate_nyx]
 
 
 proc main() =
+  #[
+    Handle options
+    if no flag, or flag == new-torrc -> create new torrc
+    if flag == restore -> restore default config
+  ]#
   if paramCount() == 0:
     #[
       In old version, we are having the same logic
       No need to change bash file for this
     ]#
-    maketorrc_create_new_config()
+    maketorrc_generate_torrc_config()
+    maketorrc_nyxrc_checkconfig()
+  elif paramCount() > 1:
     return
-  if paramCount() != 1:
-    return
-  if paramStr(1) == "restore":
-    maketorrc_restore_system_config()
-  elif paramStr(1) == "new-torrc":
-    maketorrc_create_new_config()
+  else:
+    if paramStr(1) == "restore":
+      makettorc_restore_torrc_backup()
+    elif paramStr(1) == "new-torrc":
+      maketorrc_generate_torrc_config()
 
 main()
