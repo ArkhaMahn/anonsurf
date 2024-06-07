@@ -1,0 +1,1 @@
+tor_chroot /var/run/tor/control
