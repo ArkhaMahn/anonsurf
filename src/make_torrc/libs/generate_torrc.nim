@@ -2,7 +2,16 @@
   Newly written module to generate Tor's config
   Document of each config's field can be read here
   https://2019.www.torproject.org/docs/tor-manual.html.en
+  TODO reject_plain_port*: bool
+  proc option_set_plain_port(settings: var string, level: PlainPortMode) =
+    settings &= "\n# Set plain port warn / reject level\n"
+    if level == LevelWarn:
+      settings &= "WarnPlaintextPorts 23,109,110,143,80"
+    else:
+      settings &= "RejectPlaintextPorts 23,109,110,143,80"
+  # TODO bypass firewall
 ]#
+
 import strutils
 import os
 import random
@@ -66,7 +75,7 @@ proc maketorrc_validate_bridge_setting(base_settings: var string, bridge_addr: s
       base_settings &= "UseBridges 1\nClientTransportPlugin snowflake exec " & snowflake_path & "\n"
 
   elif bridge_addr.startsWith("meek "):
-    base_settings &= "# Error: meek not supported yet"
+    base_settings &= "# Error: meek not supported yet\n"
 
   return true
 
@@ -140,9 +149,6 @@ proc maketorrc_set_disable_swap(base_settings: var string, disable_swapp: bool) 
   ]#
   base_settings &= "\n# Set DisableAllSwap\nDisableAllSwap " & intToStr(int(disable_swapp)) & "\n"
 
-#[
-  TODO reject_plain_port*: bool
-]#
 
 proc maketorrc_settings_from_config_file(setting: var string) =
   let
