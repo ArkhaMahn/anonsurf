@@ -57,8 +57,16 @@ proc maketorrc_set_disable_network(base_setting: var string, disable_network: bo
   ]#
   base_setting &= "\n# Set DisableNetwork\nSafeSocks " & intToStr(int(disable_network)) & "\n"
 
+
+proc maketorrc_set_disable_swap(base_setting: var string, disable_swapp: bool) =
+  #[
+    Generate option "DisableAllSwap" for Torrc. Parse from bool:
+      false = 0
+      true = 1
+    If set to 1, Tor will attempt to lock all current and future memory pages, so that memory cannot be paged out. Windows, OS X and Solaris are currently not supported. We believe that this feature works on modern Gnu/Linux distributions, and that it should work on *BSD systems (untested). This option requires that you start your Tor as root, and you should use the User option to properly reduce Tor’s privileges. Can not be changed while tor is running. (Default: 0)
+  ]#
+  base_setting &= "\n# Set DisableAllSwap\nDisableAllSwap " & intToStr(int(disable_swapp)) & "\n"
+
 #[
-  reject_internal_address*: bool
   reject_plain_port*: bool
-  disable_all_swap*: bool
 ]#

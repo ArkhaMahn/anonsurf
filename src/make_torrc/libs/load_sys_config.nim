@@ -1,7 +1,6 @@
 #[
   A newly written module to parse anosnurf's configurations
 # TODO test SafeLogging
-# TODO test ClientDNSRejectInternalAddresses
 # TODO OptimisticData
 ]#
 import os
@@ -20,11 +19,10 @@ type
     use_sandbox*: bool
     use_safe_sock*: bool
     disable_network*: bool # Close other outbound connection
-    reject_internal_address*: bool
     reject_plain_port*: bool
     disable_all_swap*: bool
     use_bridge*: BridgeMode
-    bridge_address*: string
+    bridge_address*: string # This option should accept multiple types
 
 
 proc get_opt_value(p_config: Config, key: string): string =
@@ -83,7 +81,6 @@ proc maketorrc_get_system_config*(): SurfConfig =
       use_safe_sock: false,
       disable_network: false,
       disable_all_swap: false,
-      reject_internal_address: false,
       reject_plain_port: false,
       use_bridge: NoBridge,
       bridge_address: "",

@@ -26,7 +26,8 @@ HardwareAccel 1
 TestSocks 1
 AllowNonRFC953Hostnames 0
 
-#dns safety hacks
+# DNS safety hacks. Both are enabled by default, according to Tor's doc. However, we should define it here to make everything be clear
+ClientDNSRejectInternalAddresses 1
 ClientRejectInternalAddresses 1
 
 #circuit hacks
