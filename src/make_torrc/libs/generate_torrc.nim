@@ -34,6 +34,28 @@ proc maketorrc_get_random_bridge(): string =
   return sample(list_bridge_addrs)
 
 
+proc maketorrc_validate_bridge_setting(base_settings: var string, bridge_addr: string): bool =
+  #[
+    Manage bridge type (obfs4 or other)
+    Make a pre-check if binary to use bridge exists, or return error
+  ]#
+
+  if bridge_addr.startsWith("obfs4 "):
+    if not fileExists("/usr/bin/obfs4proxy"):
+      print_error("/usr/bin/obfs4proxy not found. Config will not enable bridge in torrc")
+      base_settings &= "# Error: obfs4proxy not found in the system\n"
+      return false
+    else:
+      base_settings &= "UseBridges 1\nClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy managed\n"
+
+  elif bridge_addr.startsWith("meek "):
+    base_settings &= "# Error: meek not supported yet"
+  elif bridge_addr.startsWith("snowflake "):
+    base_settings &= "# Error: snowflake not supported yet"
+
+  return true
+
+
 proc maketorrc_set_bridge(base_settings: var string, bridge_mode: BridgeMode, bridge_addr: string) =
   #[
     Generate option to use bridge, and bridge's address for Torrc
@@ -45,14 +67,18 @@ proc maketorrc_set_bridge(base_settings: var string, bridge_mode: BridgeMode, br
   if bridge_mode == NoBridge:
     base_settings &= "\n# Bridge setting: No bridge\n"
   else:
-    var final_bridge_addr: string = bridge_addr
+    var
+      final_bridge_addr: string = bridge_addr
 
-    base_settings &= "\n# Enable bridge mode\nUseBridges 1\n"
+    base_settings &= "\n# Enable bridge mode\n"
+    # If bridge use enable bridge but addr is missing, select a bridge randomly.
+    # Otherwise it will use use's value which was assigned when variable was created
     if (bridge_mode == ManualBridge and isEmptyOrWhitespace(final_bridge_addr)) or bridge_mode == AutoBridge:
       final_bridge_addr = maketorrc_get_random_bridge()
 
-    base_settings &= "ClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy managed\n" # TODO manage bridge type (obfs4 or other) # TODO: make a pre-check if binary to use bridge exists, prevent error
-    base_settings &= "\nBridge " & final_bridge_addr & "\n"
+    # Only write settings if validate_bridge returns true
+    if maketorrc_validate_bridge_setting(base_settings, final_bridge_addr):
+      base_settings &= "\nBridge " & final_bridge_addr & "\n"
 
 
 proc maketorrc_set_sandbox(base_settings: var string, use_sandbox: bool) =
