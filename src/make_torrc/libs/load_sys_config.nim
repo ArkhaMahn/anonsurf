@@ -7,7 +7,7 @@
 import os
 import parsecfg
 import strutils
-import .. / dnstool / cli / print
+import .. / .. / dnstool / cli / print
 
 const
   path_surfrc* = "/etc/anonsurf/anonsurf.cfg"
@@ -44,15 +44,27 @@ proc set_opt_value(value: var BridgeMode, config_value: string) =
 
 
 proc maketorrc_load_config_from_file(config: var SurfConfig) =
+  #[
+    Load config from file to type SurfConfig dynamically
+    The value will be defined by the names of fields in SurfConfig, so key in option must match field's name
+    Config will be default when:
+      1. File doesn't exists
+      2. Error reading file
+    When program goes to for loop, there's another try-exception. if exception happens, it goes to next key,
+    prevent program use half config from file and half default
+  ]#
   if fileExists(path_surfrc):
     try:
       let p_config = loadConfig(path_surfrc)
 
       for key, value in fieldPairs(config):
-        let opt_str = p_config.get_opt_value(key)
-        # If opt_str is empty then config file doesnt have it. Should use default
-        if not isEmptyOrWhitespace(opt_str):
-          value.set_opt_value(opt_str)
+        try:
+          let opt_str = p_config.get_opt_value(key)
+          # If opt_str is empty then config file doesnt have it. Should use default
+          if not isEmptyOrWhitespace(opt_str):
+            value.set_opt_value(opt_str)
+        except:
+          discard
 
     except:
       discard
