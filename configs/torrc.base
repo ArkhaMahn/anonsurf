@@ -36,8 +36,3 @@ MaxClientCircuitsPending 48
 UseEntryGuards 1
 EnforceDistinctSubnets 1
 CookieAuthentication 1
-
-# TODO test DisableNetwork
-# TODO test DisableAllSwap
-# TODO test SafeLogging
-# TODO test ClientDNSRejectInternalAddresses
