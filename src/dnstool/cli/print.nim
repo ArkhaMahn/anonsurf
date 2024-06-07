@@ -1,6 +1,3 @@
-import .. / cores / dnstool_const
-
-
 proc print_error*(msg: string) =
   # Print error with color red
   echo "[\e[91m!\e[0m] \e[91m", msg, "\e[0m"
@@ -10,11 +7,11 @@ proc print_under_tor_dns*() =
   echo " \e[32mUsing Tor's DNS\e[0m"
 
 
-proc print_error_resolv_not_found*() =
+proc print_error_resolv_not_found*(resolv_conf_path: string) =
   echo "[\e[91mDNS error\e[0m] \e[94m" & resolv_conf_path & "\e[0m not found"
 
 
-proc print_error_resolv_empty*() =
+proc print_error_resolv_empty*(resolv_conf_path: string) =
   echo "[\e[91mDNS error\e[0m] \e[94m" & resolv_conf_path & "\e[0m is empty"
 
 

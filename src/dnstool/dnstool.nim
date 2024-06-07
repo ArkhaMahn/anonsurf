@@ -1,19 +1,19 @@
 import os
-import cores / [utils, dnstool_const, network_manager_interact, resolv_conf_interact]
+import cores / [utils, network_manager_interact, resolv_conf_interact]
 import cli / [help, print]
 import .. / anonsurf_cli / libs / tor_utils
 
 
 proc dnst_show_status*() =
   if not fileExists(resolv_conf_path):
-    print_error_resolv_not_found()
+    print_error_resolv_not_found(resolv_conf_path)
     return
 
   let
-    addresses = parse_dns_addresses()
+    addresses = parse_dns_addresses(resolv_conf_path)
 
   if len(addresses) == 0:
-    print_error_resolv_empty()
+    print_error_resolv_empty(resolv_conf_path)
   elif is_anonsurf_running():
     if has_only_localhost(addresses):
       print_under_tor_dns()

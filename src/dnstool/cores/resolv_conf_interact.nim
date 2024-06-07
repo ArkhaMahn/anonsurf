@@ -1,8 +1,11 @@
 import os
-import dnstool_const
 import utils
 import network_manager_interact
 import ../ cli / print
+
+const
+  resolv_conf_backup* = "/etc/anonsurf/resolv.conf.bak"
+  resolv_conf_path* = "/etc/resolv.conf"
 
 
 proc resolv_create_dhcp_only*() =
@@ -21,7 +24,7 @@ proc resolv_create_addrs*(list_addr: seq[string]) =
     print_error("Failed to remove " & resolv_conf_path & " to create new one.")
     return
 
-  write_dns_to_system(list_addr)
+  write_dns_to_system(list_addr, resolv_conf_path)
   nm_create_hook_unmanage()
 
 
@@ -46,7 +49,7 @@ proc resov_make_backup*() =
     print_error("Create backup: Skip creating backup file. Missing " & resolv_conf_path)
     return
 
-  if system_has_only_localhost():
+  if system_has_only_localhost(resolv_conf_path):
     print_error("Create backup: Skip creating backup file. Only found localhost nameserver.")
     return
 
@@ -55,7 +58,7 @@ proc resov_make_backup*() =
       print_error("Create backup: Failed to remove " & resolv_conf_backup & " to create new one.")
       return
 
-  if system_dns_file_is_symlink():
+  if system_dns_file_is_symlink(resolv_conf_path):
     #[
       /etc/resolv.conf is a symlink of resolvconf which is at
       /run/resolvconf/resolv.conf so we don't create backup here

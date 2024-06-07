@@ -1,6 +1,3 @@
-import .. / cores / dnstool_const
-
-
 proc print_help(cmd = "dnstool", keyword = "help", args = "", descr = "") =
   #[
     Make color for command syntax in help bannner
@@ -52,8 +49,8 @@ proc dnst_show_help*() =
   print_help(cmd = program_name, keyword = "help | -h | --help", descr = "Show help banner")
   print_help(cmd = program_name, keyword = "status", descr = "Show current system DNS")
   print_help(cmd = program_name_with_sudo, keyword = "address", args = "<DNS servers>" , descr = "Set DNS servers")
-  print_help(cmd = program_name_with_sudo, keyword = "create-backup", descr = "Make backup for current " & resolv_conf_path)
-  print_help(cmd = program_name_with_sudo, keyword = "restore-backup", descr = "Restore backup of " & resolv_conf_path)
+  print_help(cmd = program_name_with_sudo, keyword = "create-backup", descr = "Make backup for current /etc/resolv.conf")
+  print_help(cmd = program_name_with_sudo, keyword = "restore-backup", descr = "Restore backup of /etc/resolv.conf")
   echo("\nAddress could be:")
   print_desc(keyword = "dhcp", descr = "Address[es] of current DHCP client.")
   print_desc(descr = "Any IPv4 or IPv6 address[es]")

@@ -1,9 +1,14 @@
 import os
-import dnstool_const
 import strutils
 import .. / cli / print
 import sequtils
 import net
+
+
+type
+  AddrFromParams* = object
+    has_dhcp_flag*: bool
+    list_addr*: seq[string]
 
 
 proc convert_seq_addr_to_string(addresses: seq[string]): string =
@@ -21,26 +26,26 @@ proc has_only_localhost*(list_addr: seq[string]): bool =
   return false
 
 
-proc system_dns_file_is_symlink*(): bool =
+proc system_dns_file_is_symlink*(resolv_conf_path: string): bool =
   if getFileInfo(resolv_conf_path, followSymlink = false).kind == pcLinkToFile:
     return true
   return false
 
 
-proc parse_dns_addresses*(): seq[string] =
+proc parse_dns_addresses*(resolv_conf_path: string): seq[string] =
   for line in lines(resolv_conf_path):
     if line.startsWith("nameserver"):
       result.add(line.split(" ")[1])
 
 
-proc system_has_only_localhost*(): bool =
+proc system_has_only_localhost*(resolv_conf_path: string): bool =
   let
-    addresses = parse_dns_addresses()
+    addresses = parse_dns_addresses(resolv_conf_path)
 
   return has_only_localhost(addresses)
 
 
-proc write_dns_to_system*(list_dns_addr: seq[string]) =
+proc write_dns_to_system*(list_dns_addr: seq[string], resolv_conf_path: string) =
   let
     deduplicated_list_addr = deduplicate(list_dns_addr)
   if len(deduplicated_list_addr) == 0:
