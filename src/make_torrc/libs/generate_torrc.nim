@@ -5,6 +5,7 @@
 ]#
 import strutils
 import os
+import random
 import load_sys_config
 import .. / .. / dnstool / cli / print
 
@@ -12,9 +13,49 @@ const
   config_torrc_base = staticRead("../../../configs/torrc.base")
   path_torrc_config = "/etc/tor/torrc"
   path_torrc_backup = "/etc/tor/torrc.bak"
+  path_list_bridges = "/etc/anonsurf/bridges.txt"
 
 
-proc maketorrc_set_sandbox(base_setting: var string, use_sandbox: bool) =
+proc maketorrc_get_random_bridge(): string =
+  #[
+    Read the list from official list
+    Random selecting from the list
+  ]#
+  # New list from https://trac.torproject.org/projects/tor/wiki/doc/TorBrowser/DefaultBridges
+  randomize()
+
+  var
+    list_bridge_addrs: seq[string]
+
+  for line in lines(path_list_bridges):
+    if not line.startsWith("#") and not isEmptyOrWhitespace(line):
+      list_bridge_addrs.add(line)
+
+  return sample(list_bridge_addrs)
+
+
+proc maketorrc_set_bridge(base_settings: var string, bridge_mode: BridgeMode, bridge_addr: string) =
+  #[
+    Generate option to use bridge, and bridge's address for Torrc
+    If bridge is enabled (either auto or manual), this function will add values
+    otherwise, it skips
+    If mode is manual but address is empty (or invalid), this function should use auto bridge instead
+    Auto mode will randomly shuffle from list bridges
+  ]#
+  if bridge_mode == NoBridge:
+    base_settings &= "\n# Bridge setting: No bridge\n"
+  else:
+    var final_bridge_addr: string = bridge_addr
+
+    base_settings &= "\n# Enable bridge mode\nUseBridges 1\n"
+    if (bridge_mode == ManualBridge and isEmptyOrWhitespace(final_bridge_addr)) or bridge_mode == AutoBridge:
+      final_bridge_addr = maketorrc_get_random_bridge()
+
+    base_settings &= "ClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy managed\n" # TODO manage bridge type (obfs4 or other) # TODO: make a pre-check if binary to use bridge exists, prevent error
+    base_settings &= "\nBridge " & final_bridge_addr & "\n"
+
+
+proc maketorrc_set_sandbox(base_settings: var string, use_sandbox: bool) =
   #[
     Generate option "Sandbox" for Torrc. Parse from bool:
       false = 0
@@ -26,51 +67,37 @@ proc maketorrc_set_sandbox(base_setting: var string, use_sandbox: bool) =
     Tor must remain in client or server mode (some changes to ClientOnly and ORPort are not allowed). Currently, if Sandbox is 1, ControlPort command "GETINFO address" will not work.
     (Default: 0) 
   ]#
-  base_setting &= "\n# Use sandbox\nSandbox " & intToStr(int(use_sandbox)) & "\n"
+  base_settings &= "\n# Use sandbox\nSandbox " & intToStr(int(use_sandbox)) & "\n"
 
 
-proc maketorrc_set_bridge(base_setting: var string) =
-  #[
-    Generate option to use bridge, and bridge's address for Torrc
-    If bridge is enabled (either auto or manual), this function will add values
-    otherwise, it skips
-    If mode is manual but address is empty (or invalid), this function should use auto bridge instead
-    Auto mode will randomly shuffle from list bridges
-    # TODO: make list bridge be static read, but still try reading from disk.
-    # TODO validate bridge's values (from either file or config)
-    # TODO: make a pre-check if binary to use bridge exists, prevent error
-  ]#
-  discard
-
-
-proc maketorrc_set_safe_sock(base_setting: var string, use_safe_sock: bool) =
+proc maketorrc_set_safe_sock(base_settings: var string, use_safe_sock: bool) =
   #[
     Generate option "SafeSocks" for Torrc. Parse from bool:
       false = 0
       true = 1
     When this option is enabled, Tor will reject application connections that use unsafe variants of the socks protocol — ones that only provide an IP address, meaning the application is doing a DNS resolve first. Specifically, these are socks4 and socks5 when not doing remote DNS. (Default: 0) 
   ]#
-  base_setting &= "\n# Use SafeSocks\nSafeSocks " & intToStr(int(use_safe_sock)) & "\n"
+  base_settings &= "\n# Use SafeSocks\nSafeSocks " & intToStr(int(use_safe_sock)) & "\n"
 
 
-proc maketorrc_set_disable_network(base_setting: var string, disable_network: bool) =
+proc maketorrc_set_disable_network(base_settings: var string, disable_network: bool) =
   #[
     Generate option "DisableNetwork" for Torrc. Parse from bool:
       false = 0
       true = 1
     When this option is set, we don’t listen for or accept any connections other than controller connections, and we close (and don’t reattempt) any outbound connections. Controllers sometimes use this option to avoid using the network until Tor is fully configured. Tor will make still certain network-related calls (like DNS lookups) as a part of its configuration process, even if DisableNetwork is set. (Default: 0) 
   ]#
-  base_setting &= "\n# Set DisableNetwork\nSafeSocks " & intToStr(int(disable_network)) & "\n"
+  base_settings &= "\n# Set DisableNetwork\nSafeSocks " & intToStr(int(disable_network)) & "\n"
 
 
-proc maketorrc_set_disable_swap(base_setting: var string, disable_swapp: bool) =
+proc maketorrc_set_disable_swap(base_settings: var string, disable_swapp: bool) =
   #[
     Generate option "DisableAllSwap" for Torrc. Parse from bool:
       false = 0
       true = 1
     If set to 1, Tor will attempt to lock all current and future memory pages, so that memory cannot be paged out. Windows, OS X and Solaris are currently not supported. We believe that this feature works on modern Gnu/Linux distributions, and that it should work on *BSD systems (untested). This option requires that you start your Tor as root, and you should use the User option to properly reduce Tor’s privileges. Can not be changed while tor is running. (Default: 0)
   ]#
-  base_setting &= "\n# Set DisableAllSwap\nDisableAllSwap " & intToStr(int(disable_swapp)) & "\n"
+  base_settings &= "\n# Set DisableAllSwap\nDisableAllSwap " & intToStr(int(disable_swapp)) & "\n"
 
 #[
   TODO reject_plain_port*: bool
@@ -81,7 +108,7 @@ proc maketorrc_settings_from_config_file(setting: var string) =
     config = maketorrc_get_system_config()
 
   setting.maketorrc_set_sandbox(config.use_sandbox)
-  # setting.maketorrc_set_bridge(config.)
+  setting.maketorrc_set_bridge(config.use_bridge, config.bridge_address)
   setting.maketorrc_set_safe_sock(config.use_safe_sock)
   setting.maketorrc_set_disable_network(config.disable_network)
   setting.maketorrc_set_disable_swap(config.disable_all_swap)
