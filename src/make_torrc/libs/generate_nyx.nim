@@ -6,7 +6,7 @@ import .. / .. / dnstool / cli / print
 
 const
   path_nyxrc = "/etc/anonsurf/nyxrc"
-  config_nyx = "tor_chroot /var/run/tor/control"
+  config_nyx = "tor_chroot /var/run/tor/control\ndata_directory disabled"
 
 
 proc maketorrc_nyxrc_checkconfig*() =
