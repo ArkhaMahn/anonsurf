@@ -140,16 +140,6 @@ proc maketorrc_set_disable_network(base_settings: var string, disable_network: b
   base_settings &= "\n# Set DisableNetwork\nDisableNetwork " & intToStr(int(disable_network)) & "\n"
 
 
-proc maketorrc_set_disable_swap(base_settings: var string, disable_swapp: bool) =
-  #[
-    Generate option "DisableAllSwap" for Torrc. Parse from bool:
-      false = 0
-      true = 1
-    If set to 1, Tor will attempt to lock all current and future memory pages, so that memory cannot be paged out. Windows, OS X and Solaris are currently not supported. We believe that this feature works on modern Gnu/Linux distributions, and that it should work on *BSD systems (untested). This option requires that you start your Tor as root, and you should use the User option to properly reduce Tor’s privileges. Can not be changed while tor is running. (Default: 0)
-  ]#
-  base_settings &= "\n# Set DisableAllSwap\nDisableAllSwap " & intToStr(int(disable_swapp)) & "\n"
-
-
 proc maketorrc_set_plaintext_port(base_settings: var string, reject_port: bool, list_port: string) =
   #[
     Generate setting for WarnPlaintextPorts or RejectPlaintextPorts depends on "reject_port"
@@ -169,7 +159,6 @@ proc maketorrc_settings_from_config_file(settings: var string) =
   settings.maketorrc_set_bridge(config.use_bridge, config.bridge_address)
   settings.maketorrc_set_safe_sock(config.use_safe_sock)
   settings.maketorrc_set_disable_network(config.disable_network)
-  settings.maketorrc_set_disable_swap(config.disable_all_swap)
   settings.maketorrc_set_plaintext_port(config.reject_plain_port, config.list_plain_ports)
 
 
