@@ -37,3 +37,4 @@ MaxClientCircuitsPending 48
 UseEntryGuards 1
 EnforceDistinctSubnets 1
 CookieAuthentication 1
+CookieAuthFile /var/run/tor/control.authcookie
