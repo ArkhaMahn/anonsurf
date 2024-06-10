@@ -18,7 +18,8 @@ type
     use_sandbox*: bool
     use_safe_sock*: bool
     disable_network*: bool # Close other outbound connection
-    # reject_plain_port*: bool
+    reject_plain_port*: bool
+    list_plain_ports*: string
     disable_all_swap*: bool
     use_bridge*: BridgeMode
     bridge_address*: string # This option should accept multiple types
@@ -80,7 +81,8 @@ proc maketorrc_get_system_config*(): SurfConfig =
       use_safe_sock: false,
       disable_network: false,
       disable_all_swap: false,
-      # reject_plain_port: false,
+      reject_plain_port: false,
+      list_plain_ports: "23,109,110,143",
       use_bridge: NoBridge,
       bridge_address: "",
     )

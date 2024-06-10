@@ -150,15 +150,27 @@ proc maketorrc_set_disable_swap(base_settings: var string, disable_swapp: bool) 
   base_settings &= "\n# Set DisableAllSwap\nDisableAllSwap " & intToStr(int(disable_swapp)) & "\n"
 
 
-proc maketorrc_settings_from_config_file(setting: var string) =
+proc maketorrc_set_plaintext_port(base_settings: var string, reject_port: bool, list_port: string) =
+  #[
+    Generate setting for WarnPlaintextPorts or RejectPlaintextPorts depends on "reject_port"
+    list_port is a string variable follows format port,port
+  ]#
+  if reject_port:
+    base_settings &= "\n# Set RejectPlaintextPorts\nRejectPlaintextPorts " & list_port & "\n"
+  else:
+    base_settings &= "\n# Set WarnPlaintextPorts\nWarnPlaintextPorts " & list_port & "\n"
+
+
+proc maketorrc_settings_from_config_file(settings: var string) =
   let
     config = maketorrc_get_system_config()
 
-  setting.maketorrc_set_sandbox(config.use_sandbox)
-  setting.maketorrc_set_bridge(config.use_bridge, config.bridge_address)
-  setting.maketorrc_set_safe_sock(config.use_safe_sock)
-  setting.maketorrc_set_disable_network(config.disable_network)
-  setting.maketorrc_set_disable_swap(config.disable_all_swap)
+  settings.maketorrc_set_sandbox(config.use_sandbox)
+  settings.maketorrc_set_bridge(config.use_bridge, config.bridge_address)
+  settings.maketorrc_set_safe_sock(config.use_safe_sock)
+  settings.maketorrc_set_disable_network(config.disable_network)
+  settings.maketorrc_set_disable_swap(config.disable_all_swap)
+  settings.maketorrc_set_plaintext_port(config.reject_plain_port, config.list_plain_ports)
 
 
 proc maketorrc_create_tor_backup() =
