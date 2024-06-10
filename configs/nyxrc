@@ -1,1 +1,2 @@
 tor_chroot /var/run/tor/control
+data_directory disabled
