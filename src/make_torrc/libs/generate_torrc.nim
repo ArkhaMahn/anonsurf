@@ -130,16 +130,6 @@ proc maketorrc_set_safe_sock(base_settings: var string, use_safe_sock: bool) =
   base_settings &= "\n# Use SafeSocks\nSafeSocks " & intToStr(int(use_safe_sock)) & "\n"
 
 
-proc maketorrc_set_disable_network(base_settings: var string, disable_network: bool) =
-  #[
-    Generate option "DisableNetwork" for Torrc. Parse from bool:
-      false = 0
-      true = 1
-    When this option is set, we don’t listen for or accept any connections other than controller connections, and we close (and don’t reattempt) any outbound connections. Controllers sometimes use this option to avoid using the network until Tor is fully configured. Tor will make still certain network-related calls (like DNS lookups) as a part of its configuration process, even if DisableNetwork is set. (Default: 0) 
-  ]#
-  base_settings &= "\n# Set DisableNetwork\nDisableNetwork " & intToStr(int(disable_network)) & "\n"
-
-
 proc maketorrc_set_plaintext_port(base_settings: var string, reject_port: bool, list_port: string) =
   #[
     Generate setting for WarnPlaintextPorts or RejectPlaintextPorts depends on "reject_port"
@@ -158,7 +148,6 @@ proc maketorrc_settings_from_config_file(settings: var string) =
   settings.maketorrc_set_sandbox(config.use_sandbox)
   settings.maketorrc_set_bridge(config.use_bridge, config.bridge_address)
   settings.maketorrc_set_safe_sock(config.use_safe_sock)
-  settings.maketorrc_set_disable_network(config.disable_network)
   settings.maketorrc_set_plaintext_port(config.reject_plain_port, config.list_plain_ports)
 
 

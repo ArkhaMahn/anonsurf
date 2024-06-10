@@ -17,7 +17,6 @@ type
   SurfConfig* = object
     use_sandbox*: bool
     use_safe_sock*: bool
-    disable_network*: bool # Close other outbound connection
     reject_plain_port*: bool
     list_plain_ports*: string
     use_bridge*: BridgeMode
@@ -78,7 +77,6 @@ proc maketorrc_get_system_config*(): SurfConfig =
     anonsurf_config = SurfConfig(
       use_sandbox: false,
       use_safe_sock: false,
-      disable_network: false,
       reject_plain_port: false,
       list_plain_ports: "23,109,110,143",
       use_bridge: NoBridge,
