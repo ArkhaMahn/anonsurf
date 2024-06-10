@@ -137,7 +137,7 @@ proc maketorrc_set_disable_network(base_settings: var string, disable_network: b
       true = 1
     When this option is set, we don’t listen for or accept any connections other than controller connections, and we close (and don’t reattempt) any outbound connections. Controllers sometimes use this option to avoid using the network until Tor is fully configured. Tor will make still certain network-related calls (like DNS lookups) as a part of its configuration process, even if DisableNetwork is set. (Default: 0) 
   ]#
-  base_settings &= "\n# Set DisableNetwork\nSafeSocks " & intToStr(int(disable_network)) & "\n"
+  base_settings &= "\n# Set DisableNetwork\nDisableNetwork " & intToStr(int(disable_network)) & "\n"
 
 
 proc maketorrc_set_disable_swap(base_settings: var string, disable_swapp: bool) =
