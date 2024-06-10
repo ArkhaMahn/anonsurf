@@ -52,6 +52,7 @@ inst-configs:
 	# Copy configs
 	cp configs/bridges.txt $(DESTDIR)/etc/anonsurf/.
 	cp configs/onion.pac $(DESTDIR)/etc/anonsurf/.
+	cp configs/anonsurf.cfg $(DESTDIR)/etc/anonsurf/.
 
 	# Copy daemon service
 	cp sys-units/anonsurfd.service $(DESTDIR)/lib/systemd/system/anonsurfd.service
