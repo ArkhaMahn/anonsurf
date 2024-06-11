@@ -120,7 +120,6 @@ public class ButtonChangeID: Button {
 
   public ButtonChangeID() {
     this.set_label("Change ID"); // TODO improve button name
-    this.get_tor_cookie();
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     this.address = new InetAddress.loopback(SocketFamily.IPV4);
@@ -165,6 +164,11 @@ public class ButtonChangeID: Button {
   }
 
   public async void on_click_button() {
+    // Get cookie when click change id
+    // This would be much better if program gets tor cookie every time it starts
+    // and remove when it closes
+    this.get_tor_cookie();
+
     try {
       InetSocketAddress inet_address = new InetSocketAddress(this.address, 9051);
       SocketClient client = new SocketClient();
