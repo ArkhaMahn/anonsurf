@@ -84,6 +84,7 @@ public class ButtonMyIP: Button {
     this.set_label("My IP");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
+    this.get_tor_cookie();
     try {
       this.pool = new ThreadPool<ThreadMyIP>.with_owned_data((worker) => {
         worker.run();
@@ -116,6 +117,7 @@ public class ButtonMyIP: Button {
 
 public class ButtonChangeID: Button {
   private InetAddress address;
+  private string cookie_hash;
 
   public ButtonChangeID() {
     this.set_label("Change ID"); // TODO improve button name
@@ -124,32 +126,49 @@ public class ButtonChangeID: Button {
     this.address = new InetAddress.loopback(SocketFamily.IPV4);
   }
 
-  private string get_tor_password() {
-    File file = File.new_for_path ("/etc/anonsurf/nyxrc");
+  private string get_path_cookie_from_torrc() {
+    var string cookie_path = "/var/run/tor/control.authcookie";
+    File file = File.new_for_path("/etc/tor/torrc");
+
     try {
       FileInputStream @is = file.read();
       DataInputStream dis = new DataInputStream(@is);
-      string line = dis.read_line();
-      @is.close();
-      return line.split(" ", 2)[1];
+      string line;
+
+      while ((line = dis.read_line()) != null) {
+        if (line.index_of("CookieAuthFile ") == 0) {
+          // Line starts with CookieAuthFile
+          cookie_path = line.split(" ")[1];
+          @is.close();
+          break;
+        }
     } catch (Error error) {
-      send_notification("Error reading nyx's config", error.message, NotifyLevel.Error);
+      send_notification("Error reading Torrc", error.message, NotifyLevel.Error);
       return "";
+    } finally {
+      return cookie_path;
+    }
+  }
+
+  private void get_tor_cookie() {
+    string cookie_path = this.get_path_cookie_from_torrc();
+    File file = File.new_for_path(cookie_path);
+
+    try {
+      FileInputStream @is = file.read();
+      DataInputStream dis = new DataInputStream(@is);
+      this.cookie_hash = dis.read_line(); // Do we need to convert binary to hex?
+    } catch {
+      send_notification("Error reading Tor's cookie auth", error.message, NotifyLevel.Error);
     }
   }
 
   public async void on_click_button() {
     try {
-      string password = this.get_tor_password();
-
-      if (password == "") {
-        return;
-      }
-
       InetSocketAddress inet_address = new InetSocketAddress(this.address, 9051);
       SocketClient client = new SocketClient();
       SocketConnection conn = yield client.connect_async(inet_address);
-      string message = "authenticate \"" + password + "\"\n";
+      string message = "authenticate \"" + this.cookie + "\"\n";
       DataInputStream input;
 
       yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
