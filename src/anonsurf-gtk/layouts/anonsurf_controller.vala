@@ -159,7 +159,7 @@ public class ButtonChangeID: Button {
       FileInputStream @is = file.read();
       DataInputStream dis = new DataInputStream(@is);
       this.cookie_hash = dis.read_line(); // Do we need to convert binary to hex?
-    } catch {
+    } catch (Error error) {
       send_notification("Error reading Tor's cookie auth", error.message, NotifyLevel.Error);
     }
   }
