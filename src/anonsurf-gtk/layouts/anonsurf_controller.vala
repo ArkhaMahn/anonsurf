@@ -84,7 +84,6 @@ public class ButtonMyIP: Button {
     this.set_label("My IP");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
-    this.get_tor_cookie();
     try {
       this.pool = new ThreadPool<ThreadMyIP>.with_owned_data((worker) => {
         worker.run();
@@ -121,6 +120,7 @@ public class ButtonChangeID: Button {
 
   public ButtonChangeID() {
     this.set_label("Change ID"); // TODO improve button name
+    this.get_tor_cookie();
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     this.address = new InetAddress.loopback(SocketFamily.IPV4);
@@ -169,7 +169,7 @@ public class ButtonChangeID: Button {
       InetSocketAddress inet_address = new InetSocketAddress(this.address, 9051);
       SocketClient client = new SocketClient();
       SocketConnection conn = yield client.connect_async(inet_address);
-      string message = "authenticate \"" + this.cookie + "\"\n";
+      string message = "authenticate \"" + this.cookie_hash + "\"\n";
       DataInputStream input;
 
       yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
