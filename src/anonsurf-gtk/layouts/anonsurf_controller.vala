@@ -180,7 +180,7 @@ public class ButtonChangeID: Button {
       input = new DataInputStream(conn.input_stream);
       message = yield input.read_line_async();
 
-      if (message == "250 OK\x0d") {
+      if (message != "250 OK\x0d") {
         send_notification("Authentication failed", message, NotifyLevel.Error);
         conn.close();
         return;
