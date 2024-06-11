@@ -143,11 +143,11 @@ public class ButtonChangeID: Button {
           break;
         }
       }
+      return cookie_path;
+
     } catch (Error error) {
       send_notification("Error reading Torrc", error.message, NotifyLevel.Error);
       return "";
-    } finally {
-      return cookie_path;
     }
   }
 
