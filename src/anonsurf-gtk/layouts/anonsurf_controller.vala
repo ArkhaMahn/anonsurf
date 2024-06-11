@@ -177,22 +177,25 @@ public class ButtonChangeID: Button {
       message = yield input.read_line_async();
 
       if (message == "250 OK\x0d") {
-        message = "signal newnym\n";
-        yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
-        message = yield input.read_line_async();
-
-        if (message == "250 OK\x0d") {
-          send_notification("Tor's ID", "ID successfully changed", NotifyLevel.Ok); // TODO improve message
-        } else {
-          send_notification("Failed to change ID", message, NotifyLevel.Error);
-        }
-
-        message = "quit\n"; // Close connection
-        yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
-      } else {
         send_notification("Authentication failed", message, NotifyLevel.Error);
+        conn.close();
+        return;
       }
+
+      message = "signal newnym\n";
+      yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
+      message = yield input.read_line_async();
+
+      if (message == "250 OK\x0d") {
+        send_notification("Tor's ID", "ID successfully changed", NotifyLevel.Ok); // TODO improve message
+      } else {
+        send_notification("Failed to change ID", message, NotifyLevel.Error);
+      }
+
+      message = "quit\n"; // Close connection
+      yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
       conn.close();
+
     } catch (Error error) {
       send_notification("Socket error", error.message, NotifyLevel.Error);
     }
