@@ -127,7 +127,7 @@ public class ButtonChangeID: Button {
   }
 
   private string get_path_cookie_from_torrc() {
-    var string cookie_path = "/var/run/tor/control.authcookie";
+    string cookie_path = "/var/run/tor/control.authcookie";
     File file = File.new_for_path("/etc/tor/torrc");
 
     try {
@@ -142,6 +142,7 @@ public class ButtonChangeID: Button {
           @is.close();
           break;
         }
+      }
     } catch (Error error) {
       send_notification("Error reading Torrc", error.message, NotifyLevel.Error);
       return "";
