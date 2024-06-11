@@ -1,6 +1,5 @@
 import os
 import posix
-import strscans
 import net
 import strutils
 import print_utils
@@ -9,6 +8,14 @@ import print_utils
 #[
   Check if anonsurfd is running using a symlink in /run/
 ]#
+
+const
+  path_torrc_config = "/etc/tor/torrc"
+
+type
+  TorConfig = object
+    control_port: string
+    cookie_auth_path: string
 
 
 proc ask_kill_app*() =
@@ -81,64 +88,94 @@ proc cli_anonsurf_stop*() =
 #[
   Parse Tor's config file, and get value of control port
 ]#
-proc parse_torrc_control_port*(control_port: var string): bool =
-  const
-    path = "/etc/tor/torrc"
-
-  if fileExists(path):
-    for line in lines(path):
-      if line.startsWith("ControlPort"):
-        control_port = line.split(" ")[1]
-        return true
-    return false
-  else:
+proc parse_torrc_cfg(tor_cfg: var TorConfig): bool =
+  if not fileExists(path_torrc_config):
+    cli_send_msg(Err, "Tor's config error", "Unable to find torrc")
     return false
 
+  for line in lines(path_torrc_config):
+    if line.startsWith("ControlPort "):
+      tor_cfg.control_port = line.split(" ")[1]
+    elif line.startsWith("CookieAuthFile "):
+      tor_cfg.cookie_auth_path = line.split(" ")[1]
 
-#[
-  Connect to Tor's control port and send request
-]#
-proc change_identity_from_tor_sock() =
-  let
-    conf_file = "/etc/anonsurf/nyxrc"
 
-  if not fileExists(conf_file):
-    cli_send_msg(Err, "Missing config file", "nyxrc not found")
-    return
+proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
+  #[
+    Connect to Tor's control port and send "change identity" command
+    Current version uses CookieAuth, which requires hash from Tor's cookie
+    https://gist.github.com/ndsamuelson/3c83f38ae470c82ff87d2653af11716b
+  ]#
 
   var
-    tmp, passwd: string
+    recv_msg: string
     sock = net.newSocket()
 
-  if scanf(readFile(conf_file), "$w $w", tmp, passwd):
-    var
-      control_port: string
-      recv_msg: string
-
-    if not parse_torrc_control_port(control_port):
-      cli_send_msg(Err, "Tor's config error", "Unable to find control port")
-      return
-
-    if ":" in control_port:
-      sock.connect("127.0.0.1", Port(parseInt(control_port.split(":")[1])))
-    else:
-      sock.connect("127.0.0.1", Port(parseInt(control_port)))
-
-    sock.send("authenticate \"" & passwd & "\"\n")
+  try:
+    # Send authenticate to Tor's control port
+    sock.connect("127.0.0.1", Port(control_port))
+    sock.send("authenticate " & tor_cookie & "\n")
     recv_msg = sock.sock_get_str()
+
+    # Check if client authenticated
     if recv_msg != "250 OK\c\n":
       cli_send_msg(Err, "Failed to change identity", recv_msg)
       return
 
+    # Send change id command
     sock.send("signal newnym\n")
     recv_msg = sock.sock_get_str()
+
     if recv_msg != "250 OK\c\n":
       cli_send_msg(Err, "Failed to change identity", recv_msg)
       return
 
     cli_send_msg(Ok, "Identity changed", "You have a new Identity from Tor")
-    sock.send("quit\n") # Send a command to Tor's control port to stop current session
+  except:
+    cli_send_msg(Err, "Failed to change identity", getCurrentExceptionMsg())
+  finally:
+    # Send a command to Tor's control port to stop current session
+    sock.send("quit\n")
     sock.close()
+
+
+#[
+  Parse Tor's configurations for control port's authentication, then send "change id" request
+]#
+proc change_identity_from_tor_sock() =
+  var
+    tor_cfg: TorConfig
+
+  if not tor_cfg.parse_torrc_cfg():
+    return
+  elif isEmptyOrWhitespace(tor_cfg.control_port):
+    cli_send_msg(Err, "Tor's config error", "Unable to find control port")
+    return
+  elif isEmptyOrWhitespace(tor_cfg.cookie_auth_path):
+    # Set vvalue to default of Tor
+    let path_auth_cookie = "/var/run/tor/control.authcookie"
+
+    if fileExists(path_auth_cookie):
+      tor_cfg.cookie_auth_path = path_auth_cookie
+    else:
+      cli_send_msg(Err, "Tor's config error", "Unable to find authentication cookie")
+
+  var
+    control_port: int
+    tor_cookie: string
+
+  if ":" in tor_cfg.control_port:
+    control_port = parseInt(tor_cfg.control_port.split(":")[1])
+  else:
+    control_port = parseInt(tor_cfg.control_port)
+
+  try:
+    tor_cookie = readFile(tor_cfg.cookie_auth_path)
+  except:
+    cli_send_msg(Err, "Failed to change identity", getCurrentExceptionMsg())
+    return
+
+  send_change_identity_to_tor(control_port, tor_cookie)
 
 
 #[
@@ -161,4 +198,5 @@ proc cli_anonsurf_tor_status*() =
   if not is_anonsurf_running():
     cli_send_msg(Info, "AnonSurf is not running", "Your are not under Tor network")
   else:
+    # TODO if this one failed to run, try checking other stuff
     discard execShellCmd("/usr/bin/nyx --config /etc/anonsurf/nyxrc")
