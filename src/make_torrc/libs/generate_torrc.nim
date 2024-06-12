@@ -80,29 +80,26 @@ proc maketorrc_validate_bridge_setting(base_settings: var string, bridge_addr: s
   return true
 
 
-proc maketorrc_set_bridge(base_settings: var string, bridge_mode: BridgeMode, bridge_addr: string) =
+proc maketorrc_set_bridge(base_settings: var string, auto_bridge: bool, bridge_addr: string) =
   #[
     Generate option to use bridge, and bridge's address for Torrc
-    If bridge is enabled (either auto or manual), this function will add values
-    otherwise, it skips
-    If mode is manual but address is empty (or invalid), this function should use auto bridge instead
-    Auto mode will randomly shuffle from list bridges
+    If auto_bridge is true, this program selects random bridge addr from list
+    Else:
+      - If bridge addr is empty, it's no bridge mode
+      - If bridge addr is not empty, use current bridge addr. It's as same as manual in previous version
   ]#
-  if bridge_mode == NoBridge:
-    base_settings &= "\n# Bridge setting: No bridge\n"
+  var
+    final_bridge_addr: string = bridge_addr
+
+  if auto_bridge == true:
+    final_bridge_addr = maketorrc_get_random_bridge()
   else:
-    var
-      final_bridge_addr: string = bridge_addr
-
-    base_settings &= "\n# Enable bridge mode\n"
-    # If bridge use enable bridge but addr is missing, select a bridge randomly.
-    # Otherwise it will use use's value which was assigned when variable was created
-    if (bridge_mode == ManualBridge and isEmptyOrWhitespace(final_bridge_addr)) or bridge_mode == AutoBridge:
-      final_bridge_addr = maketorrc_get_random_bridge()
-
-    # Only write settings if validate_bridge returns true
-    if maketorrc_validate_bridge_setting(base_settings, final_bridge_addr):
-      base_settings &= "\nBridge " & final_bridge_addr & "\n"
+    if isEmptyOrWhitespace(final_bridge_addr):
+      base_settings &= "\n# Bridge setting: No bridge\n"
+    else:
+      base_settings &= "\n# Enable bridge mode\n"
+      if maketorrc_validate_bridge_setting(base_settings, final_bridge_addr):
+        base_settings &= "\nBridge " & final_bridge_addr & "\n"
 
 
 proc maketorrc_set_sandbox(base_settings: var string, use_sandbox: bool) =
@@ -146,7 +143,7 @@ proc maketorrc_settings_from_config_file(settings: var string) =
     config = maketorrc_get_system_config()
 
   settings.maketorrc_set_sandbox(config.use_sandbox)
-  settings.maketorrc_set_bridge(config.use_bridge, config.bridge_address)
+  settings.maketorrc_set_bridge(config.auto_bridge, config.bridge_address)
   settings.maketorrc_set_safe_sock(config.use_safe_sock)
   settings.maketorrc_set_plaintext_port(config.reject_plain_port, config.list_plain_ports)
 

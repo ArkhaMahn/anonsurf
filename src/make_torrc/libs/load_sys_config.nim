@@ -12,14 +12,12 @@ const
   path_surfrc* = "/etc/anonsurf/anonsurf.cfg"
 
 type
-  BridgeMode* = enum
-    NoBridge, AutoBridge, ManualBridge
   SurfConfig* = object
     use_sandbox*: bool
     use_safe_sock*: bool
     reject_plain_port*: bool
     list_plain_ports*: string
-    use_bridge*: BridgeMode
+    auto_bridge*: bool
     bridge_address*: string # This option should accept multiple types
 
 
@@ -33,10 +31,6 @@ proc set_opt_value(value: var string, config_value: string) =
 
 proc set_opt_value(value: var bool, config_value: string) =
   value = parseBool(config_value)
-
-
-proc set_opt_value(value: var BridgeMode, config_value: string) =
-  value = parseEnum[BridgeMode](config_value)
 
 
 proc maketorrc_load_config_from_file(config: var SurfConfig) =
@@ -79,7 +73,7 @@ proc maketorrc_get_system_config*(): SurfConfig =
       use_safe_sock: false,
       reject_plain_port: false,
       list_plain_ports: "23,109,110,143",
-      use_bridge: NoBridge,
+      auto_bridge: false,
       bridge_address: "",
     )
 
