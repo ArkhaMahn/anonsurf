@@ -66,13 +66,14 @@ proc maketorrc_validate_bridge_setting(base_settings: var string, bridge_addr: s
       base_settings &= "UseBridges 1\nClientTransportPlugin obfs4 exec " & obfs4_path & " managed\n"
 
   elif bridge_addr.startsWith("snowflake "):
-    let snowflake_path = findExe("snowflake-client")
-    if isEmptyOrWhitespace(snowflake_path):
-      print_error("snowflake-client not found. Config will not enable bridge in torrc")
-      base_settings &= "# Error: snowflake-client not found in the system\n"
-      return false
-    else:
-      base_settings &= "UseBridges 1\nClientTransportPlugin snowflake exec " & snowflake_path & "\n"
+    base_settings &= "# Error: snowflake not supported yet\n"
+    # let snowflake_path = findExe("snowflake-client")
+    # if isEmptyOrWhitespace(snowflake_path):
+    #   print_error("snowflake-client not found. Config will not enable bridge in torrc")
+    #   base_settings &= "# Error: snowflake-client not found in the system\n"
+    #   return false
+    # else:
+    #   base_settings &= "UseBridges 1\nClientTransportPlugin snowflake exec " & snowflake_path & "\n"
 
   elif bridge_addr.startsWith("meek "):
     base_settings &= "# Error: meek not supported yet\n"
