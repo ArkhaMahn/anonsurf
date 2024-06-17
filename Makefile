@@ -64,8 +64,11 @@ inst-bins:
 	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
 	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
 	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
-	chmod +x $(DESTDIR)/usr/lib/anonsurf/make-torrc
-	chmod +x $(DESTDIR)/usr/lib/anonsurf/safekill
+
+inst-perms:
+	chown debian-tor:debian-tor $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
+	chmod +x $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
+	chmod +s $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
 
 inst-icons:
 	cp icons/*.png $(DESTDIR)/usr/share/icons/.
@@ -78,7 +81,7 @@ mk-folders:
 	mkdir -p $(DESTDIR)/usr/share/applications/
 	mkdir -p $(DESTDIR)/lib/systemd/system/
 
-install: mk-folders inst-bins inst-configs inst-launchers inst-icons
+install: mk-folders inst-bins inst-configs inst-launchers inst-icons inst-perms
 
 uninstall:
 	# Remove config files
