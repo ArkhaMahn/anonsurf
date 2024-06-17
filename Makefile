@@ -68,7 +68,7 @@ inst-bins:
 inst-perms:
 	chown debian-tor:debian-tor $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
 	chmod +x $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
-	chmod +s $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
+	chmod +s $(DESTDIR)/usr/bin/anonsurf
 
 inst-icons:
 	cp icons/*.png $(DESTDIR)/usr/share/icons/.
