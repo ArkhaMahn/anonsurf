@@ -14,7 +14,7 @@ const
 
 type
   TorConfig = object
-    control_port: string
+    control_port: int
     cookie_auth_path: string
 
 
@@ -30,6 +30,15 @@ proc is_anonsurf_running*(): bool =
     file_stat: Stat
 
   if lstat(cstring("/run/systemd/units/invocation:anonsurfd.service"), file_stat) == 0:
+    return true
+  return false
+
+
+proc is_tor_running(): bool =
+  var
+    file_stat: Stat
+
+  if lstat(cstring("/run/systemd/units/invocation:tor.service"), file_stat) == 0:
     return true
   return false
 
@@ -93,11 +102,23 @@ proc parse_torrc_cfg(tor_cfg: var TorConfig): bool =
     cli_send_msg(Err, "Tor's config error", "Unable to find torrc")
     return false
 
+  var tmp_control_port_cfg: string
+
   for line in lines(path_torrc_config):
     if line.startsWith("ControlPort "):
-      tor_cfg.control_port = line.split(" ")[1]
+      tmp_control_port_cfg = line.split(" ")[1]
     elif line.startsWith("CookieAuthFile "):
       tor_cfg.cookie_auth_path = line.split(" ")[1]
+
+
+  if isEmptyOrWhitespace(tmp_control_port_cfg):
+      cli_send_msg(Err, "Tor's config error", "Unable to find control port")
+      return false
+
+  if ":" in tmp_control_port_cfg:
+    tor_cfg.control_port = parseInt(tmp_control_port_cfg.split(":")[1])
+  else:
+    tor_cfg.control_port = parseInt(tmp_control_port_cfg)
 
 
 proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
@@ -112,8 +133,9 @@ proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
     sock = net.newSocket()
 
   try:
-    # Send authenticate to Tor's control port
     sock.connect("127.0.0.1", Port(control_port))
+
+    # Send authenticate to Tor's control port
     sock.send("authenticate " & tor_cookie & "\n")
     recv_msg = sock.sock_get_str()
 
@@ -135,6 +157,7 @@ proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
     cli_send_msg(Err, "Failed to change identity", getCurrentExceptionMsg())
   finally:
     # Send a command to Tor's control port to stop current session
+    # TODO what if sock failed to connect? this might cause exception error
     sock.send("quit\n")
     sock.close()
 
@@ -146,28 +169,13 @@ proc change_identity_from_tor_sock() =
   var
     tor_cfg: TorConfig
 
+  tor_cfg.cookie_auth_path = "/var/run/tor/control.authcookie"
+
   if not tor_cfg.parse_torrc_cfg():
     return
-  elif isEmptyOrWhitespace(tor_cfg.control_port):
-    cli_send_msg(Err, "Tor's config error", "Unable to find control port")
-    return
-  elif isEmptyOrWhitespace(tor_cfg.cookie_auth_path):
-    # Set vvalue to default of Tor
-    let path_auth_cookie = "/var/run/tor/control.authcookie"
-
-    if fileExists(path_auth_cookie):
-      tor_cfg.cookie_auth_path = path_auth_cookie
-    else:
-      cli_send_msg(Err, "Tor's config error", "Unable to find authentication cookie")
 
   var
-    control_port: int
     tor_cookie: string
-
-  if ":" in tor_cfg.control_port:
-    control_port = parseInt(tor_cfg.control_port.split(":")[1])
-  else:
-    control_port = parseInt(tor_cfg.control_port)
 
   try:
     tor_cookie = readFile(tor_cfg.cookie_auth_path)
@@ -175,7 +183,7 @@ proc change_identity_from_tor_sock() =
     cli_send_msg(Err, "Failed to change identity", getCurrentExceptionMsg())
     return
 
-  send_change_identity_to_tor(control_port, tor_cookie)
+  send_change_identity_to_tor(tor_cfg.control_port, tor_cookie)
 
 
 #[
@@ -186,9 +194,52 @@ proc cli_anonsurf_change_id*() =
     cli_send_msg(Err, "AnonSurf is not running", "AnonSurf is not running. Can't change Tor's identity")
   else:
     try:
+      # FIXME no msg send to terminal
       change_identity_from_tor_sock()
     except:
       cli_send_msg(Err, "Changing identity error", "Error while changing identity")
+
+
+proc cli_anonsurf_check_health_tor() =
+  #[
+    Check if tor is running. If yes, check tor's connect to control port
+  ]#
+  if not is_tor_running():
+    cli_send_msg(Err, "Tor status", "Tor service is not running")
+  else:
+    var
+      sock = net.newSocket()
+      tor_cfg: TorConfig
+
+    if not tor_cfg.parse_torrc_cfg():
+      cli_send_msg(Err, "Tor status", "Failed to parse Tor's configurations")
+      return
+
+    try:
+      sock.connect("127.0.0.1", Port(tor_cfg.control_port))
+      cli_send_msg(Ok, "Tor status", "Control port is fine")
+    except:
+      cli_send_msg(Err, "Tor status", "Failed to connect to Tor's control port")
+    finally:
+      sock.close()
+
+
+#[
+  Show some other debug stuff for status.
+  Call when nyx failed to run
+]#
+proc cli_anonsurf_check_system_status() =
+  #[
+    Check:
+      1. Tor is running and Can connect to control port
+      2. Readable tor's auth cookie (and user belongs to Tor's group)
+  ]#
+  # Check Tor's service or control port
+  cli_anonsurf_check_health_tor()
+
+  # Check if user belongs to debian-tor group https://man7.org/linux/man-pages/man3/getgrouplist.3.html
+  # try:
+    # discard readFile("")
 
 
 #[
@@ -198,5 +249,5 @@ proc cli_anonsurf_tor_status*() =
   if not is_anonsurf_running():
     cli_send_msg(Info, "AnonSurf is not running", "Your are not under Tor network")
   else:
-    # TODO if this one failed to run, try checking other stuff
-    discard execShellCmd("/usr/bin/nyx --config /etc/anonsurf/nyxrc")
+    if execShellCmd("/usr/bin/nyx --config /etc/anonsurf/nyxrc") != 0:
+      cli_anonsurf_check_system_status()
