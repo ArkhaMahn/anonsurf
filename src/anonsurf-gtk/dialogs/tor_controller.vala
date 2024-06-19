@@ -21,7 +21,6 @@ public class NyxTerminal: Terminal {
   }
 
   public void start_nyx_terminal() {
-    // TODO close dialog if process failed to run
     this.spawn_async(
       DEFAULT, // https://valadoc.org/vte-2.91/Vte.PtyFlags.html
       null,

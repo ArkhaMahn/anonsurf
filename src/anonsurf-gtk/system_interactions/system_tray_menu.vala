@@ -2,7 +2,6 @@
 Create a menu when user right click on system tray's icon
 The items in the menu will be updated (hide or show)
 depend on AnonSurf's status
-TODO instead of only AnonSurf, the update should consider any error of Tor too
 */
 
 using Gtk;
@@ -123,7 +122,6 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
     this.menu_item_check_ip = new MenuItemCheckIP();
     this.menu_item_quit = new MenuItemQuit();
 
-    // FIXME Vala warns incompatible pointer when append
     this.append(this.menu_item_start);
     this.append(this.menu_item_tor_controller);
     this.append(this.menu_item_change_id);
