@@ -79,8 +79,11 @@ function enableService {
 
 
 function startSurf {
-	# If tor didn't start, we start it
-	# It is used for startup
+	# If tor is running, stop it first
+	if /usr/sbin/service tor status >/dev/null; then
+		/usr/sbin/service tor stop
+	fi
+
 	TOR_PORT=$(grep TransPort "/etc/tor/torrc" | cut -d " " -f 2 | cut -d ":" -f 2)
 	DNS_PORT=$(grep DNSPort "/etc/tor/torrc" | cut -d " " -f 2 | cut -d ":" -f 2)
 	# Init DNS
