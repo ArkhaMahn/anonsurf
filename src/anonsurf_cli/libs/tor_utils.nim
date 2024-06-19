@@ -19,10 +19,11 @@ type
 
 
 proc ask_kill_app*() =
-  echo "Do you want to kill dangerous apps? [Y/n]"
+  stdout.write("Do you want to kill dangerous apps? [Y/n] ")
   let selected = readLine(stdin)
   if selected == "y" or selected == "Y":
     discard execShellCmd("/usr/lib/anonsurf/safekill")
+  # FIXME likely hang until enter again. need flush?
 
 
 proc is_anonsurf_running*(): bool =
@@ -110,7 +111,6 @@ proc parse_torrc_cfg(tor_cfg: var TorConfig): bool =
     elif line.startsWith("CookieAuthFile "):
       tor_cfg.cookie_auth_path = line.split(" ")[1]
 
-
   if isEmptyOrWhitespace(tmp_control_port_cfg):
       cli_send_msg(Err, "Tor's config error", "Unable to find control port")
       return false
@@ -119,6 +119,8 @@ proc parse_torrc_cfg(tor_cfg: var TorConfig): bool =
     tor_cfg.control_port = parseInt(tmp_control_port_cfg.split(":")[1])
   else:
     tor_cfg.control_port = parseInt(tmp_control_port_cfg)
+
+  return true
 
 
 proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
@@ -172,6 +174,7 @@ proc change_identity_from_tor_sock() =
   tor_cfg.cookie_auth_path = "/var/run/tor/control.authcookie"
 
   if not tor_cfg.parse_torrc_cfg():
+    cli_send_msg(Err, "Failed to parse Tor's config")
     return
 
   var
@@ -217,7 +220,7 @@ proc cli_anonsurf_check_health_tor() =
 
     try:
       sock.connect("127.0.0.1", Port(tor_cfg.control_port))
-      cli_send_msg(Ok, "Tor status", "Control port is fine")
+      cli_send_msg(Ok, "Tor status", "Connected control port. Tor seems okay")
     except:
       cli_send_msg(Err, "Tor status", "Failed to connect to Tor's control port")
     finally:
@@ -240,6 +243,7 @@ proc cli_anonsurf_check_system_status() =
   # Check if user belongs to debian-tor group https://man7.org/linux/man-pages/man3/getgrouplist.3.html
   # try:
     # discard readFile("")
+  # TODO check DNS and other stuff
 
 
 #[
@@ -250,4 +254,5 @@ proc cli_anonsurf_tor_status*() =
     cli_send_msg(Info, "AnonSurf is not running", "Your are not under Tor network")
   else:
     if execShellCmd("/usr/bin/nyx --config /etc/anonsurf/nyxrc") != 0:
+      cli_send_msg(Err, "AnonSurf failed to check status using Nyx")
       cli_anonsurf_check_system_status()
