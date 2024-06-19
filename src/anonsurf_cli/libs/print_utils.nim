@@ -35,16 +35,16 @@ proc cli_send_msg*(level: PrintLevel, title, body: string) =
   case level
   of Ok:
     echo fmt"[{B_GREEN}*{RESET}] {title}"
-    echo fmt"{B_GREEN}{body}{RESET}"
+    echo fmt"{B_GREEN}  {body}{RESET}"
   of Warn:
     echo fmt"[{B_MAGENTA}!{RESET}] {title}"
-    echo fmt"{B_BLUE}{body}{RESET}"
+    echo fmt"{B_BLUE}  {body}{RESET}"
   of Err:
     echo fmt"[{B_RED}x{RESET}] {title}"
-    echo fmt"{B_CYAN}{body}{RESET}"
+    echo fmt"{B_CYAN}  {body}{RESET}"
   of Info:
     echo fmt"[{B_BLUE}+{RESET}] {title}"
-    echo fmt"{B_BLUE}{body}{RESET}"
+    echo fmt"{B_BLUE}  {body}{RESET}"
 
 
 proc cli_show_help_line(command, description: string) =
