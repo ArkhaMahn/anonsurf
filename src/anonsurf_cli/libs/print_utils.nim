@@ -17,7 +17,7 @@ type
 #[
   Show print msg to cli
 ]#
-proc cli_send_msg*(level: PrintLevel, title, body: string) =
+proc cli_send_msg*(level: PrintLevel, title: string, body: string = "") =
   #[
     Print message to CLI
     0: Ok
@@ -32,19 +32,28 @@ proc cli_send_msg*(level: PrintLevel, title, body: string) =
     B_BLUE = "\e[94m"
     RESET = "\e[0m"
 
+  var
+    output_msg: string
+    sub_msg: string
+
   case level
   of Ok:
-    echo fmt"[{B_GREEN}*{RESET}] {title}"
-    echo fmt"{B_GREEN}  {body}{RESET}"
+    output_msg = fmt"[{B_GREEN}*{RESET}] {title}"
+    sub_msg = fmt"{B_GREEN}{body}{RESET}"
   of Warn:
-    echo fmt"[{B_MAGENTA}!{RESET}] {title}"
-    echo fmt"{B_BLUE}  {body}{RESET}"
+    output_msg = fmt"[{B_MAGENTA}!{RESET}] {title}"
+    sub_msg = fmt"{B_BLUE}{body}{RESET}"
   of Err:
-    echo fmt"[{B_RED}x{RESET}] {title}"
-    echo fmt"{B_CYAN}  {body}{RESET}"
+    output_msg = fmt"[{B_RED}x{RESET}] {title}"
+    sub_msg = fmt"{B_CYAN}{body}{RESET}"
   of Info:
-    echo fmt"[{B_BLUE}+{RESET}] {title}"
-    echo fmt"{B_BLUE}  {body}{RESET}"
+    output_msg = fmt"[{B_BLUE}+{RESET}] {title}"
+    sub_msg = fmt"{B_BLUE}{body}{RESET}"
+
+  if body == "":
+    echo output_msg
+  else:
+    echo output_msg & "\n  " & sub_msg
 
 
 proc cli_show_help_line(command, description: string) =
