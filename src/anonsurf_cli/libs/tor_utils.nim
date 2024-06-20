@@ -21,9 +21,9 @@ type
 proc ask_kill_app*() =
   stdout.write("Do you want to kill dangerous apps? [Y/n] ")
   let selected = readLine(stdin)
+  flushFile(stdout)
   if selected == "y" or selected == "Y":
     discard execShellCmd("/usr/lib/anonsurf/safekill")
-  # FIXME likely hang until enter again. need flush?
 
 
 proc is_anonsurf_running*(): bool =
