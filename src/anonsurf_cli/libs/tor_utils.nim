@@ -181,7 +181,7 @@ proc change_identity_from_tor_sock() =
     tor_cookie: string
 
   try:
-    tor_cookie = readFile(tor_cfg.cookie_auth_path)
+    tor_cookie = toHex(readFile(tor_cfg.cookie_auth_path))
   except:
     cli_send_msg(Err, "Failed to change identity", getCurrentExceptionMsg())
     return
