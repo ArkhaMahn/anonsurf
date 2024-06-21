@@ -1,6 +1,5 @@
 #[
   A newly written module to parse anosnurf's configurations
-# TODO test SafeLogging
 ]#
 import os
 import parsecfg
