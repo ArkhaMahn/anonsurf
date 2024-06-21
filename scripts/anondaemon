@@ -200,6 +200,8 @@ case "$1" in
 			echo -e "  [x] torrc not found. Can not start!"
 		fi
 
+		sleep 1
+
 		if [ -e /var/run/tor/control.authcookie ]; then
 			chmod +r /var/run/tor/control.authcookie || true
 		else
