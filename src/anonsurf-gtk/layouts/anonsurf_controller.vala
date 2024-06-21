@@ -185,7 +185,7 @@ public class ButtonChangeID: Button {
       InetSocketAddress inet_address = new InetSocketAddress(this.address, 9051);
       SocketClient client = new SocketClient();
       SocketConnection conn = yield client.connect_async(inet_address);
-      string message = "authenticate \"" + this.cookie_hash + "\"\n";
+      string message = "authenticate " + this.cookie_hash + "\n";
       DataInputStream input;
 
       yield conn.output_stream.write_async(message.data, Priority.DEFAULT);
