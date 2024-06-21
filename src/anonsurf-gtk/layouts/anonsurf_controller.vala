@@ -160,7 +160,7 @@ public class ButtonChangeID: Button {
       DataInputStream dis = new DataInputStream(@is);
       string cookie_binary = dis.read_line();
 
-      for (char i = 0; i < cookie_binary.char_count(); i ++) {
+      for (char i = 0; i < cookie_binary.length; i ++) {
         hex_str.append_printf("%x", (uint8)cookie_binary[i]);
       }
 
