@@ -226,7 +226,7 @@ case "$1" in
 			echo -e "  [x] torrc not found. Can not start!"
 		fi
 
-		if [ -e /etc/tor/torrc ]; then
+		if [ -e /var/run/tor/control.authcookie ]; then
 			chmod +r /var/run/tor/control.authcookie || true
 		fi
 	;;
