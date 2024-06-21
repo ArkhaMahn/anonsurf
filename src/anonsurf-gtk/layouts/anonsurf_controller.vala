@@ -150,7 +150,7 @@ public class ButtonChangeID: Button {
     }
   }
 
-  private void get_tor_cookie() {
+  private bool get_tor_cookie() {
     string cookie_path = this.get_path_cookie_from_torrc();
     File file = File.new_for_path(cookie_path);
 
@@ -165,9 +165,11 @@ public class ButtonChangeID: Button {
       }
 
       this.cookie_hash = hex_str.str;
+      return true;
 
     } catch (Error error) {
       send_notification("Error reading Tor's cookie auth", error.message, NotifyLevel.Error);
+      return false;
     }
   }
 
@@ -175,7 +177,9 @@ public class ButtonChangeID: Button {
     // Get cookie when click change id
     // This would be much better if program gets tor cookie every time it starts
     // and remove when it closes
-    this.get_tor_cookie();
+    if (!this.get_tor_cookie()) {
+      return;
+    }
 
     try {
       InetSocketAddress inet_address = new InetSocketAddress(this.address, 9051);
