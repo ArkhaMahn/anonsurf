@@ -225,10 +225,6 @@ case "$1" in
 		else
 			echo -e "  [x] torrc not found. Can not start!"
 		fi
-
-		if [ -e /var/run/tor/control.authcookie ]; then
-			chmod +r /var/run/tor/control.authcookie || true
-		fi
 	;;
 	stop)
 		stopSurf

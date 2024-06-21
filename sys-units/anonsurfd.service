@@ -9,6 +9,7 @@ ExecStart=/usr/lib/anonsurf/anondaemon start
 ExecReload=/usr/lib/anonsurf/anondaemon restart
 ExecStop=/usr/lib/anonsurf/anondaemon stop
 RemainAfterExit=yes
+ExecStartPost=chmod +r /var/run/tor/control.authcookie
 
 [Install]
 WantedBy=default.target
