@@ -222,6 +222,7 @@ case "$1" in
 			then
 				/usr/sbin/service tor start || echo -e "  [x] Can not start Tor service!"
 			fi
+			chmod +r /var/run/tor/control.authcookie
 		else
 			echo -e "  [x] torrc not found. Can not start!"
 		fi
