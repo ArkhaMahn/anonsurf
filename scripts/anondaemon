@@ -228,6 +228,8 @@ case "$1" in
 
 		if [ -e /var/run/tor/control.authcookie ]; then
 			chmod +r /var/run/tor/control.authcookie || true
+		else
+			echo -e "  [x] /var/run/tor/control.authcookie doesn't exist"
 		fi
 	;;
 	stop)
