@@ -158,7 +158,7 @@ public class ButtonChangeID: Button {
       StringBuilder hex_str = new StringBuilder();
       FileInputStream @is = file.read();
       DataInputStream dis = new DataInputStream(@is);
-      cookie_binary = dis.read_line();
+      string cookie_binary = dis.read_line();
 
       for (char i = 0; i < cookie_binary.char_count(); i ++) {
         hex_str.append_printf("%x", (uint8)cookie_binary[i]);
