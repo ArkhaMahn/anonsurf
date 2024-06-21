@@ -155,9 +155,17 @@ public class ButtonChangeID: Button {
     File file = File.new_for_path(cookie_path);
 
     try {
+      StringBuilder hex_str = new StringBuilder();
       FileInputStream @is = file.read();
       DataInputStream dis = new DataInputStream(@is);
-      this.cookie_hash = dis.read_line(); // Do we need to convert binary to hex?
+      cookie_binary = dis.read_line();
+
+      for (char i = 0; i < cookie_binary.char_count(); i ++) {
+        hex_str.append_printf("%x", (uint8)cookie_binary[i]);
+      }
+
+      this.cookie_hash = hex_str.str;
+
     } catch (Error error) {
       send_notification("Error reading Tor's cookie auth", error.message, NotifyLevel.Error);
     }
