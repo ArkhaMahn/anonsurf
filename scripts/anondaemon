@@ -53,31 +53,6 @@ TOR_UID="debian-tor"
 # TOR_PORT="9040"
 
 
-function disableService {
-	if [ ! -e /tmp/tor.pid ]; then
-		echo -e -n "\n $GREEN*$BLUE Stopping service nscd${RESETCOLOR}"
-		/usr/sbin/service nscd stop 2>/dev/null || echo " (already stopped)"
-		echo -e -n "\n $GREEN*$BLUE Stopping service resolvconf"
-		/usr/sbin/service resolvconf stop 2>/dev/null || echo " (already stopped)"
-		echo -e -n "\n $GREEN*$BLUE Stopping service dnsmasq$RESETCOLOR${RESETCOLOR}"
-		/usr/sbin/service dnsmasq stop 2>/dev/null || echo " (already stopped)"
-		killall dnsmasq nscd resolvconf 2>/dev/null || true
-		# sleep 1
-		killall -9 dnsmasq 2>/dev/null || true
-	fi
-}
-
-
-function enableService {
-	echo -e -n " $GREEN*$BLUE Restarting services\n"
-	/usr/sbin/service resolvconf start || service resolvconf restart || true
-	/usr/sbin/service dnsmasq start || true
-	/usr/sbin/service nscd start || true
-	echo -e " $GREEN*$BLUE It is safe to not worry for dnsmasq and nscd start errors if they are not installed.$RESETCOLOR"
-	# sleep 1
-}
-
-
 function startSurf {
 	# If tor is running, stop it first
 	if /usr/sbin/service tor status >/dev/null; then
@@ -214,7 +189,6 @@ function stopSurf {
 
 case "$1" in
 	start)
-		# disableService
 		/usr/lib/anonsurf/make-torrc
 		if [ -e /etc/tor/torrc ]; then
 			startSurf
@@ -234,7 +208,6 @@ case "$1" in
 	;;
 	stop)
 		stopSurf
-		# enableService
 		/usr/lib/anonsurf/make-torrc restore
 	;;
 	restart)
