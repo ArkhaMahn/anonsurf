@@ -14,10 +14,13 @@ type
   SurfConfig* = object
     use_sandbox*: bool
     use_safe_sock*: bool
+    proxy_is_https*: bool
     reject_plain_port*: bool
     list_plain_ports*: string
     auto_bridge*: bool
     bridge_address*: string # This option should accept multiple types
+    http_proxy_addr*: string
+    http_proxy_credential*: string
 
 
 proc get_opt_value(p_config: Config, key: string): string =
@@ -73,7 +76,10 @@ proc maketorrc_get_system_config*(): SurfConfig =
       reject_plain_port: false,
       list_plain_ports: "23,109,110,143",
       auto_bridge: false,
+      proxy_is_https: false,
       bridge_address: "",
+      http_proxy_addr: "",
+      http_proxy_credential: "",
     )
 
   maketorrc_load_config_from_file(anonsurf_config)
