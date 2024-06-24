@@ -159,7 +159,6 @@ proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
     cli_send_msg(Err, "Change ID failed", getCurrentExceptionMsg())
   finally:
     # Send a command to Tor's control port to stop current session
-    # TODO what if sock failed to connect? this might cause exception error
     sock.send("quit\n")
     sock.close()
 
