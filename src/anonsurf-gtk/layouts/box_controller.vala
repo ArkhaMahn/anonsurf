@@ -161,7 +161,12 @@ public class ButtonChangeID: Button {
       string cookie_binary = dis.read_line();
 
       for (char i = 0; i < cookie_binary.length; i ++) {
-        hex_str.append_printf("%x", (uint8)cookie_binary[i]);
+        /*
+          Convert char (binary value) to its hex, and then append result to a new string
+          Previous version used uint8. Uchar might be better because of variable's size
+          %02x to fix hex format error
+        */
+        hex_str.append_printf("%02x", (uchar)cookie_binary[i]);
       }
 
       this.cookie_hash = hex_str.str;
