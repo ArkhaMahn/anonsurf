@@ -24,7 +24,7 @@ clean:
 
 anonsurf-gtk:
 	valac $(VALA-FLAGS) $(VALA-SRC-DIR)/anonsurf_gtk.vala \
-	$(VALA-SRC-LAYOUTS)/anonsurf_boot.vala $(VALA-SRC-LAYOUTS)/anonsurf_controller.vala $(VALA-SRC-LAYOUTS)/titlebar.vala \
+	$(VALA-SRC-LAYOUTS)/box_boot.vala $(VALA-SRC-LAYOUTS)/box_controller.vala $(VALA-SRC-LAYOUTS)/titlebar.vala \
 	$(VALA-SRC-DIALOGS)/about.vala $(VALA-SRC-DIALOGS)/tor_controller.vala $(VALA-SRC-DIALOGS)/ask_kill.vala \
 	$(VALA-SRC-SYS)/notifications.vala $(VALA-SRC-SYS)/system_tray_icon.vala $(VALA-SRC-SYS)/system_tray_menu.vala $(VALA-SRC-SYS)/threads.vala \
 	-o $(BUILD-DEST)/anonsurf-gtk
