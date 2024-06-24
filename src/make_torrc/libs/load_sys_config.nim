@@ -18,7 +18,7 @@ type
     list_plain_ports*: string
     auto_bridge*: bool
     bridge_address*: string # This option should accept multiple types
-    http_proxy_addr*: string
+    http_proxy_address*: string
     http_proxy_credential*: string
 
 
@@ -77,7 +77,7 @@ proc maketorrc_get_system_config*(): SurfConfig =
       auto_bridge: false,
       proxy_is_https: false,
       bridge_address: "",
-      http_proxy_addr: "",
+      http_proxy_address: "",
       http_proxy_credential: "",
     )
 

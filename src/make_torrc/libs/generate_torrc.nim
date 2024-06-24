@@ -159,7 +159,7 @@ proc maketorrc_settings_from_config_file(settings: var string) =
   settings.maketorrc_set_bridge(config.auto_bridge, config.bridge_address)
   settings.maketorrc_set_safe_sock(config.use_safe_sock)
   settings.maketorrc_set_plaintext_port(config.reject_plain_port, config.list_plain_ports)
-  settings.maketorrc_set_proxy_settings(config.http_proxy_addr, config.http_proxy_credential, config.proxy_is_https)
+  settings.maketorrc_set_proxy_settings(config.http_proxy_address, config.http_proxy_credential, config.proxy_is_https)
 
 
 proc maketorrc_create_tor_backup() =
