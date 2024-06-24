@@ -161,7 +161,7 @@ public class ButtonChangeID: Button {
       string cookie_binary = dis.read_line();
 
       for (char i = 0; i < cookie_binary.length; i ++) {
-        hex_str.append_printf("%x", (uint8)cookie_binary[i].to_byte());
+        hex_str.append_printf("%x", (uint8)cookie_binary[i]);
       }
 
       this.cookie_hash = hex_str.str;
