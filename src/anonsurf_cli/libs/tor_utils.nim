@@ -239,11 +239,7 @@ proc cli_anonsurf_check_system_status() =
   ]#
   # Check Tor's service or control port
   cli_anonsurf_check_health_tor()
-
-  # Check if user belongs to debian-tor group https://man7.org/linux/man-pages/man3/getgrouplist.3.html
-  # try:
-    # discard readFile("")
-  # TODO check DNS and other stuff
+  discard execShellCmd("/usr/bin/dnstool status")
 
 
 #[
