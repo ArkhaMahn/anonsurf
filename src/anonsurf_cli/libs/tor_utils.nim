@@ -197,7 +197,6 @@ proc cli_anonsurf_change_id*() =
     cli_send_msg(Err, "AnonSurf is not running", "AnonSurf is not running. Can't change Tor's identity")
   else:
     try:
-      # FIXME no msg send to terminal
       change_identity_from_tor_sock()
     except:
       cli_send_msg(Err, "Changing identity error", "Error while changing identity")
