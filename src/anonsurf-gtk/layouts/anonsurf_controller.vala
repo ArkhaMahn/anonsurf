@@ -119,7 +119,7 @@ public class ButtonChangeID: Button {
   private string cookie_hash;
 
   public ButtonChangeID() {
-    this.set_label("Change ID"); // TODO improve button name
+    this.set_label("Change ID");
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
     this.address = new InetAddress.loopback(SocketFamily.IPV4);
@@ -193,7 +193,7 @@ public class ButtonChangeID: Button {
       message = yield input.read_line_async();
 
       if (message != "250 OK\x0d") {
-        send_notification("Authentication failed", message, NotifyLevel.Error);
+        send_notification("Change ID failed", message, NotifyLevel.Error);
         conn.close();
         return;
       }
@@ -203,9 +203,9 @@ public class ButtonChangeID: Button {
       message = yield input.read_line_async();
 
       if (message == "250 OK\x0d") {
-        send_notification("Tor's ID", "ID successfully changed", NotifyLevel.Ok); // TODO improve message
+        send_notification("Change ID succeeded", "ID successfully changed", NotifyLevel.Ok);
       } else {
-        send_notification("Failed to change ID", message, NotifyLevel.Error);
+        send_notification("Change ID failed", message, NotifyLevel.Error);
       }
 
       message = "quit\n"; // Close connection
@@ -213,7 +213,7 @@ public class ButtonChangeID: Button {
       conn.close();
 
     } catch (Error error) {
-      send_notification("Socket error", error.message, NotifyLevel.Error);
+      send_notification("Change ID failed", error.message, NotifyLevel.Error);
     }
   }
 
@@ -238,7 +238,7 @@ public class ButtonTorController: Button {
   public DialogTorController tor_status;
 
   public ButtonTorController() {
-    this.set_label("Tor stat"); // TODO improve button name
+    this.set_label("Tor status"); // TODO improve button name
     this.set_size_request(BUTTON_SIZE_X, BUTTON_SIZE_Y);
     this.clicked.connect(on_click_button);
   }

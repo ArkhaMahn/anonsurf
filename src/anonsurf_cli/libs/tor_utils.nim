@@ -143,7 +143,7 @@ proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
 
     # Check if client authenticated
     if recv_msg != "250 OK\c\n":
-      cli_send_msg(Err, "Failed to change identity", recv_msg)
+      cli_send_msg(Err, "Change ID failed", recv_msg)
       return
 
     # Send change id command
@@ -151,12 +151,12 @@ proc send_change_identity_to_tor(control_port: int, tor_cookie: string) =
     recv_msg = sock.sock_get_str()
 
     if recv_msg != "250 OK\c\n":
-      cli_send_msg(Err, "Failed to change identity", recv_msg)
+      cli_send_msg(Err, "Change ID failed", recv_msg)
       return
 
-    cli_send_msg(Ok, "Identity changed", "You have a new Identity from Tor")
+    cli_send_msg(Ok, "Change ID succeeded", "You have a new Identity from Tor")
   except:
-    cli_send_msg(Err, "Failed to change identity", getCurrentExceptionMsg())
+    cli_send_msg(Err, "Change ID failed", getCurrentExceptionMsg())
   finally:
     # Send a command to Tor's control port to stop current session
     # TODO what if sock failed to connect? this might cause exception error
@@ -199,7 +199,7 @@ proc cli_anonsurf_change_id*() =
     try:
       change_identity_from_tor_sock()
     except:
-      cli_send_msg(Err, "Changing identity error", "Error while changing identity")
+      cli_send_msg(Err, "Change ID failed", "Error while changing identity")
 
 
 proc cli_anonsurf_check_health_tor() =
@@ -207,7 +207,7 @@ proc cli_anonsurf_check_health_tor() =
     Check if tor is running. If yes, check tor's connect to control port
   ]#
   if not is_tor_running():
-    cli_send_msg(Err, "Tor status", "Tor service is not running")
+    cli_send_msg(Err, "Tor status", "Service Tor is not running in system")
   else:
     var
       sock = net.newSocket()
@@ -238,6 +238,7 @@ proc cli_anonsurf_check_system_status() =
   ]#
   # Check Tor's service or control port
   cli_anonsurf_check_health_tor()
+  cli_send_msg(Info, "DNS check")
   discard execShellCmd("/usr/bin/dnstool status")
 
 
@@ -249,5 +250,5 @@ proc cli_anonsurf_tor_status*() =
     cli_send_msg(Info, "AnonSurf is not running", "Your are not under Tor network")
   else:
     if execShellCmd("/usr/bin/nyx --config /etc/anonsurf/nyxrc") != 0:
-      cli_send_msg(Err, "AnonSurf failed to check status using Nyx")
+      cli_send_msg(Err, "Nyx failed to run for showing status")
       cli_anonsurf_check_system_status()
