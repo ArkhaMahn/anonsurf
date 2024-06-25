@@ -81,12 +81,12 @@ public class ThreadEnableAnonSurf {
 
       int exit_code = action_enable_anonsurf.get_exit_status();
       if (exit_code == 0) {
-        send_notification("Enabled", "AnonSurf is enabled at boot", NotifyLevel.Ok);
+        send_notification("AnonSurf startup", "AnonSurf is enabled at boot", NotifyLevel.Ok);
       } else {
-        send_notification("Failed to Disable", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
+        send_notification("AnonSurf startup", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to enable", error.message, NotifyLevel.Error);
+      send_notification("AnonSurf startup", error.message, NotifyLevel.Error);
     }
   }
 
@@ -97,12 +97,12 @@ public class ThreadEnableAnonSurf {
 
       int exit_code = action_disable_anonsurf.get_exit_status();
       if (exit_code == 0) {
-        send_notification("Disabled", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
+        send_notification("AnonSurf startup", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
       } else {
-        send_notification("Failed to Disable", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
+        send_notification("AnonSurf startup", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to Disable", error.message, NotifyLevel.Error);
+      send_notification("AnonSurf startup", error.message, NotifyLevel.Error);
     }
   }
 
