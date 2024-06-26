@@ -44,7 +44,7 @@ proc maketorrc_validate_bridge_setting(base_settings: var string, bridge_addr: s
       https://sigvids.gitlab.io/create-tor-private-obfs4-bridges.html
       https://community.torproject.org/relay/setup/bridge/debian-ubuntu/
     snowflake:
-      https://askubuntu.com/a/1406572
+      https://gitlab.torproject.org/tpo/anti-censorship/pluggable-transports/snowflake/-/tree/main/client#running-the-snowflake-client-with-tor
     meek
       https://blog.torproject.org/how-use-meek-pluggable-transport/
   ]#
@@ -59,14 +59,13 @@ proc maketorrc_validate_bridge_setting(base_settings: var string, bridge_addr: s
       base_settings &= "UseBridges 1\nClientTransportPlugin obfs4 exec " & obfs4_path & " managed\n"
 
   elif bridge_addr.startsWith("snowflake "):
-    base_settings &= "# Error: snowflake not supported yet\n"
-    # let snowflake_path = findExe("snowflake-client")
-    # if isEmptyOrWhitespace(snowflake_path):
-    #   print_error("snowflake-client not found. Config will not enable bridge in torrc")
-    #   base_settings &= "# Error: snowflake-client not found in the system\n"
-    #   return false
-    # else:
-    #   base_settings &= "UseBridges 1\nClientTransportPlugin snowflake exec " & snowflake_path & "\n"
+    let snowflake_path = findExe("snowflake-client")
+    if isEmptyOrWhitespace(snowflake_path):
+      print_error("snowflake-client not found. Config will not enable bridge in torrc")
+      base_settings &= "# Error: snowflake-client not found in the system\n"
+      return false
+    else:
+      base_settings &= "UseBridges 1\nClientTransportPlugin snowflake exec " & snowflake_path & "\n"
 
   elif bridge_addr.startsWith("meek "):
     base_settings &= "# Error: meek not supported yet\n"
