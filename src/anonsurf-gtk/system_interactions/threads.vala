@@ -22,12 +22,12 @@ public class ThreadStartAnonSurf {
 
       int exit_code = action_start_anonsurf.get_exit_status();
       if (exit_code == 0) {
-        send_notification("Activated", "AnonSurf is activated", NotifyLevel.Ok);
+        send_notification("Start AnonSurf", "AnonSurf is activated", NotifyLevel.Ok);
       } else {
-        send_notification("Failed to activate", "AnonSurf couldn't start. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
+        send_notification("Start AnonSurf", "AnonSurf couldn't start. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to activate", error.message, NotifyLevel.Error);
+      send_notification("Start AnonSurf", error.message, NotifyLevel.Error);
     }
   }
 
@@ -39,12 +39,12 @@ public class ThreadStartAnonSurf {
 
       int exit_code = action_stop_anonsurf.get_exit_status();
       if (exit_code == 0) {
-        send_notification("Deactivated", "AnonSurf is deactivated", NotifyLevel.Warn);
+        send_notification("Stop AnonSurf", "AnonSurf is deactivated", NotifyLevel.Warn);
       } else {
-        send_notification("Failed to deactivate", "AnonSurf couldn't stop. Exit code: "  + exit_code.to_string(), NotifyLevel.Error);
+        send_notification("Stop AnonSurf", "AnonSurf couldn't stop. Exit code: "  + exit_code.to_string(), NotifyLevel.Error);
       }
     } catch (GLib.Error error) {
-      send_notification("Failed to deactivate", error.message, NotifyLevel.Error);
+      send_notification("Stop AnonSurf", error.message, NotifyLevel.Error);
     }
   }
 
@@ -59,7 +59,6 @@ public class ThreadStartAnonSurf {
 
 
 public class ThreadEnableAnonSurf {
-  // TODO improve output messages
   public bool is_action_enable { private set; get; }
 
   public ThreadEnableAnonSurf(bool is_action_enable) {
@@ -128,12 +127,12 @@ public class ThreadMyIP {
     string recv_data = (string)message.response_body.data;
 
     if (recv_data.contains("Congratulations. This browser is configured to use Tor.")) {
-      send_notification("Connection is secured", "Your connection is under Tor network", NotifyLevel.Ok);
+      send_notification("IP check", "Your connection is under Tor network", NotifyLevel.Ok);
     }
     else if (recv_data.contains("Sorry. You are not using Tor.")) {
-      send_notification("Connection is not secured", "Your connection is not under Tor network", NotifyLevel.Warn);
+      send_notification("IP check", "Your connection is not under Tor network", NotifyLevel.Warn);
     } else {
-      send_notification("Check Error", "Unexpected response data", NotifyLevel.Error);
+      send_notification("CIP check", "Unexpected response data", NotifyLevel.Error);
     }
   }
 }
