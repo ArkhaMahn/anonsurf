@@ -3,9 +3,8 @@ package dns
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
-
-	"gitlab.com/parrotsec/packages/anonsurf/internal/ui"
 )
 
 const (
@@ -14,54 +13,46 @@ const (
 	NMHookHandleResolvConf     = "[main]\ndns=default\nrc-manager=symlink\n"
 )
 
-func nmReloadService() {
+func NMReloadService() error {
 	cmd := exec.Command("/usr/bin/systemctl", "reload", "NetworkManager")
-	if err := cmd.Run(); err != nil {
-		ui.PrintError("Failed to reload NetworkManager service")
-	}
+	return cmd.Run()
 }
 
-func NMGetDNSServers() []string {
-	// Equivalent to: /usr/bin/nmcli dev show | grep DNS
+func NMGetDNSServers() ([]string, error) {
 	out, err := exec.Command("/usr/bin/nmcli", "-g", "IP4.DNS,IP6.DNS", "dev", "show").Output()
 	if err != nil {
-		return []string{}
+		return nil, err
 	}
+	return ParseNetworkManagerDNSOutput(string(out)), nil
+}
 
-	lines := strings.Split(strings.TrimSpace(string(out)), "\n")
-	if len(lines) == 0 {
-		return []string{}
-	}
-
-	// Assuming the last line contains the DNS servers like: IP4.DNS[1]: 192.168.58.1,1.1.1.1
-	// The Nim logic did: .replace("\n", "").split(" ")[^1].split(",") which combines all lines into one?
-	// It's safer to just extract all DNS servers from all matching lines.
+func ParseNetworkManagerDNSOutput(output string) []string {
 	var dnsServers []string
-	for _, line := range lines {
-		parts := strings.Fields(line)
-		if len(parts) > 1 {
-			// Usually parts[1] is the IP or comma-separated IPs
-			ips := strings.Split(parts[1], ",")
-			dnsServers = append(dnsServers, ips...)
-		}
+	for _, field := range strings.FieldsFunc(output, func(r rune) bool {
+		return r == ',' || r == '\n' || r == '\r' || r == '\t' || r == ' '
+	}) {
+		dnsServers = append(dnsServers, field)
 	}
-	return dnsServers
+	return GetListValidAddresses(dnsServers)
 }
 
-func NMCreateHookUnmanage() {
-	err := os.WriteFile(NMHookScript, []byte(NMHookDontManageResolvConf), 0644)
-	if err != nil {
-		ui.PrintError("Failed to write hook script to " + NMHookScript)
-		return
+func (m Manager) createNetworkManagerHook(content string) error {
+	if err := os.MkdirAll(filepath.Dir(m.NetworkManagerHookPath), 0755); err != nil {
+		return err
 	}
-	nmReloadService()
+	if err := writeFileAtomically(m.NetworkManagerHookPath, []byte(content), 0644); err != nil {
+		return err
+	}
+	if m.ReloadNetworkManager == nil {
+		return nil
+	}
+	return m.ReloadNetworkManager()
 }
 
-func NMCreateHookDHCP() {
-	err := os.WriteFile(NMHookScript, []byte(NMHookHandleResolvConf), 0644)
-	if err != nil {
-		ui.PrintError("Failed to write hook script to " + NMHookScript)
-		return
-	}
-	nmReloadService()
+func NMCreateHookUnmanage() error {
+	return NewManager().createNetworkManagerHook(NMHookDontManageResolvConf)
+}
+
+func NMCreateHookDHCP() error {
+	return NewManager().createNetworkManagerHook(NMHookHandleResolvConf)
 }

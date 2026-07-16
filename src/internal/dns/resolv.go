@@ -1,9 +1,10 @@
 package dns
 
 import (
+	"errors"
+	"fmt"
 	"os"
-
-	"gitlab.com/parrotsec/packages/anonsurf/internal/ui"
+	"path/filepath"
 )
 
 const (
@@ -11,21 +12,70 @@ const (
 	ResolvConfPath   = "/etc/resolv.conf"
 )
 
-func tryRemoveFile(path string) bool {
+var (
+	ErrBackupNotFound         = errors.New("resolv.conf backup not found")
+	ErrBackupSkippedLocalhost = errors.New("skip backup because resolv.conf only points to localhost")
+	ErrBackupSkippedSymlink   = errors.New("skip backup because resolv.conf is a symlink")
+)
+
+type Manager struct {
+	ResolvConfPath           string
+	ResolvConfBackup         string
+	NetworkManagerHookPath   string
+	ReloadNetworkManager     func() error
+	NetworkManagerDNSServers func() ([]string, error)
+}
+
+func NewManager() Manager {
+	return Manager{
+		ResolvConfPath:           ResolvConfPath,
+		ResolvConfBackup:         ResolvConfBackup,
+		NetworkManagerHookPath:   NMHookScript,
+		ReloadNetworkManager:     NMReloadService,
+		NetworkManagerDNSServers: NMGetDNSServers,
+	}
+}
+
+func removeFileIfExists(path string) error {
 	err := os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
-		return false
+		return err
 	}
-	return true
+	return nil
 }
 
-func fileExists(path string) bool {
+func fileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
-	return !os.IsNotExist(err)
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
-func moveFile(src, dst string) error {
-	return os.Rename(src, dst)
+func writeFileAtomically(path string, data []byte, perm os.FileMode) error {
+	dir := filepath.Dir(path)
+	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp-*")
+	if err != nil {
+		return err
+	}
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath)
+
+	if _, err := tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Chmod(perm); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmpPath, path)
 }
 
 func copyFile(src, dst string) error {
@@ -33,70 +83,106 @@ func copyFile(src, dst string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(dst, data, 0644)
+	return writeFileAtomically(dst, data, 0644)
 }
 
-func ResolvCreateDHCPOnly() {
-	if !tryRemoveFile(ResolvConfPath) {
-		ui.PrintError("Failed to remove current DNS settings")
-		return
+func (m Manager) CreateDHCPOnly() error {
+	if err := m.createNetworkManagerHook(NMHookHandleResolvConf); err != nil {
+		return err
 	}
-	NMCreateHookDHCP()
+	if err := removeFileIfExists(m.ResolvConfPath); err != nil {
+		return fmt.Errorf("remove current DNS settings: %w", err)
+	}
+	return nil
 }
 
-func ResolvCreateAddrs(listAddr []string) {
+func (m Manager) CreateAddrs(listAddr []string) error {
 	if len(listAddr) == 0 {
-		ui.PrintError("No valid addresses is provided")
-		return
+		return ErrNoValidDNSAddress
 	}
-
-	if !tryRemoveFile(ResolvConfPath) {
-		ui.PrintError("Failed to remove " + ResolvConfPath + " to create new one.")
-		return
+	if err := WriteDNSToSystem(listAddr, m.ResolvConfPath); err != nil {
+		return fmt.Errorf("write DNS settings: %w", err)
 	}
-
-	WriteDNSToSystem(listAddr, ResolvConfPath)
-	NMCreateHookUnmanage()
+	return m.createNetworkManagerHook(NMHookDontManageResolvConf)
 }
 
-func ResolvRestoreFromBackup() {
-	if !tryRemoveFile(ResolvConfPath) {
-		ui.PrintError("Restore backup: Failed to remove " + ResolvConfPath + " to restore backup.")
-	}
-
-	if fileExists(ResolvConfBackup) {
-		err := moveFile(ResolvConfBackup, ResolvConfPath)
-		if err != nil {
-			ui.PrintError("Restore backup: Failed to restore backup")
-		}
-	}
-}
-
-func ResolvMakeBackup() {
-	if !fileExists(ResolvConfPath) {
-		ui.PrintError("Create backup: Skip creating backup file. Missing " + ResolvConfPath)
-		return
-	}
-
-	if SystemHasOnlyLocalhost(ResolvConfPath) {
-		ui.PrintError("Create backup: Skip creating backup file. Only found localhost nameserver.")
-		return
-	}
-
-	if fileExists(ResolvConfBackup) {
-		if !tryRemoveFile(ResolvConfBackup) {
-			ui.PrintError("Create backup: Failed to remove " + ResolvConfBackup + " to create new one.")
-			return
-		}
-	}
-
-	if SystemDNSFileIsSymlink(ResolvConfPath) {
-		ui.PrintError("Create backup: Skip creating backup file because " + ResolvConfPath + " is a symlink.")
-		return
-	}
-
-	err := copyFile(ResolvConfPath, ResolvConfBackup)
+func (m Manager) RestoreFromBackup() error {
+	exists, err := fileExists(m.ResolvConfBackup)
 	if err != nil {
-		ui.PrintError("Create backup: Failed to create backup file")
+		return fmt.Errorf("check backup: %w", err)
 	}
+	if !exists {
+		return ErrBackupNotFound
+	}
+	if err := os.Rename(m.ResolvConfBackup, m.ResolvConfPath); err != nil {
+		return fmt.Errorf("restore backup: %w", err)
+	}
+	return nil
+}
+
+func (m Manager) RestoreBackupOrDHCP() error {
+	if err := m.RestoreFromBackup(); err == nil {
+		return nil
+	} else if !errors.Is(err, ErrBackupNotFound) {
+		return err
+	}
+	return m.createNetworkManagerHook(NMHookHandleResolvConf)
+}
+
+func (m Manager) MakeBackup() error {
+	exists, err := fileExists(m.ResolvConfPath)
+	if err != nil {
+		return fmt.Errorf("check resolv.conf: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("missing %s", m.ResolvConfPath)
+	}
+
+	hasOnlyLocalhost, err := SystemHasOnlyLocalhost(m.ResolvConfPath)
+	if err != nil {
+		return fmt.Errorf("read resolv.conf: %w", err)
+	}
+	if hasOnlyLocalhost {
+		return ErrBackupSkippedLocalhost
+	}
+
+	isSymlink, err := SystemDNSFileIsSymlink(m.ResolvConfPath)
+	if err != nil {
+		return fmt.Errorf("check resolv.conf symlink: %w", err)
+	}
+	if isSymlink {
+		return ErrBackupSkippedSymlink
+	}
+
+	if err := os.MkdirAll(filepath.Dir(m.ResolvConfBackup), 0755); err != nil {
+		return fmt.Errorf("create backup directory: %w", err)
+	}
+	if err := copyFile(m.ResolvConfPath, m.ResolvConfBackup); err != nil {
+		return fmt.Errorf("create backup: %w", err)
+	}
+	return nil
+}
+
+func (m Manager) DHCPAddresses() ([]string, error) {
+	addresses, err := m.NetworkManagerDNSServers()
+	if err != nil {
+		return nil, err
+	}
+	return GetListValidAddresses(addresses), nil
+}
+
+func ResolvCreateDHCPOnly() error {
+	return NewManager().CreateDHCPOnly()
+}
+
+func ResolvCreateAddrs(listAddr []string) error {
+	return NewManager().CreateAddrs(listAddr)
+}
+
+func ResolvRestoreFromBackup() error {
+	return NewManager().RestoreFromBackup()
+}
+
+func ResolvMakeBackup() error {
+	return NewManager().MakeBackup()
 }

@@ -2,25 +2,28 @@ package dns
 
 import (
 	"bufio"
-	"fmt"
+	"errors"
 	"net"
 	"os"
 	"strings"
-
-	"gitlab.com/parrotsec/packages/anonsurf/internal/ui"
 )
+
+var ErrNoValidDNSAddress = errors.New("no valid DNS address found")
 
 type AddrFromParams struct {
 	HasDHCPFlag bool
 	ListAddr    []string
+	Invalid     []string
 }
 
 func ConvertSeqAddrToString(addresses []string) string {
-	var dnsAddrInText string
+	var dnsAddrInText strings.Builder
 	for _, address := range addresses {
-		dnsAddrInText += "nameserver " + address + "\n"
+		dnsAddrInText.WriteString("nameserver ")
+		dnsAddrInText.WriteString(address)
+		dnsAddrInText.WriteString("\n")
 	}
-	return dnsAddrInText
+	return dnsAddrInText.String()
 }
 
 func HasOnlyLocalhost(listAddr []string) bool {
@@ -38,18 +41,13 @@ func SystemDNSFileIsSymlink(resolvConfPath string) (bool, error) {
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
 
-func ParseDNSAddresses(resolvConfPath string) []string {
+func ParseDNSAddresses(resolvConfPath string) ([]string, error) {
 	var result []string
 	file, err := os.Open(resolvConfPath)
 	if err != nil {
-		return result
+		return result, err
 	}
-	defer func(file *os.File) {
-		err := file.Close()
-		if err != nil {
-			fmt.Println("Error closing file:", err)
-		}
-	}(file)
+	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -59,43 +57,46 @@ func ParseDNSAddresses(resolvConfPath string) []string {
 			result = append(result, fields[1])
 		}
 	}
-	return result
-}
-
-func SystemHasOnlyLocalhost(resolvConfPath string) bool {
-	addresses := ParseDNSAddresses(resolvConfPath)
-	return HasOnlyLocalhost(addresses)
-}
-
-func WriteDNSToSystem(listDNSAddr []string, resolvConfPath string) {
-	seen := make(map[string]bool)
-	var deduplicatedListAddr []string
-	for _, addr := range listDNSAddr {
-		if !seen[addr] {
-			seen[addr] = true
-			deduplicatedListAddr = append(deduplicatedListAddr, addr)
-		}
+	if err := scanner.Err(); err != nil {
+		return result, err
 	}
+	return result, nil
+}
 
+func SystemHasOnlyLocalhost(resolvConfPath string) (bool, error) {
+	addresses, err := ParseDNSAddresses(resolvConfPath)
+	if err != nil {
+		return false, err
+	}
+	return HasOnlyLocalhost(addresses), nil
+}
+
+func RenderResolvConf(listDNSAddr []string) (string, error) {
+	deduplicatedListAddr := GetListValidAddresses(listDNSAddr)
 	if len(deduplicatedListAddr) == 0 {
-		ui.PrintError("No valid DNS address is found.")
-		return
+		return "", ErrNoValidDNSAddress
 	}
 
 	dnsAddr := ConvertSeqAddrToString(deduplicatedListAddr)
-	content := "# Written by DNSTool\n" + dnsAddr
+	return "# Written by DNSTool\n" + dnsAddr, nil
+}
 
-	err := os.WriteFile(resolvConfPath, []byte(content), 0644)
+func WriteDNSToSystem(listDNSAddr []string, resolvConfPath string) error {
+	content, err := RenderResolvConf(listDNSAddr)
 	if err != nil {
-		ui.PrintError("Error while writing DNS address to " + resolvConfPath)
+		return err
 	}
+	return writeFileAtomically(resolvConfPath, []byte(content), 0644)
 }
 
 func GetListValidAddresses(listAddr []string) []string {
 	var result []string
+	seen := make(map[string]bool)
 	for _, eachAddr := range listAddr {
-		if net.ParseIP(eachAddr) != nil {
-			result = append(result, eachAddr)
+		address := strings.TrimSpace(eachAddr)
+		if net.ParseIP(address) != nil && !seen[address] {
+			seen[address] = true
+			result = append(result, address)
 		}
 	}
 	return result
@@ -108,10 +109,16 @@ func ParseAddrFromParams(params []string) AddrFromParams {
 	}
 
 	for _, value := range params {
+		value = strings.TrimSpace(value)
+		if value == "" {
+			continue
+		}
 		if value == "dhcp" {
 			paramResult.HasDHCPFlag = true
 		} else if net.ParseIP(value) != nil {
 			paramResult.ListAddr = append(paramResult.ListAddr, value)
+		} else {
+			paramResult.Invalid = append(paramResult.Invalid, value)
 		}
 	}
 

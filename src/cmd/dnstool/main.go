@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
@@ -11,16 +13,18 @@ import (
 	"gitlab.com/parrotsec/packages/anonsurf/internal/ui"
 )
 
-func dnstShowStatus() {
-	if _, err := os.Stat(dns.ResolvConfPath); os.IsNotExist(err) {
-		ui.PrintErrorResolvNotFound(dns.ResolvConfPath)
-		return
+func dnstShowStatus(manager dns.Manager) error {
+	addresses, err := dns.ParseDNSAddresses(manager.ResolvConfPath)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			ui.PrintErrorResolvNotFound(manager.ResolvConfPath)
+			return nil
+		}
+		return err
 	}
 
-	addresses := dns.ParseDNSAddresses(dns.ResolvConfPath)
-
 	if len(addresses) == 0 {
-		ui.PrintErrorResolvEmpty(dns.ResolvConfPath)
+		ui.PrintErrorResolvEmpty(manager.ResolvConfPath)
 	} else if tor.IsAnonsurfRunning() {
 		if dns.HasOnlyLocalhost(addresses) {
 			ui.PrintUnderTorDNS()
@@ -34,75 +38,92 @@ func dnstShowStatus() {
 			ui.PrintDNSAddresses(addresses)
 		}
 	}
+	return nil
 }
 
-func dnstRestoreBackup() {
-	if _, err := os.Stat(dns.ResolvConfBackup); !os.IsNotExist(err) {
-		dns.ResolvRestoreFromBackup()
-	} else {
-		dns.NMCreateHookDHCP()
+func dnstRestoreBackup(manager dns.Manager) error {
+	if err := manager.RestoreBackupOrDHCP(); err != nil {
+		return err
 	}
-	dnstShowStatus()
+	return dnstShowStatus(manager)
 }
 
-func dnstCreateBackup() {
-	dns.ResolvMakeBackup()
+func dnstCreateBackup(manager dns.Manager) error {
+	return manager.MakeBackup()
 }
 
-func dnstWriteAddresses(hasDHCP bool, listAddr []string) {
+func dnstWriteAddresses(manager dns.Manager, hasDHCP bool, listAddr []string) error {
 	if hasDHCP {
 		if len(listAddr) == 0 {
-			dns.ResolvCreateDHCPOnly()
+			if err := manager.CreateDHCPOnly(); err != nil {
+				return err
+			}
 		} else {
-			addrFromDHCP := dns.GetListValidAddresses(dns.NMGetDNSServers())
-			dns.ResolvCreateAddrs(append(listAddr, addrFromDHCP...))
+			addrFromDHCP, err := manager.DHCPAddresses()
+			if err != nil {
+				return fmt.Errorf("read DHCP DNS addresses: %w", err)
+			}
+			if err := manager.CreateAddrs(append(listAddr, addrFromDHCP...)); err != nil {
+				return err
+			}
 		}
 	} else {
-		dns.ResolvCreateAddrs(listAddr)
+		if err := manager.CreateAddrs(listAddr); err != nil {
+			return err
+		}
 	}
 
 	fmt.Println("[*] Applied DNS settings")
-	dnstShowStatus()
+	return dnstShowStatus(manager)
+}
+
+func requireAdmin() error {
+	if !sys.IsAdmin() {
+		return errors.New("require admin's privilege")
+	}
+	return nil
 }
 
 func main() {
+	manager := dns.NewManager()
+
 	var rootCmd = &cobra.Command{
-		Use: "dnstool",
-		Run: func(cmd *cobra.Command, args []string) {
+		Use:           "dnstool",
+		SilenceUsage:  true,
+		SilenceErrors: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
 			ui.ShowHelp()
-			dnstShowStatus()
+			return dnstShowStatus(manager)
 		},
 	}
 
 	statusCmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show current DNS status",
-		Run: func(cmd *cobra.Command, args []string) {
-			dnstShowStatus()
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return dnstShowStatus(manager)
 		},
 	}
 
 	createBackupCmd := &cobra.Command{
 		Use:   "create-backup",
 		Short: "Create a backup of resolv.conf",
-		Run: func(cmd *cobra.Command, args []string) {
-			if !sys.IsAdmin() {
-				ui.PrintError("Require admin's privilege")
-				return
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireAdmin(); err != nil {
+				return err
 			}
-			dnstCreateBackup()
+			return dnstCreateBackup(manager)
 		},
 	}
 
 	restoreBackupCmd := &cobra.Command{
 		Use:   "restore-backup",
 		Short: "Restore resolv.conf from backup",
-		Run: func(cmd *cobra.Command, args []string) {
-			if !sys.IsAdmin() {
-				ui.PrintError("Require admin's privilege")
-				return
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireAdmin(); err != nil {
+				return err
 			}
-			dnstRestoreBackup()
+			return dnstRestoreBackup(manager)
 		},
 	}
 
@@ -110,20 +131,22 @@ func main() {
 		Use:     "address [dhcp] [addr...]",
 		Aliases: []string{"addr"},
 		Short:   "Write custom DNS addresses or use DHCP",
-		Run: func(cmd *cobra.Command, args []string) {
-			if !sys.IsAdmin() {
-				ui.PrintError("Require admin's privilege")
-				return
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireAdmin(); err != nil {
+				return err
 			}
 			addrResult := dns.ParseAddrFromParams(args)
-			dnstWriteAddresses(addrResult.HasDHCPFlag, addrResult.ListAddr)
+			if len(addrResult.Invalid) > 0 {
+				return fmt.Errorf("invalid DNS address: %s", strings.Join(addrResult.Invalid, ", "))
+			}
+			return dnstWriteAddresses(manager, addrResult.HasDHCPFlag, addrResult.ListAddr)
 		},
 	}
 
 	rootCmd.AddCommand(statusCmd, createBackupCmd, restoreBackupCmd, addressCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		ui.PrintError(err.Error())
 		os.Exit(1)
 	}
 }

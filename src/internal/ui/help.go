@@ -36,7 +36,7 @@ func ShowHelp() {
 	showBanner()
 	printHelpLine(programName, "help | -h | --help", "", "Show help banner")
 	printHelpLine(programName, "status", "", "Show current system DNS")
-	printHelpLine(programNameWithSudo, "address", "<DNS servers>", "Set DNS servers")
+	printHelpLine(programNameWithSudo, "address", "[dhcp] <DNS servers>", "Set DNS servers")
 	printHelpLine(programNameWithSudo, "create-backup", "", "Make backup for current /etc/resolv.conf")
 	printHelpLine(programNameWithSudo, "restore-backup", "", "Restore backup of /etc/resolv.conf")
 	fmt.Println("\nAddress could be:")
