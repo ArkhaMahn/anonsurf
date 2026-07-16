@@ -22,17 +22,23 @@ type TorrcOptions struct {
 	BridgeAddress       string
 	Obfs4ProxyPath      string
 	SnowflakeClientPath string
+	HTTPProxyAddress    string
+	HTTPProxyCredential string
+	ProxyIsHTTPS        bool
 }
 
 // TorrcOptionsFromConfig keeps config parsing separate from Tor-specific rendering rules.
 func TorrcOptionsFromConfig(cfg config.Config) TorrcOptions {
 	return TorrcOptions{
-		UseSandbox:       cfg.UseSandbox,
-		UseSafeSocks:     cfg.UseSafeSocks,
-		RejectPlainPorts: cfg.RejectPlainPorts,
-		PlaintextPorts:   cfg.ListPlainPorts,
-		AutoBridge:       cfg.AutoBridge,
-		BridgeAddress:    cfg.BridgeAddress,
+		UseSandbox:          cfg.UseSandbox,
+		UseSafeSocks:        cfg.UseSafeSocks,
+		RejectPlainPorts:    cfg.RejectPlainPorts,
+		PlaintextPorts:      cfg.ListPlainPorts,
+		AutoBridge:          cfg.AutoBridge,
+		BridgeAddress:       cfg.BridgeAddress,
+		HTTPProxyAddress:    cfg.HTTPProxyAddress,
+		HTTPProxyCredential: cfg.HTTPProxyCredential,
+		ProxyIsHTTPS:        cfg.ProxyIsHTTPS,
 	}
 }
 
@@ -75,6 +81,15 @@ func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	}
 	builder.WriteString(plaintextPorts)
 	builder.WriteString("\n")
+	proxySettings, err := renderProxySettings(options)
+	if err != nil {
+		return "", err
+	}
+	if proxySettings != "" {
+		builder.WriteString("\n")
+		builder.WriteString(proxySettings)
+		builder.WriteString("\n")
+	}
 
 	return builder.String(), nil
 }
@@ -131,6 +146,54 @@ func bridgeTransport(address string) (string, error) {
 	default:
 		return "", nil
 	}
+}
+
+func renderProxySettings(options TorrcOptions) (string, error) {
+	address := strings.TrimSpace(options.HTTPProxyAddress)
+	credential := strings.TrimSpace(options.HTTPProxyCredential)
+
+	if address == "" {
+		if credential != "" {
+			return "", fmt.Errorf("proxy credential requires proxy address")
+		}
+		return "", nil
+	}
+	if err := validateTorrcSingleLine("proxy address", address); err != nil {
+		return "", err
+	}
+	if credential != "" {
+		if err := validateTorrcSingleLine("proxy credential", credential); err != nil {
+			return "", err
+		}
+	}
+
+	var builder strings.Builder
+	builder.WriteString("# Set proxy address\n")
+	if options.ProxyIsHTTPS {
+		builder.WriteString("HTTPSProxy ")
+		builder.WriteString(address)
+		builder.WriteString("\n")
+		if credential != "" {
+			builder.WriteString("HTTPSProxyAuthenticator ")
+			builder.WriteString(credential)
+			builder.WriteString("\n")
+		}
+		return strings.TrimRight(builder.String(), "\n"), nil
+	}
+
+	if credential != "" {
+		return "", fmt.Errorf("HTTP proxy credentials require proxy_is_https=true")
+	}
+	builder.WriteString("HTTPProxy ")
+	builder.WriteString(address)
+	return builder.String(), nil
+}
+
+func validateTorrcSingleLine(name, value string) error {
+	if strings.ContainsAny(value, "\r\n") {
+		return fmt.Errorf("%s must be a single line", name)
+	}
+	return nil
 }
 
 func torBool(value bool) string {

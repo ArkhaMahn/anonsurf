@@ -23,22 +23,28 @@ func TestEmbeddedTorrcBaseMatchesRepositoryConfig(t *testing.T) {
 
 func TestTorrcOptionsFromConfig(t *testing.T) {
 	cfg := config.Config{
-		UseSandbox:       true,
-		UseSafeSocks:     true,
-		RejectPlainPorts: true,
-		ListPlainPorts:   "23,80",
-		AutoBridge:       true,
-		BridgeAddress:    "obfs4 127.0.0.1:443 cert=abc",
+		UseSandbox:          true,
+		UseSafeSocks:        true,
+		RejectPlainPorts:    true,
+		ListPlainPorts:      "23,80",
+		AutoBridge:          true,
+		BridgeAddress:       "obfs4 127.0.0.1:443 cert=abc",
+		HTTPProxyAddress:    "127.0.0.1:8080",
+		HTTPProxyCredential: "user:pass",
+		ProxyIsHTTPS:        true,
 	}
 
 	got := TorrcOptionsFromConfig(cfg)
 	want := TorrcOptions{
-		UseSandbox:       true,
-		UseSafeSocks:     true,
-		RejectPlainPorts: true,
-		PlaintextPorts:   "23,80",
-		AutoBridge:       true,
-		BridgeAddress:    "obfs4 127.0.0.1:443 cert=abc",
+		UseSandbox:          true,
+		UseSafeSocks:        true,
+		RejectPlainPorts:    true,
+		PlaintextPorts:      "23,80",
+		AutoBridge:          true,
+		BridgeAddress:       "obfs4 127.0.0.1:443 cert=abc",
+		HTTPProxyAddress:    "127.0.0.1:8080",
+		HTTPProxyCredential: "user:pass",
+		ProxyIsHTTPS:        true,
 	}
 
 	if !reflect.DeepEqual(got, want) {
@@ -149,6 +155,50 @@ func TestRenderTorrcWithSnowflakeBridge(t *testing.T) {
 	}
 }
 
+func TestRenderTorrcWithHTTPProxy(t *testing.T) {
+	got, err := RenderTorrcWithBase("Base", TorrcOptions{
+		PlaintextPorts:   "23",
+		HTTPProxyAddress: "127.0.0.1:8080",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, expected := range []string{
+		"# Set proxy address",
+		"HTTPProxy 127.0.0.1:8080",
+	} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("torrc missing %q: %s", expected, got)
+		}
+	}
+	if strings.Contains(got, "HTTPSProxy") {
+		t.Fatalf("HTTP proxy should not include HTTPS proxy directives: %s", got)
+	}
+}
+
+func TestRenderTorrcWithHTTPSProxyCredential(t *testing.T) {
+	got, err := RenderTorrcWithBase("Base", TorrcOptions{
+		PlaintextPorts:      "23",
+		HTTPProxyAddress:    "127.0.0.1:8443",
+		HTTPProxyCredential: "user:pass",
+		ProxyIsHTTPS:        true,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, expected := range []string{
+		"# Set proxy address",
+		"HTTPSProxy 127.0.0.1:8443",
+		"HTTPSProxyAuthenticator user:pass",
+	} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("torrc missing %q: %s", expected, got)
+		}
+	}
+}
+
 func TestRenderTorrcRejectsInvalidInput(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -203,6 +253,35 @@ func TestRenderTorrcRejectsInvalidInput(t *testing.T) {
 			base:    "Base",
 			options: TorrcOptions{PlaintextPorts: "23", BridgeAddress: "meek 192.0.2.10:443"},
 			want:    "meek bridges are not supported",
+		},
+		{
+			name:    "proxy credential without address",
+			base:    "Base",
+			options: TorrcOptions{PlaintextPorts: "23", HTTPProxyCredential: "user:pass"},
+			want:    "proxy credential requires proxy address",
+		},
+		{
+			name:    "HTTP proxy with credentials",
+			base:    "Base",
+			options: TorrcOptions{PlaintextPorts: "23", HTTPProxyAddress: "127.0.0.1:8080", HTTPProxyCredential: "user:pass"},
+			want:    "HTTP proxy credentials require proxy_is_https=true",
+		},
+		{
+			name:    "proxy address with newline",
+			base:    "Base",
+			options: TorrcOptions{PlaintextPorts: "23", HTTPProxyAddress: "127.0.0.1:8080\nSocksPort 0"},
+			want:    "proxy address must be a single line",
+		},
+		{
+			name: "proxy credential with newline",
+			base: "Base",
+			options: TorrcOptions{
+				PlaintextPorts:      "23",
+				HTTPProxyAddress:    "127.0.0.1:8443",
+				HTTPProxyCredential: "user:pass\nSocksPort 0",
+				ProxyIsHTTPS:        true,
+			},
+			want: "proxy credential must be a single line",
 		},
 	}
 
