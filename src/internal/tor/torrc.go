@@ -14,10 +14,14 @@ var defaultTorrcBase string
 
 // TorrcOptions contains the config values that can be rendered without system side effects.
 type TorrcOptions struct {
-	UseSandbox       bool
-	UseSafeSocks     bool
-	RejectPlainPorts bool
-	PlaintextPorts   string
+	UseSandbox          bool
+	UseSafeSocks        bool
+	RejectPlainPorts    bool
+	PlaintextPorts      string
+	AutoBridge          bool
+	BridgeAddress       string
+	Obfs4ProxyPath      string
+	SnowflakeClientPath string
 }
 
 // TorrcOptionsFromConfig keeps config parsing separate from Tor-specific rendering rules.
@@ -27,6 +31,8 @@ func TorrcOptionsFromConfig(cfg config.Config) TorrcOptions {
 		UseSafeSocks:     cfg.UseSafeSocks,
 		RejectPlainPorts: cfg.RejectPlainPorts,
 		PlaintextPorts:   cfg.ListPlainPorts,
+		AutoBridge:       cfg.AutoBridge,
+		BridgeAddress:    cfg.BridgeAddress,
 	}
 }
 
@@ -52,6 +58,12 @@ func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	builder.WriteString("\n\n# Use sandbox\n")
 	builder.WriteString("Sandbox ")
 	builder.WriteString(torBool(options.UseSandbox))
+	bridgeSettings, err := renderBridgeSettings(options)
+	if err != nil {
+		return "", err
+	}
+	builder.WriteString("\n\n")
+	builder.WriteString(bridgeSettings)
 	builder.WriteString("\n\n# Use SafeSocks\n")
 	builder.WriteString("SafeSocks ")
 	builder.WriteString(torBool(options.UseSafeSocks))
@@ -65,6 +77,60 @@ func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	builder.WriteString("\n")
 
 	return builder.String(), nil
+}
+
+func renderBridgeSettings(options TorrcOptions) (string, error) {
+	address := strings.TrimSpace(options.BridgeAddress)
+	if options.AutoBridge && address == "" {
+		return "", fmt.Errorf("auto bridge requires a selected bridge address")
+	}
+	if address == "" {
+		return "# Bridge setting: No bridge", nil
+	}
+
+	transport, err := bridgeTransport(address)
+	if err != nil {
+		return "", err
+	}
+
+	var builder strings.Builder
+	builder.WriteString("# Enable bridge mode\nUseBridges 1\n")
+	switch transport {
+	case "obfs4":
+		if strings.TrimSpace(options.Obfs4ProxyPath) == "" {
+			return "", fmt.Errorf("obfs4 bridge requires obfs4proxy path")
+		}
+		builder.WriteString("ClientTransportPlugin obfs4 exec ")
+		builder.WriteString(strings.TrimSpace(options.Obfs4ProxyPath))
+		builder.WriteString(" managed\n")
+	case "snowflake":
+		if strings.TrimSpace(options.SnowflakeClientPath) == "" {
+			return "", fmt.Errorf("snowflake bridge requires snowflake-client path")
+		}
+		builder.WriteString("ClientTransportPlugin snowflake exec ")
+		builder.WriteString(strings.TrimSpace(options.SnowflakeClientPath))
+		builder.WriteString("\n")
+	case "meek":
+		return "", fmt.Errorf("meek bridges are not supported")
+	}
+
+	builder.WriteString("\nBridge ")
+	builder.WriteString(address)
+	return builder.String(), nil
+}
+
+func bridgeTransport(address string) (string, error) {
+	fields := strings.Fields(address)
+	if len(fields) == 0 {
+		return "", fmt.Errorf("bridge address is empty")
+	}
+
+	switch fields[0] {
+	case "obfs4", "snowflake", "meek":
+		return fields[0], nil
+	default:
+		return "", nil
+	}
 }
 
 func torBool(value bool) string {

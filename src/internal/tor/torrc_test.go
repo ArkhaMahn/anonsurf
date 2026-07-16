@@ -27,6 +27,8 @@ func TestTorrcOptionsFromConfig(t *testing.T) {
 		UseSafeSocks:     true,
 		RejectPlainPorts: true,
 		ListPlainPorts:   "23,80",
+		AutoBridge:       true,
+		BridgeAddress:    "obfs4 127.0.0.1:443 cert=abc",
 	}
 
 	got := TorrcOptionsFromConfig(cfg)
@@ -35,6 +37,8 @@ func TestTorrcOptionsFromConfig(t *testing.T) {
 		UseSafeSocks:     true,
 		RejectPlainPorts: true,
 		PlaintextPorts:   "23,80",
+		AutoBridge:       true,
+		BridgeAddress:    "obfs4 127.0.0.1:443 cert=abc",
 	}
 
 	if !reflect.DeepEqual(got, want) {
@@ -50,7 +54,7 @@ func TestRenderTorrcWithWarnPlaintextPorts(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	want := "Base\n\n# Use sandbox\nSandbox 0\n\n# Use SafeSocks\nSafeSocks 0\n\n# Set WarnPlaintextPorts\nWarnPlaintextPorts 23,109,110\n"
+	want := "Base\n\n# Use sandbox\nSandbox 0\n\n# Bridge setting: No bridge\n\n# Use SafeSocks\nSafeSocks 0\n\n# Set WarnPlaintextPorts\nWarnPlaintextPorts 23,109,110\n"
 	if got != want {
 		t.Fatalf("torrc = %q, want %q", got, want)
 	}
@@ -78,6 +82,70 @@ func TestRenderTorrcWithRejectPlaintextPorts(t *testing.T) {
 	}
 	if strings.Contains(got, "WarnPlaintextPorts") {
 		t.Fatalf("torrc should not include WarnPlaintextPorts: %s", got)
+	}
+}
+
+func TestRenderTorrcWithPlainBridge(t *testing.T) {
+	got, err := RenderTorrcWithBase("Base", TorrcOptions{
+		PlaintextPorts: "23",
+		BridgeAddress:  "192.0.2.10:443 ABCDEF",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, expected := range []string{
+		"UseBridges 1",
+		"Bridge 192.0.2.10:443 ABCDEF",
+	} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("torrc missing %q: %s", expected, got)
+		}
+	}
+	if strings.Contains(got, "ClientTransportPlugin") {
+		t.Fatalf("plain bridge should not include a pluggable transport: %s", got)
+	}
+}
+
+func TestRenderTorrcWithObfs4Bridge(t *testing.T) {
+	got, err := RenderTorrcWithBase("Base", TorrcOptions{
+		PlaintextPorts: "23",
+		BridgeAddress:  "obfs4 192.0.2.10:443 cert=abc",
+		Obfs4ProxyPath: "/usr/bin/obfs4proxy",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, expected := range []string{
+		"UseBridges 1",
+		"ClientTransportPlugin obfs4 exec /usr/bin/obfs4proxy managed",
+		"Bridge obfs4 192.0.2.10:443 cert=abc",
+	} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("torrc missing %q: %s", expected, got)
+		}
+	}
+}
+
+func TestRenderTorrcWithSnowflakeBridge(t *testing.T) {
+	got, err := RenderTorrcWithBase("Base", TorrcOptions{
+		PlaintextPorts:      "23",
+		BridgeAddress:       "snowflake 192.0.2.10:443",
+		SnowflakeClientPath: "/usr/bin/snowflake-client",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, expected := range []string{
+		"UseBridges 1",
+		"ClientTransportPlugin snowflake exec /usr/bin/snowflake-client",
+		"Bridge snowflake 192.0.2.10:443",
+	} {
+		if !strings.Contains(got, expected) {
+			t.Fatalf("torrc missing %q: %s", expected, got)
+		}
 	}
 }
 
@@ -111,6 +179,30 @@ func TestRenderTorrcRejectsInvalidInput(t *testing.T) {
 			base:    "Base",
 			options: TorrcOptions{PlaintextPorts: "65536"},
 			want:    `invalid plaintext port "65536"`,
+		},
+		{
+			name:    "auto bridge without selected address",
+			base:    "Base",
+			options: TorrcOptions{PlaintextPorts: "23", AutoBridge: true},
+			want:    "auto bridge requires a selected bridge address",
+		},
+		{
+			name:    "obfs4 without transport binary",
+			base:    "Base",
+			options: TorrcOptions{PlaintextPorts: "23", BridgeAddress: "obfs4 192.0.2.10:443 cert=abc"},
+			want:    "obfs4 bridge requires obfs4proxy path",
+		},
+		{
+			name:    "snowflake without transport binary",
+			base:    "Base",
+			options: TorrcOptions{PlaintextPorts: "23", BridgeAddress: "snowflake 192.0.2.10:443"},
+			want:    "snowflake bridge requires snowflake-client path",
+		},
+		{
+			name:    "unsupported meek transport",
+			base:    "Base",
+			options: TorrcOptions{PlaintextPorts: "23", BridgeAddress: "meek 192.0.2.10:443"},
+			want:    "meek bridges are not supported",
 		},
 	}
 
