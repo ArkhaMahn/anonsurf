@@ -15,6 +15,10 @@ type torrcManager interface {
 	Write(content string) error
 }
 
+type nyxrcManager interface {
+	Ensure() error
+}
+
 type bridgeResolver interface {
 	Resolve(options tor.TorrcOptions) (tor.TorrcOptions, error)
 }
@@ -25,6 +29,7 @@ type dependencies struct {
 	resolveBridges bridgeResolver
 	renderTorrc    func(options tor.TorrcOptions) (string, error)
 	manager        torrcManager
+	nyxrc          nyxrcManager
 }
 
 func main() {
@@ -41,6 +46,7 @@ func defaultDependencies() dependencies {
 		resolveBridges: tor.NewBridgeResolver(),
 		renderTorrc:    tor.RenderTorrc,
 		manager:        tor.NewTorrcManager(),
+		nyxrc:          tor.NewNyxrcManager(),
 	}
 }
 
@@ -84,6 +90,9 @@ func generateTorrc(deps dependencies) error {
 	}
 	if err := deps.manager.Write(rendered); err != nil {
 		return fmt.Errorf("write torrc: %w", err)
+	}
+	if err := deps.nyxrc.Ensure(); err != nil {
+		return fmt.Errorf("ensure nyxrc: %w", err)
 	}
 
 	return nil
