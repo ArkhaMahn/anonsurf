@@ -33,6 +33,9 @@ type serviceController interface {
 	Start() error
 	Stop() error
 	Restart() error
+	Enable() error
+	Disable() error
+	IsEnabled() (bool, error)
 }
 
 type dependencies struct {
@@ -75,9 +78,9 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 		plannedCommand("status", nil, "Show AnonSurf, Tor, and DNS status"),
 		plannedCommand("changeid", []string{"newnym"}, "Request a new Tor identity"),
 		plannedCommand("myip", []string{"ip"}, "Check the current public Tor status"),
-		plannedCommand("enable-boot", nil, "Enable AnonSurf at system startup"),
-		plannedCommand("disable-boot", nil, "Disable AnonSurf at system startup"),
-		plannedCommand("status-boot", nil, "Show whether AnonSurf starts at boot"),
+		serviceCommand("enable-boot", "Enable AnonSurf at system startup", deps.service.Enable, "AnonSurf enabled at startup."),
+		serviceCommand("disable-boot", "Disable AnonSurf at system startup", deps.service.Disable, "AnonSurf disabled at startup."),
+		statusBootCommand(deps.service),
 	)
 
 	return rootCmd
@@ -94,6 +97,27 @@ func serviceCommand(use, short string, run func() error, success string) *cobra.
 				return fmt.Errorf("%s: %w", use, err)
 			}
 			fmt.Fprintln(cmd.OutOrStdout(), success)
+			return nil
+		},
+	}
+}
+
+func statusBootCommand(service serviceController) *cobra.Command {
+	return &cobra.Command{
+		Use:   "status-boot",
+		Short: "Show whether AnonSurf starts at boot",
+		Long:  "Show whether AnonSurf starts at boot.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			enabled, err := service.IsEnabled()
+			if err != nil {
+				return fmt.Errorf("status-boot: %w", err)
+			}
+			if enabled {
+				fmt.Fprintln(cmd.OutOrStdout(), "AnonSurf is enabled at startup.")
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "AnonSurf is disabled at startup.")
+			}
 			return nil
 		},
 	}

@@ -2,9 +2,55 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"strings"
 	"testing"
 )
+
+type fakeService struct {
+	startErr   error
+	stopErr    error
+	restartErr error
+	enableErr  error
+	disableErr error
+	statusErr  error
+	enabled    bool
+	calls      []string
+}
+
+func (s *fakeService) Start() error {
+	s.calls = append(s.calls, "start")
+	return s.startErr
+}
+
+func (s *fakeService) Stop() error {
+	s.calls = append(s.calls, "stop")
+	return s.stopErr
+}
+
+func (s *fakeService) Restart() error {
+	s.calls = append(s.calls, "restart")
+	return s.restartErr
+}
+
+func (s *fakeService) Enable() error {
+	s.calls = append(s.calls, "enable")
+	return s.enableErr
+}
+
+func (s *fakeService) Disable() error {
+	s.calls = append(s.calls, "disable")
+	return s.disableErr
+}
+
+func (s *fakeService) IsEnabled() (bool, error) {
+	s.calls = append(s.calls, "is-enabled")
+	return s.enabled, s.statusErr
+}
+
+func testDependencies(service *fakeService) dependencies {
+	return dependencies{service: service}
+}
 
 func TestRootHelpWithNoArguments(t *testing.T) {
 	var stdout, stderr bytes.Buffer
@@ -49,28 +95,112 @@ func TestVersionFlag(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if got := stdout.String(); got != "AnonSurf 5.0.0\n" {
+	if got := stdout.String(); got != "AnonSurf 6.0.0\n" {
 		t.Fatalf("version output = %q", got)
 	}
 }
 
-func TestRegisteredCommandsReturnNotImplemented(t *testing.T) {
+func TestServiceCommandsRunController(t *testing.T) {
+	tests := []struct {
+		command string
+		output  string
+		call    string
+	}{
+		{command: "start", output: "AnonSurf started.\n", call: "start"},
+		{command: "stop", output: "AnonSurf stopped.\n", call: "stop"},
+		{command: "restart", output: "AnonSurf restarted.\n", call: "restart"},
+		{command: "enable-boot", output: "AnonSurf enabled at startup.\n", call: "enable"},
+		{command: "disable-boot", output: "AnonSurf disabled at startup.\n", call: "disable"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.command, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			service := &fakeService{}
+			err := executeWithDependencies([]string{test.command}, &stdout, &stderr, testDependencies(service))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := stdout.String(); got != test.output {
+				t.Fatalf("stdout = %q, want %q", got, test.output)
+			}
+			if len(service.calls) != 1 || service.calls[0] != test.call {
+				t.Fatalf("service calls = %#v, want %q", service.calls, test.call)
+			}
+		})
+	}
+}
+
+func TestStatusBootCommandReportsEnabledState(t *testing.T) {
+	tests := []struct {
+		name    string
+		enabled bool
+		output  string
+	}{
+		{name: "enabled", enabled: true, output: "AnonSurf is enabled at startup.\n"},
+		{name: "disabled", enabled: false, output: "AnonSurf is disabled at startup.\n"},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			var stdout, stderr bytes.Buffer
+			service := &fakeService{enabled: test.enabled}
+			err := executeWithDependencies([]string{"status-boot"}, &stdout, &stderr, testDependencies(service))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if got := stdout.String(); got != test.output {
+				t.Fatalf("stdout = %q, want %q", got, test.output)
+			}
+			if len(service.calls) != 1 || service.calls[0] != "is-enabled" {
+				t.Fatalf("service calls = %#v, want is-enabled", service.calls)
+			}
+		})
+	}
+}
+
+func TestServiceCommandReturnsContextualError(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	wantErr := errors.New("systemctl failed")
+	service := &fakeService{enableErr: wantErr}
+
+	err := executeWithDependencies([]string{"enable-boot"}, &stdout, &stderr, testDependencies(service))
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want wrapping %v", err, wantErr)
+	}
+	if !strings.Contains(err.Error(), "enable-boot:") {
+		t.Fatalf("error = %v, want command context", err)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+}
+
+func TestStatusBootCommandReturnsContextualError(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	wantErr := errors.New("systemctl failed")
+	service := &fakeService{statusErr: wantErr}
+
+	err := executeWithDependencies([]string{"status-boot"}, &stdout, &stderr, testDependencies(service))
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want wrapping %v", err, wantErr)
+	}
+	if !strings.Contains(err.Error(), "status-boot:") {
+		t.Fatalf("error = %v, want command context", err)
+	}
+}
+
+func TestPlannedCommandsReturnNotImplemented(t *testing.T) {
 	commands := []string{
-		"start",
-		"stop",
-		"restart",
 		"status",
 		"changeid",
 		"myip",
-		"enable-boot",
-		"disable-boot",
-		"status-boot",
 	}
 
 	for _, command := range commands {
 		t.Run(command, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
-			err := execute([]string{command}, &stdout, &stderr)
+			err := executeWithDependencies([]string{command}, &stdout, &stderr, testDependencies(&fakeService{}))
 			if err == nil {
 				t.Fatal("expected not implemented error")
 			}
@@ -93,7 +223,7 @@ func TestCommandAliasesReturnNotImplemented(t *testing.T) {
 	for alias, command := range tests {
 		t.Run(alias, func(t *testing.T) {
 			var stdout, stderr bytes.Buffer
-			err := execute([]string{alias}, &stdout, &stderr)
+			err := executeWithDependencies([]string{alias}, &stdout, &stderr, testDependencies(&fakeService{}))
 			if err == nil {
 				t.Fatal("expected not implemented error")
 			}
@@ -114,7 +244,6 @@ func TestCommandHelp(t *testing.T) {
 	output := stdout.String()
 	for _, expected := range []string{
 		"Start system-wide Tor transparent routing",
-		"dedicated migration step",
 		"Usage:",
 	} {
 		if !strings.Contains(output, expected) {
