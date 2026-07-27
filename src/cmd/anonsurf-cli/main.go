@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
 const version = "6.0.0"
@@ -19,12 +20,32 @@ func main() {
 }
 
 func execute(args []string, stdout, stderr io.Writer) error {
-	rootCmd := newRootCommand(stdout, stderr)
+	return executeWithDependencies(args, stdout, stderr, defaultDependencies())
+}
+
+func executeWithDependencies(args []string, stdout, stderr io.Writer, deps dependencies) error {
+	rootCmd := newRootCommand(stdout, stderr, deps)
 	rootCmd.SetArgs(args)
 	return rootCmd.Execute()
 }
 
-func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
+type serviceController interface {
+	Start() error
+	Stop() error
+	Restart() error
+}
+
+type dependencies struct {
+	service serviceController
+}
+
+func defaultDependencies() dependencies {
+	return dependencies{
+		service: systemd.NewAnonsurfdController(),
+	}
+}
+
+func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:           "anonsurf",
 		Short:         "Manage AnonSurf system-wide Tor routing",
@@ -48,9 +69,9 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	rootCmd.AddCommand(
-		plannedCommand("start", nil, "Start system-wide Tor transparent routing"),
-		plannedCommand("stop", nil, "Stop AnonSurf and return to clearnet"),
-		plannedCommand("restart", nil, "Restart AnonSurf routing"),
+		serviceCommand("start", "Start system-wide Tor transparent routing", deps.service.Start, "AnonSurf started."),
+		serviceCommand("stop", "Stop AnonSurf and return to clearnet", deps.service.Stop, "AnonSurf stopped."),
+		serviceCommand("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted."),
 		plannedCommand("status", nil, "Show AnonSurf, Tor, and DNS status"),
 		plannedCommand("changeid", []string{"newnym"}, "Request a new Tor identity"),
 		plannedCommand("myip", []string{"ip"}, "Check the current public Tor status"),
@@ -62,12 +83,29 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	return rootCmd
 }
 
+func serviceCommand(use, short string, run func() error, success string) *cobra.Command {
+	return &cobra.Command{
+		Use:   use,
+		Short: short,
+		Long:  short + ".",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := run(); err != nil {
+				return fmt.Errorf("%s: %w", use, err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), success)
+			return nil
+		},
+	}
+}
+
 func plannedCommand(use string, aliases []string, short string) *cobra.Command {
 	return &cobra.Command{
 		Use:     use,
 		Aliases: aliases,
 		Short:   short,
 		Long:    short + ".\n\nThis command is registered in the Go CLI and will be wired to the system controller in a dedicated migration step.",
+		Args:    cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return fmt.Errorf("%s is not implemented yet in the Go CLI", cmd.CommandPath())
 		},
