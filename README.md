@@ -1,5 +1,5 @@
 # Build
-- Build dependencies: valac, nim, gcc, valac, libsoup2.4-dev, libnotify-dev, libvte-2.91-dev, git
+- Build dependencies: golang-go, valac, gcc, valac, libsoup2.4-dev, libnotify-dev, libvte-2.91-dev, git
 - Runtime dependencies: nyx, pkexec, sudo, tor, iptables, systemd, libglib2.0-0, libgtk-3-0, libnotify4, libsoup2.4-1, libvte-2.91-0
 - Commands to build:
 1. `git clone https://gitlab.com/parrotsec/packages/anonsurf/`

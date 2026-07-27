@@ -8,7 +8,7 @@ Uploaders: Lorenzo "Palinuro" Faletra <palinuro@parrotsec.org>,
 Standards-Version: 4.5.0
 Build-Depends:
  debhelper-compat (= 12),
- nim,
+ golang-go,
  gcc (>= 10),
  bash-completion,
  valac,
@@ -46,6 +46,5 @@ Package: anonsurf-cli
 Architecture: any
 Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf, nyx, sudo
-Description: Command Line Interfaced for AnonSurf
- AnonSurf's command line interface and
- menu launcher written in Nim
+Description: Command-line interface for AnonSurf
+ AnonSurf's command-line interface written in Go.

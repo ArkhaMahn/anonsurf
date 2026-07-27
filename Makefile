@@ -5,12 +5,15 @@ VALA-FLAGS += --vapidir /usr/share/vala/vapi/ --pkg vte-2.91 # Use libvte to cre
 VALA-FLAGS += -X -Wno-incompatible-pointer-types # Suppress Vala's warning. Check https://stackoverflow.com/a/66559047
 VALA-FLAGS += -X -Wno-discarded-qualifiers # Supress Vala's warning. Check https://stackoverflow.com/a/66559047
 
-VALA-SRC-DIR = src/anonsurf-gtk
+VALA-SRC-DIR = src_nim/anonsurf-gtk
 VALA-SRC-LAYOUTS = $(VALA-SRC-DIR)/layouts
 VALA-SRC-DIALOGS = $(VALA-SRC-DIR)/dialogs
 VALA-SRC-SYS = $(VALA-SRC-DIR)/system_interactions
 
-NIM-FLAGS = c --nimcache:/tmp/ -d:ssl -d:release
+GO ?= go
+GO-SRC-DIR = src
+GO-BUILD-FLAGS = -trimpath
+GO-LDFLAGS = -s -w
 BUILD-DEST = build/release
 
 os_name="$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
@@ -22,21 +25,24 @@ all: build install
 clean:
 	rm -rf build
 
-anonsurf-gtk:
+$(BUILD-DEST):
+	mkdir -p $(BUILD-DEST)
+
+anonsurf-gtk: $(BUILD-DEST)
 	valac $(VALA-FLAGS) $(VALA-SRC-DIR)/anonsurf_gtk.vala \
 	$(VALA-SRC-LAYOUTS)/box_boot.vala $(VALA-SRC-LAYOUTS)/box_controller.vala $(VALA-SRC-LAYOUTS)/titlebar.vala \
 	$(VALA-SRC-DIALOGS)/about.vala $(VALA-SRC-DIALOGS)/tor_controller.vala $(VALA-SRC-DIALOGS)/ask_kill.vala \
 	$(VALA-SRC-SYS)/notifications.vala $(VALA-SRC-SYS)/system_tray_icon.vala $(VALA-SRC-SYS)/system_tray_menu.vala $(VALA-SRC-SYS)/threads.vala \
 	-o $(BUILD-DEST)/anonsurf-gtk
 
-anonsurf-cli:
-	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/anonsurf src/anonsurf_cli/anonsurf_cli.nim
+anonsurf-cli: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anonsurf ./cmd/anonsurf-cli
 
-dnstool:
-	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/dnstool src/dnstool/dnstool.nim
+dnstool: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/dnstool ./cmd/dnstool
 
-make-torrc:
-	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/make-torrc src/make_torrc/make_torrc.nim
+make-torrc: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/make-torrc ./cmd/make-torrc
 
 build: anonsurf-cli anonsurf-gtk dnstool make-torrc
 
