@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
@@ -45,6 +47,7 @@ type dependencies struct {
 	service  serviceController
 	status   statusReader
 	identity identityChanger
+	ipCheck  ipChecker
 }
 
 type statusReader interface {
@@ -55,11 +58,16 @@ type identityChanger interface {
 	Change() error
 }
 
+type ipChecker interface {
+	Check(ctx context.Context) (netcheck.Result, error)
+}
+
 func defaultDependencies() dependencies {
 	return dependencies{
 		service:  systemd.NewAnonsurfdController(),
 		status:   status.NewReader(),
 		identity: tor.NewIdentityChanger(),
+		ipCheck:  netcheck.NewChecker(),
 	}
 }
 
@@ -92,7 +100,7 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 		serviceCommand("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted."),
 		statusCommand(deps.status),
 		changeIDCommand(deps.identity),
-		plannedCommand("myip", []string{"ip"}, "Check the current public Tor status"),
+		myIPCommand(deps.ipCheck),
 		serviceCommand("enable-boot", "Enable AnonSurf at system startup", deps.service.Enable, "AnonSurf enabled at startup."),
 		serviceCommand("disable-boot", "Disable AnonSurf at system startup", deps.service.Disable, "AnonSurf disabled at startup."),
 		statusBootCommand(deps.service),
@@ -171,6 +179,29 @@ func changeIDCommand(changer identityChanger) *cobra.Command {
 	}
 }
 
+func myIPCommand(checker ipChecker) *cobra.Command {
+	return &cobra.Command{
+		Use:     "myip",
+		Aliases: []string{"ip"},
+		Short:   "Check the current public Tor status",
+		Long:    "Check the current public IP address and whether it is seen as Tor traffic.",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			result, err := checker.Check(cmd.Context())
+			if err != nil {
+				return fmt.Errorf("myip: %w", err)
+			}
+			fmt.Fprintf(cmd.OutOrStdout(), "Public IP: %s\n", result.IP)
+			if result.IsTor {
+				fmt.Fprintln(cmd.OutOrStdout(), "Tor:       yes")
+			} else {
+				fmt.Fprintln(cmd.OutOrStdout(), "Tor:       no")
+			}
+			return nil
+		},
+	}
+}
+
 func serviceCommand(use, short string, run func() error, success string) *cobra.Command {
 	return &cobra.Command{
 		Use:   use,
@@ -204,19 +235,6 @@ func statusBootCommand(service serviceController) *cobra.Command {
 				fmt.Fprintln(cmd.OutOrStdout(), "AnonSurf is disabled at startup.")
 			}
 			return nil
-		},
-	}
-}
-
-func plannedCommand(use string, aliases []string, short string) *cobra.Command {
-	return &cobra.Command{
-		Use:     use,
-		Aliases: aliases,
-		Short:   short,
-		Long:    short + ".\n\nThis command is registered in the Go CLI and will be wired to the system controller in a dedicated migration step.",
-		Args:    cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return fmt.Errorf("%s is not implemented yet in the Go CLI", cmd.CommandPath())
 		},
 	}
 }

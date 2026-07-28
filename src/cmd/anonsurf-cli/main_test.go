@@ -2,10 +2,12 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strings"
 	"testing"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 )
 
@@ -55,6 +57,7 @@ func testDependencies(service *fakeService) dependencies {
 		service:  service,
 		status:   fakeStatus{snapshot: status.Snapshot{}},
 		identity: &fakeIdentity{},
+		ipCheck:  fakeIPCheck{},
 	}
 }
 
@@ -75,6 +78,12 @@ type fakeIdentity struct {
 func (i *fakeIdentity) Change() error {
 	i.called = true
 	return i.err
+}
+
+type fakeIPCheck struct{}
+
+func (fakeIPCheck) Check(context.Context) (netcheck.Result, error) {
+	return netcheck.Result{IP: "127.0.0.1", IsTor: true}, nil
 }
 
 func TestRootHelpWithNoArguments(t *testing.T) {
@@ -306,47 +315,6 @@ func TestChangeIDCommandReturnsContextualError(t *testing.T) {
 	}
 	if stdout.Len() != 0 {
 		t.Fatalf("stdout = %q, want empty", stdout.String())
-	}
-}
-
-func TestPlannedCommandsReturnNotImplemented(t *testing.T) {
-	commands := []string{
-		"myip",
-	}
-
-	for _, command := range commands {
-		t.Run(command, func(t *testing.T) {
-			var stdout, stderr bytes.Buffer
-			err := executeWithDependencies([]string{command}, &stdout, &stderr, testDependencies(&fakeService{}))
-			if err == nil {
-				t.Fatal("expected not implemented error")
-			}
-			if !strings.Contains(err.Error(), "not implemented yet") {
-				t.Fatalf("error = %v, want not implemented message", err)
-			}
-			if stdout.Len() != 0 {
-				t.Fatalf("stdout = %q, want empty", stdout.String())
-			}
-		})
-	}
-}
-
-func TestCommandAliasesReturnNotImplemented(t *testing.T) {
-	tests := map[string]string{
-		"ip": "myip",
-	}
-
-	for alias, command := range tests {
-		t.Run(alias, func(t *testing.T) {
-			var stdout, stderr bytes.Buffer
-			err := executeWithDependencies([]string{alias}, &stdout, &stderr, testDependencies(&fakeService{}))
-			if err == nil {
-				t.Fatal("expected not implemented error")
-			}
-			if !strings.Contains(err.Error(), command) {
-				t.Fatalf("error = %v, want command %q", err, command)
-			}
-		})
 	}
 }
 
