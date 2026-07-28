@@ -1,6 +1,6 @@
 module gitlab.com/parrotsec/packages/anonsurf
 
-go 1.26.2
+go 1.19
 
 require github.com/spf13/cobra v1.10.2
 

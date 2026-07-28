@@ -12,9 +12,23 @@ VALA-SRC-SYS = $(VALA-SRC-DIR)/system_interactions
 
 GO ?= go
 GO-SRC-DIR = src
+GO-MODULE = gitlab.com/parrotsec/packages/anonsurf
 GO-BUILD-FLAGS = -trimpath
 GO-LDFLAGS = -s -w
+GO-BUILD-MODE ?= module
+GO-GOPATH ?= $(CURDIR)/build/gopath:/usr/share/gocode
+GO-GOPATH-SRC = $(CURDIR)/build/gopath/src/$(GO-MODULE)
 BUILD-DEST = build/release
+
+ifeq ($(GO-BUILD-MODE),gopath)
+GO-BUILD-DEPS = prepare-go-gopath
+GO-BUILD-ENV = GO111MODULE=off GOPATH=$(GO-GOPATH)
+GO-PKG-PREFIX = $(GO-MODULE)
+else
+GO-BUILD-DEPS =
+GO-BUILD-ENV = GO111MODULE=on
+GO-PKG-PREFIX = .
+endif
 
 os_name="$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
 
@@ -28,6 +42,10 @@ clean:
 $(BUILD-DEST):
 	mkdir -p $(BUILD-DEST)
 
+prepare-go-gopath: $(BUILD-DEST)
+	mkdir -p $(dir $(GO-GOPATH-SRC))
+	ln -sfn $(CURDIR)/$(GO-SRC-DIR) $(GO-GOPATH-SRC)
+
 anonsurf-gtk: $(BUILD-DEST)
 	valac $(VALA-FLAGS) $(VALA-SRC-DIR)/anonsurf_gtk.vala \
 	$(VALA-SRC-LAYOUTS)/box_boot.vala $(VALA-SRC-LAYOUTS)/box_controller.vala $(VALA-SRC-LAYOUTS)/titlebar.vala \
@@ -35,14 +53,14 @@ anonsurf-gtk: $(BUILD-DEST)
 	$(VALA-SRC-SYS)/notifications.vala $(VALA-SRC-SYS)/system_tray_icon.vala $(VALA-SRC-SYS)/system_tray_menu.vala $(VALA-SRC-SYS)/threads.vala \
 	-o $(BUILD-DEST)/anonsurf-gtk
 
-anonsurf-cli: $(BUILD-DEST)
-	cd $(GO-SRC-DIR) && $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anonsurf ./cmd/anonsurf-cli
+anonsurf-cli: $(BUILD-DEST) $(GO-BUILD-DEPS)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anonsurf $(GO-PKG-PREFIX)/cmd/anonsurf-cli
 
-dnstool: $(BUILD-DEST)
-	cd $(GO-SRC-DIR) && $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/dnstool ./cmd/dnstool
+dnstool: $(BUILD-DEST) $(GO-BUILD-DEPS)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/dnstool $(GO-PKG-PREFIX)/cmd/dnstool
 
-make-torrc: $(BUILD-DEST)
-	cd $(GO-SRC-DIR) && $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/make-torrc ./cmd/make-torrc
+make-torrc: $(BUILD-DEST) $(GO-BUILD-DEPS)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/make-torrc $(GO-PKG-PREFIX)/cmd/make-torrc
 
 build: anonsurf-cli anonsurf-gtk dnstool make-torrc
 

@@ -9,6 +9,7 @@ Standards-Version: 4.5.0
 Build-Depends:
  debhelper-compat (= 12),
  golang-go,
+ golang-github-spf13-cobra-dev,
  gcc (>= 10),
  bash-completion,
  valac,
