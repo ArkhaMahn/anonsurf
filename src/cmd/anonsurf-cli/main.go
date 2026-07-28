@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/monitor"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
@@ -50,6 +51,7 @@ type dependencies struct {
 	identity identityChanger
 	ipCheck  ipChecker
 	monitor  monitorRunner
+	safeKill safeKillRunner
 }
 
 type statusReader interface {
@@ -68,6 +70,10 @@ type monitorRunner interface {
 	Run() error
 }
 
+type safeKillRunner interface {
+	Run() error
+}
+
 func defaultDependencies() dependencies {
 	return dependencies{
 		service:  systemd.NewAnonsurfdController(),
@@ -75,6 +81,7 @@ func defaultDependencies() dependencies {
 		identity: tor.NewIdentityChanger(),
 		ipCheck:  netcheck.NewChecker(),
 		monitor:  monitor.NewNyxMonitor(os.Stdin, os.Stdout, os.Stderr),
+		safeKill: safekill.NewRunner(),
 	}
 }
 
@@ -102,9 +109,9 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	rootCmd.AddCommand(
-		serviceCommand("start", "Start system-wide Tor transparent routing", deps.service.Start, "AnonSurf started."),
-		serviceCommand("stop", "Stop AnonSurf and return to clearnet", deps.service.Stop, "AnonSurf stopped."),
-		serviceCommand("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted."),
+		serviceCommandWithSafeKill("start", "Start system-wide Tor transparent routing", deps.service.Start, "AnonSurf started.", deps.safeKill),
+		serviceCommandWithSafeKill("stop", "Stop AnonSurf and return to clearnet", deps.service.Stop, "AnonSurf stopped.", deps.safeKill),
+		serviceCommandWithSafeKill("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted.", deps.safeKill),
 		statusCommand(deps.status, deps.monitor),
 		monitorCommand(deps.monitor),
 		changeIDCommand(deps.identity),
@@ -122,7 +129,6 @@ func statusCommand(reader statusReader, monitor monitorRunner) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show AnonSurf, Tor, and DNS status",
-		Long:  "Show AnonSurf, Tor, and DNS status.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if useNyx {
@@ -238,7 +244,6 @@ func serviceCommand(use, short string, run func() error, success string) *cobra.
 	return &cobra.Command{
 		Use:   use,
 		Short: short,
-		Long:  short + ".",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := run(); err != nil {
@@ -250,11 +255,37 @@ func serviceCommand(use, short string, run func() error, success string) *cobra.
 	}
 }
 
+func serviceCommandWithSafeKill(use, short string, run func() error, success string, safeKill safeKillRunner) *cobra.Command {
+	var useSafeKill bool
+	cmd := &cobra.Command{
+		Use:   use,
+		Short: short,
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if useSafeKill {
+				if safeKill == nil {
+					return fmt.Errorf("%s safe-kill: runner unavailable", use)
+				}
+				if err := safeKill.Run(); err != nil {
+					return fmt.Errorf("%s safe-kill: %w", use, err)
+				}
+				fmt.Fprintln(cmd.OutOrStdout(), "SafeKill completed.")
+			}
+			if err := run(); err != nil {
+				return fmt.Errorf("%s: %w", use, err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), success)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&useSafeKill, "safe-kill", false, "Run safekill before changing AnonSurf service state")
+	return cmd
+}
+
 func statusBootCommand(service serviceController) *cobra.Command {
 	return &cobra.Command{
 		Use:   "status-boot",
 		Short: "Show whether AnonSurf starts at boot",
-		Long:  "Show whether AnonSurf starts at boot.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			enabled, err := service.IsEnabled()
@@ -273,7 +304,7 @@ func statusBootCommand(service serviceController) *cobra.Command {
 
 const helpTemplate = `AnonSurf
 
-{{.Long}}
+{{if .Long}}{{.Long}}{{else}}{{.Short}}{{end}}
 
 Usage:
   {{.UseLine}}
