@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
 const version = "6.0.0"
@@ -41,18 +42,24 @@ type serviceController interface {
 }
 
 type dependencies struct {
-	service serviceController
-	status  statusReader
+	service  serviceController
+	status   statusReader
+	identity identityChanger
 }
 
 type statusReader interface {
 	Snapshot() (status.Snapshot, error)
 }
 
+type identityChanger interface {
+	Change() error
+}
+
 func defaultDependencies() dependencies {
 	return dependencies{
-		service: systemd.NewAnonsurfdController(),
-		status:  status.NewReader(),
+		service:  systemd.NewAnonsurfdController(),
+		status:   status.NewReader(),
+		identity: tor.NewIdentityChanger(),
 	}
 }
 
@@ -84,7 +91,7 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 		serviceCommand("stop", "Stop AnonSurf and return to clearnet", deps.service.Stop, "AnonSurf stopped."),
 		serviceCommand("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted."),
 		statusCommand(deps.status),
-		plannedCommand("changeid", []string{"newnym"}, "Request a new Tor identity"),
+		changeIDCommand(deps.identity),
 		plannedCommand("myip", []string{"ip"}, "Check the current public Tor status"),
 		serviceCommand("enable-boot", "Enable AnonSurf at system startup", deps.service.Enable, "AnonSurf enabled at startup."),
 		serviceCommand("disable-boot", "Disable AnonSurf at system startup", deps.service.Disable, "AnonSurf disabled at startup."),
@@ -144,6 +151,23 @@ func dnsLabel(state status.DNSState) string {
 		return "resolv.conf missing"
 	default:
 		return "unknown"
+	}
+}
+
+func changeIDCommand(changer identityChanger) *cobra.Command {
+	return &cobra.Command{
+		Use:     "changeid",
+		Aliases: []string{"newnym"},
+		Short:   "Request a new Tor identity",
+		Long:    "Request a new Tor identity through Tor's control port.",
+		Args:    cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := changer.Change(); err != nil {
+				return fmt.Errorf("changeid: %w", err)
+			}
+			fmt.Fprintln(cmd.OutOrStdout(), "Tor identity change requested.")
+			return nil
+		},
 	}
 }
 

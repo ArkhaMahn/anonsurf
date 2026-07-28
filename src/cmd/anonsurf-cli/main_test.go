@@ -52,8 +52,9 @@ func (s *fakeService) IsEnabled() (bool, error) {
 
 func testDependencies(service *fakeService) dependencies {
 	return dependencies{
-		service: service,
-		status:  fakeStatus{snapshot: status.Snapshot{}},
+		service:  service,
+		status:   fakeStatus{snapshot: status.Snapshot{}},
+		identity: &fakeIdentity{},
 	}
 }
 
@@ -64,6 +65,16 @@ type fakeStatus struct {
 
 func (s fakeStatus) Snapshot() (status.Snapshot, error) {
 	return s.snapshot, s.err
+}
+
+type fakeIdentity struct {
+	err    error
+	called bool
+}
+
+func (i *fakeIdentity) Change() error {
+	i.called = true
+	return i.err
 }
 
 func TestRootHelpWithNoArguments(t *testing.T) {
@@ -249,9 +260,57 @@ func TestStatusCommandReturnsContextualError(t *testing.T) {
 	}
 }
 
+func TestChangeIDCommandRequestsNewIdentity(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	deps := testDependencies(&fakeService{})
+	identity := &fakeIdentity{}
+	deps.identity = identity
+
+	if err := executeWithDependencies([]string{"changeid"}, &stdout, &stderr, deps); err != nil {
+		t.Fatal(err)
+	}
+	if !identity.called {
+		t.Fatal("expected identity changer to be called")
+	}
+	if got := stdout.String(); got != "Tor identity change requested.\n" {
+		t.Fatalf("stdout = %q", got)
+	}
+}
+
+func TestChangeIDAliasRequestsNewIdentity(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	deps := testDependencies(&fakeService{})
+	identity := &fakeIdentity{}
+	deps.identity = identity
+
+	if err := executeWithDependencies([]string{"newnym"}, &stdout, &stderr, deps); err != nil {
+		t.Fatal(err)
+	}
+	if !identity.called {
+		t.Fatal("expected identity changer to be called")
+	}
+}
+
+func TestChangeIDCommandReturnsContextualError(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	wantErr := errors.New("tor control failed")
+	deps := testDependencies(&fakeService{})
+	deps.identity = &fakeIdentity{err: wantErr}
+
+	err := executeWithDependencies([]string{"changeid"}, &stdout, &stderr, deps)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want wrapping %v", err, wantErr)
+	}
+	if !strings.Contains(err.Error(), "changeid:") {
+		t.Fatalf("error = %v, want command context", err)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+}
+
 func TestPlannedCommandsReturnNotImplemented(t *testing.T) {
 	commands := []string{
-		"changeid",
 		"myip",
 	}
 
@@ -274,8 +333,7 @@ func TestPlannedCommandsReturnNotImplemented(t *testing.T) {
 
 func TestCommandAliasesReturnNotImplemented(t *testing.T) {
 	tests := map[string]string{
-		"newnym": "changeid",
-		"ip":     "myip",
+		"ip": "myip",
 	}
 
 	for alias, command := range tests {
