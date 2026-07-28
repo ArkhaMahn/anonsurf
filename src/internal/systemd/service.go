@@ -9,6 +9,7 @@ import (
 const (
 	SystemctlPath = "/usr/bin/systemctl"
 	AnonsurfdUnit = "anonsurfd.service"
+	TorUnit       = "tor.service"
 )
 
 type Runner interface {
@@ -40,6 +41,14 @@ func NewAnonsurfdController() ServiceController {
 	}
 }
 
+func NewTorController() ServiceController {
+	return ServiceController{
+		Runner:        ExecRunner{},
+		SystemctlPath: SystemctlPath,
+		Unit:          TorUnit,
+	}
+}
+
 func (c ServiceController) Start() error {
 	return c.run("start")
 }
@@ -61,22 +70,42 @@ func (c ServiceController) Disable() error {
 }
 
 func (c ServiceController) IsEnabled() (bool, error) {
+	return c.queryState("is-enabled", map[string]bool{
+		"enabled":   true,
+		"disabled":  false,
+		"masked":    false,
+		"static":    false,
+		"indirect":  false,
+		"generated": false,
+		"transient": false,
+	})
+}
+
+func (c ServiceController) IsActive() (bool, error) {
+	return c.queryState("is-active", map[string]bool{
+		"active":       true,
+		"inactive":     false,
+		"failed":       false,
+		"activating":   false,
+		"deactivating": false,
+		"reloading":    false,
+	})
+}
+
+func (c ServiceController) queryState(action string, knownStates map[string]bool) (bool, error) {
 	runner := c.runner()
 	systemctlPath := c.systemctlPath()
 	unit := c.unit()
 
-	output, err := runner.Output(systemctlPath, "is-enabled", unit)
+	output, err := runner.Output(systemctlPath, action, unit)
 	state := strings.TrimSpace(string(output))
-	switch state {
-	case "enabled":
-		return true, nil
-	case "disabled", "masked", "static", "indirect", "generated", "transient":
-		return false, nil
+	if value, ok := knownStates[state]; ok {
+		return value, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("systemctl is-enabled %s: %w", unit, err)
+		return false, fmt.Errorf("systemctl %s %s: %w", action, unit, err)
 	}
-	return false, fmt.Errorf("unexpected systemctl is-enabled state %q", state)
+	return false, fmt.Errorf("unexpected systemctl %s state %q", action, state)
 }
 
 func (c ServiceController) run(action string) error {

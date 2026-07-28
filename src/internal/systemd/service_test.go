@@ -144,6 +144,44 @@ func TestServiceControllerIsEnabledStates(t *testing.T) {
 	}
 }
 
+func TestServiceControllerIsActiveStates(t *testing.T) {
+	tests := []struct {
+		name   string
+		output []byte
+		active bool
+	}{
+		{name: "active", output: []byte("active\n"), active: true},
+		{name: "inactive", output: []byte("inactive\n"), active: false},
+		{name: "failed", output: []byte("failed\n"), active: false},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			runner := &recordingRunner{output: test.output}
+			controller := ServiceController{
+				Runner:        runner,
+				SystemctlPath: "/bin/systemctl",
+				Unit:          "tor.service",
+			}
+
+			active, err := controller.IsActive()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if active != test.active {
+				t.Fatalf("active = %v, want %v", active, test.active)
+			}
+			want := []recordedCall{{
+				command: "/bin/systemctl",
+				args:    []string{"is-active", "tor.service"},
+			}}
+			if !reflect.DeepEqual(runner.calls, want) {
+				t.Fatalf("calls = %#v, want %#v", runner.calls, want)
+			}
+		})
+	}
+}
+
 func TestServiceControllerIsEnabledWrapsUnexpectedError(t *testing.T) {
 	wantErr := errors.New("failed")
 	controller := ServiceController{

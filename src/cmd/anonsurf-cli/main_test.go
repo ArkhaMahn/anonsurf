@@ -5,6 +5,8 @@ import (
 	"errors"
 	"strings"
 	"testing"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 )
 
 type fakeService struct {
@@ -49,7 +51,19 @@ func (s *fakeService) IsEnabled() (bool, error) {
 }
 
 func testDependencies(service *fakeService) dependencies {
-	return dependencies{service: service}
+	return dependencies{
+		service: service,
+		status:  fakeStatus{snapshot: status.Snapshot{}},
+	}
+}
+
+type fakeStatus struct {
+	snapshot status.Snapshot
+	err      error
+}
+
+func (s fakeStatus) Snapshot() (status.Snapshot, error) {
+	return s.snapshot, s.err
 }
 
 func TestRootHelpWithNoArguments(t *testing.T) {
@@ -190,9 +204,53 @@ func TestStatusBootCommandReturnsContextualError(t *testing.T) {
 	}
 }
 
+func TestStatusCommandPrintsSnapshot(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	deps := testDependencies(&fakeService{})
+	deps.status = fakeStatus{
+		snapshot: status.Snapshot{
+			AnonSurfActive: true,
+			TorActive:      true,
+			DNSState:       status.DNSTor,
+			DNSAddresses:   []string{"127.0.0.1"},
+		},
+	}
+
+	if err := executeWithDependencies([]string{"status"}, &stdout, &stderr, deps); err != nil {
+		t.Fatal(err)
+	}
+
+	output := stdout.String()
+	for _, expected := range []string{
+		"AnonSurf status",
+		"AnonSurf: active",
+		"Tor:      active",
+		"DNS:      using Tor DNS",
+		"Servers:  127.0.0.1",
+	} {
+		if !strings.Contains(output, expected) {
+			t.Fatalf("status output missing %q:\n%s", expected, output)
+		}
+	}
+}
+
+func TestStatusCommandReturnsContextualError(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	wantErr := errors.New("status failed")
+	deps := testDependencies(&fakeService{})
+	deps.status = fakeStatus{err: wantErr}
+
+	err := executeWithDependencies([]string{"status"}, &stdout, &stderr, deps)
+	if !errors.Is(err, wantErr) {
+		t.Fatalf("error = %v, want wrapping %v", err, wantErr)
+	}
+	if !strings.Contains(err.Error(), "status:") {
+		t.Fatalf("error = %v, want command context", err)
+	}
+}
+
 func TestPlannedCommandsReturnNotImplemented(t *testing.T) {
 	commands := []string{
-		"status",
 		"changeid",
 		"myip",
 	}

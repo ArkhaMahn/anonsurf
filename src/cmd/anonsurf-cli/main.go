@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
@@ -40,11 +42,17 @@ type serviceController interface {
 
 type dependencies struct {
 	service serviceController
+	status  statusReader
+}
+
+type statusReader interface {
+	Snapshot() (status.Snapshot, error)
 }
 
 func defaultDependencies() dependencies {
 	return dependencies{
 		service: systemd.NewAnonsurfdController(),
+		status:  status.NewReader(),
 	}
 }
 
@@ -75,7 +83,7 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 		serviceCommand("start", "Start system-wide Tor transparent routing", deps.service.Start, "AnonSurf started."),
 		serviceCommand("stop", "Stop AnonSurf and return to clearnet", deps.service.Stop, "AnonSurf stopped."),
 		serviceCommand("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted."),
-		plannedCommand("status", nil, "Show AnonSurf, Tor, and DNS status"),
+		statusCommand(deps.status),
 		plannedCommand("changeid", []string{"newnym"}, "Request a new Tor identity"),
 		plannedCommand("myip", []string{"ip"}, "Check the current public Tor status"),
 		serviceCommand("enable-boot", "Enable AnonSurf at system startup", deps.service.Enable, "AnonSurf enabled at startup."),
@@ -84,6 +92,59 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 	)
 
 	return rootCmd
+}
+
+func statusCommand(reader statusReader) *cobra.Command {
+	return &cobra.Command{
+		Use:   "status",
+		Short: "Show AnonSurf, Tor, and DNS status",
+		Long:  "Show AnonSurf, Tor, and DNS status.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			snapshot, err := reader.Snapshot()
+			if err != nil {
+				return fmt.Errorf("status: %w", err)
+			}
+			printStatus(cmd.OutOrStdout(), snapshot)
+			return nil
+		},
+	}
+}
+
+func printStatus(output io.Writer, snapshot status.Snapshot) {
+	fmt.Fprintln(output, "AnonSurf status")
+	fmt.Fprintf(output, "  AnonSurf: %s\n", activeLabel(snapshot.AnonSurfActive))
+	fmt.Fprintf(output, "  Tor:      %s\n", activeLabel(snapshot.TorActive))
+	fmt.Fprintf(output, "  DNS:      %s\n", dnsLabel(snapshot.DNSState))
+	if len(snapshot.DNSAddresses) > 0 {
+		fmt.Fprintf(output, "  Servers:  %s\n", strings.Join(snapshot.DNSAddresses, ", "))
+	}
+}
+
+func activeLabel(active bool) string {
+	if active {
+		return "active"
+	}
+	return "inactive"
+}
+
+func dnsLabel(state status.DNSState) string {
+	switch state {
+	case status.DNSTor:
+		return "using Tor DNS"
+	case status.DNSLeak:
+		return "possible leak: non-Tor DNS while AnonSurf is active"
+	case status.DNSClearnet:
+		return "clearnet DNS"
+	case status.DNSLocalhostOnly:
+		return "localhost only without AnonSurf"
+	case status.DNSEmpty:
+		return "no nameservers configured"
+	case status.DNSMissing:
+		return "resolv.conf missing"
+	default:
+		return "unknown"
+	}
 }
 
 func serviceCommand(use, short string, run func() error, success string) *cobra.Command {
