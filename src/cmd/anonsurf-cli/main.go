@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/monitor"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
@@ -48,6 +49,7 @@ type dependencies struct {
 	status   statusReader
 	identity identityChanger
 	ipCheck  ipChecker
+	monitor  monitorRunner
 }
 
 type statusReader interface {
@@ -62,12 +64,17 @@ type ipChecker interface {
 	Check(ctx context.Context) (netcheck.Result, error)
 }
 
+type monitorRunner interface {
+	Run() error
+}
+
 func defaultDependencies() dependencies {
 	return dependencies{
 		service:  systemd.NewAnonsurfdController(),
 		status:   status.NewReader(),
 		identity: tor.NewIdentityChanger(),
 		ipCheck:  netcheck.NewChecker(),
+		monitor:  monitor.NewNyxMonitor(os.Stdin, os.Stdout, os.Stderr),
 	}
 }
 
@@ -98,7 +105,8 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 		serviceCommand("start", "Start system-wide Tor transparent routing", deps.service.Start, "AnonSurf started."),
 		serviceCommand("stop", "Stop AnonSurf and return to clearnet", deps.service.Stop, "AnonSurf stopped."),
 		serviceCommand("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted."),
-		statusCommand(deps.status),
+		statusCommand(deps.status, deps.monitor),
+		monitorCommand(deps.monitor),
 		changeIDCommand(deps.identity),
 		myIPCommand(deps.ipCheck),
 		serviceCommand("enable-boot", "Enable AnonSurf at system startup", deps.service.Enable, "AnonSurf enabled at startup."),
@@ -109,18 +117,42 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 	return rootCmd
 }
 
-func statusCommand(reader statusReader) *cobra.Command {
-	return &cobra.Command{
+func statusCommand(reader statusReader, monitor monitorRunner) *cobra.Command {
+	var useNyx bool
+	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show AnonSurf, Tor, and DNS status",
 		Long:  "Show AnonSurf, Tor, and DNS status.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if useNyx {
+				if err := monitor.Run(); err != nil {
+					return fmt.Errorf("status --nyx: %w", err)
+				}
+				return nil
+			}
 			snapshot, err := reader.Snapshot()
 			if err != nil {
 				return fmt.Errorf("status: %w", err)
 			}
 			printStatus(cmd.OutOrStdout(), snapshot)
+			return nil
+		},
+	}
+	cmd.Flags().BoolVar(&useNyx, "nyx", false, "Open Nyx with the AnonSurf configuration instead of printing a snapshot")
+	return cmd
+}
+
+func monitorCommand(monitor monitorRunner) *cobra.Command {
+	return &cobra.Command{
+		Use:   "monitor",
+		Short: "Open Nyx Tor monitor",
+		Long:  "Open Nyx using the AnonSurf configuration.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := monitor.Run(); err != nil {
+				return fmt.Errorf("monitor: %w", err)
+			}
 			return nil
 		},
 	}
