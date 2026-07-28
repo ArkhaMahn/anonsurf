@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: AnonSurf
-Upstream-Contact: Nong Hoang "DmKnght" Tu dmknght@parrotsec.org
+Upstream-Contact: Parrot Team <team@parrotsec.org>
 Source: https://gitlab.com/parrotsec/packages/anonsurf/
 
 Files:
@@ -16,11 +16,14 @@ Files:
   build/*
   sys-units/*
   src/*
+  src_nim/*
   configs/*
   Makefile
   README.md
   scripts/*
-Copyright: 2020-2024, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
+Copyright:
+  2020-2024, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
+  2026, Dario Camonita <danterolle@parrotsec.org>
 License: GPL-3.0+
 
 Files:
@@ -56,4 +59,3 @@ License: GPL-3.0+
  .
  On Debian systems, the complete text of the GNU General
  Public License version 3 can be found in "/usr/share/common-licenses/GPL-3".
-

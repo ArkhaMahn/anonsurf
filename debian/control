@@ -2,12 +2,10 @@ Source: anonsurf
 Section: net
 Priority: optional
 Maintainer: Parrot Team <team@parrotsec.org>
-Uploaders: Lorenzo "Palinuro" Faletra <palinuro@parrotsec.org>,
-           Lisetta "Sheireen" Ferrero <sheireen@autistiche.org>
-           Nong Hoang "Dmknght" Tu <dmknght@parrotsec.org>
-Standards-Version: 4.5.0
+Uploaders: Dario Camonita <danterolle@parrotsec.org>
+Standards-Version: 4.7.2
 Build-Depends:
- debhelper-compat (= 12),
+ debhelper-compat (= 13),
  golang-go,
  golang-github-spf13-cobra-dev,
  gcc (>= 10),
@@ -39,9 +37,8 @@ Architecture: any
 Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf, nyx, pkexec
 Recommends: parrot-menu
-Description: Graphic Interface for AnonSurf
- AnonSurf's graphic user interface and
- menu launcher written in Vala
+Description: Graphical interface for AnonSurf
+ AnonSurf's graphical interface and desktop launcher written in Vala.
 
 Package: anonsurf-cli
 Architecture: any
