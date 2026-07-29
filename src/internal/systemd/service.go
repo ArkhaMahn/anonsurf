@@ -2,8 +2,11 @@ package systemd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/sys"
 )
 
 const (
@@ -20,7 +23,11 @@ type Runner interface {
 type ExecRunner struct{}
 
 func (ExecRunner) Run(command string, args ...string) error {
-	return exec.Command(command, args...).Run()
+	cmd := exec.Command(command, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	return cmd.Run()
 }
 
 func (ExecRunner) Output(command string, args ...string) ([]byte, error) {
@@ -31,6 +38,8 @@ type ServiceController struct {
 	Runner        Runner
 	SystemctlPath string
 	Unit          string
+	UseSudo       bool
+	Sudo          sys.Sudo
 }
 
 func NewAnonsurfdController() ServiceController {
@@ -38,6 +47,7 @@ func NewAnonsurfdController() ServiceController {
 		Runner:        ExecRunner{},
 		SystemctlPath: SystemctlPath,
 		Unit:          AnonsurfdUnit,
+		UseSudo:       true,
 	}
 }
 
@@ -112,11 +122,20 @@ func (c ServiceController) run(action string) error {
 	runner := c.runner()
 	systemctlPath := c.systemctlPath()
 	unit := c.unit()
+	command, args := c.runCommand(systemctlPath, action, unit)
 
-	if err := runner.Run(systemctlPath, action, unit); err != nil {
+	if err := runner.Run(command, args...); err != nil {
 		return fmt.Errorf("systemctl %s %s: %w", action, unit, err)
 	}
 	return nil
+}
+
+func (c ServiceController) runCommand(systemctlPath, action, unit string) (string, []string) {
+	args := []string{action, unit}
+	if c.UseSudo {
+		return c.Sudo.Command(systemctlPath, args...)
+	}
+	return systemctlPath, args
 }
 
 func (c ServiceController) runner() Runner {

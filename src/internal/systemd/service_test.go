@@ -4,6 +4,8 @@ import (
 	"errors"
 	"reflect"
 	"testing"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/sys"
 )
 
 type recordedCall struct {
@@ -35,6 +37,9 @@ func TestNewAnonsurfdControllerDefaults(t *testing.T) {
 	}
 	if controller.Unit != AnonsurfdUnit {
 		t.Fatalf("Unit = %q, want %q", controller.Unit, AnonsurfdUnit)
+	}
+	if !controller.UseSudo {
+		t.Fatal("UseSudo = false, want true")
 	}
 	if controller.Runner == nil {
 		t.Fatal("Runner is nil")
@@ -74,6 +79,48 @@ func TestServiceControllerRunsSystemctlActions(t *testing.T) {
 				t.Fatalf("calls = %#v, want %#v", runner.calls, want)
 			}
 		})
+	}
+}
+
+func TestServiceControllerRunsPrivilegedActionsThroughSudoWhenNotRoot(t *testing.T) {
+	runner := &recordingRunner{}
+	controller := NewAnonsurfdController()
+	controller.Runner = runner
+	controller.Sudo.IsAdmin = func() bool {
+		return false
+	}
+
+	if err := controller.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []recordedCall{{
+		command: sys.SudoPath,
+		args:    []string{SystemctlPath, "start", AnonsurfdUnit},
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("calls = %#v, want %#v", runner.calls, want)
+	}
+}
+
+func TestServiceControllerRunsPrivilegedActionsDirectlyWhenRoot(t *testing.T) {
+	runner := &recordingRunner{}
+	controller := NewAnonsurfdController()
+	controller.Runner = runner
+	controller.Sudo.IsAdmin = func() bool {
+		return true
+	}
+
+	if err := controller.Start(); err != nil {
+		t.Fatal(err)
+	}
+
+	want := []recordedCall{{
+		command: SystemctlPath,
+		args:    []string{"start", AnonsurfdUnit},
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("calls = %#v, want %#v", runner.calls, want)
 	}
 }
 
@@ -141,6 +188,31 @@ func TestServiceControllerIsEnabledStates(t *testing.T) {
 				t.Fatalf("calls = %#v, want %#v", runner.calls, want)
 			}
 		})
+	}
+}
+
+func TestServiceControllerQueriesDoNotUseSudo(t *testing.T) {
+	runner := &recordingRunner{output: []byte("enabled\n")}
+	controller := NewAnonsurfdController()
+	controller.Runner = runner
+	controller.Sudo.IsAdmin = func() bool {
+		return false
+	}
+
+	enabled, err := controller.IsEnabled()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !enabled {
+		t.Fatal("enabled = false, want true")
+	}
+
+	want := []recordedCall{{
+		command: SystemctlPath,
+		args:    []string{"is-enabled", AnonsurfdUnit},
+	}}
+	if !reflect.DeepEqual(runner.calls, want) {
+		t.Fatalf("calls = %#v, want %#v", runner.calls, want)
 	}
 }
 
