@@ -1,13 +1,12 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
-)
 
-var errBackendNotImplemented = errors.New("backend is not implemented")
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
+)
 
 type daemonController interface {
 	Start() error
@@ -19,20 +18,6 @@ type dependencies struct {
 	daemon daemonController
 }
 
-type unsupportedDaemon struct{}
-
-func (unsupportedDaemon) Start() error {
-	return errBackendNotImplemented
-}
-
-func (unsupportedDaemon) Stop() error {
-	return errBackendNotImplemented
-}
-
-func (unsupportedDaemon) Restart() error {
-	return errBackendNotImplemented
-}
-
 func main() {
 	if err := run(os.Args[1:], os.Stdout, os.Stderr, defaultDependencies()); err != nil {
 		fmt.Fprintln(os.Stderr, "anondaemon:", err)
@@ -42,7 +27,7 @@ func main() {
 
 func defaultDependencies() dependencies {
 	return dependencies{
-		daemon: unsupportedDaemon{},
+		daemon: anondaemon.NewController(),
 	}
 }
 
