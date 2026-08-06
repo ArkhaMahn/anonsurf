@@ -1,10 +1,6 @@
 package anondaemon
 
 import (
-	"fmt"
-	"io"
-	"os"
-	"path/filepath"
 	"time"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
@@ -17,8 +13,10 @@ const (
 	SysctlPath                = "/sbin/sysctl"
 	IPTablesPath              = "/usr/sbin/iptables"
 	IPTablesSavePath          = "/usr/sbin/iptables-save"
+	IPTablesRestorePath       = "/usr/sbin/iptables-restore"
 	IPTablesRulesPath         = "/etc/network/iptables.rules"
 	TorControlCookie          = tor.DefaultCookieAuthFile
+	KillallPath               = "killall"
 	defaultTorUser            = "debian-tor"
 	defaultCookieTimeout      = time.Second
 	defaultCookiePollInterval = 100 * time.Millisecond
@@ -84,6 +82,13 @@ func (c Controller) iptablesSavePath() string {
 	return IPTablesSavePath
 }
 
+func (c Controller) iptablesRestorePath() string {
+	if c.IPTablesRestorePath != "" {
+		return c.IPTablesRestorePath
+	}
+	return IPTablesRestorePath
+}
+
 func (c Controller) iptablesRulesPath() string {
 	if c.IPTablesRulesPath != "" {
 		return c.IPTablesRulesPath
@@ -103,6 +108,13 @@ func (c Controller) torCookiePath() string {
 		return c.TorCookiePath
 	}
 	return TorControlCookie
+}
+
+func (c Controller) killallPath() string {
+	if c.KillallPath != "" {
+		return c.KillallPath
+	}
+	return KillallPath
 }
 
 func (c Controller) torUser() string {
@@ -131,65 +143,4 @@ func (c Controller) cookiePollInterval() time.Duration {
 		return c.CookiePollInterval
 	}
 	return defaultCookiePollInterval
-}
-
-func (c Controller) warningWriter() io.Writer {
-	if c.WarningWriter != nil {
-		return c.WarningWriter
-	}
-	return os.Stderr
-}
-
-func (c Controller) warnf(format string, args ...any) {
-	fmt.Fprintf(c.warningWriter(), format+"\n", args...)
-}
-
-func (c Controller) readFile(path string) ([]byte, error) {
-	if c.ReadFile != nil {
-		return c.ReadFile(path)
-	}
-	return os.ReadFile(path)
-}
-
-func (c Controller) fileExists(path string) (bool, error) {
-	if c.FileExists != nil {
-		return c.FileExists(path)
-	}
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
-func (c Controller) writeFile(path string, data []byte, perm os.FileMode) error {
-	if c.WriteFile != nil {
-		return c.WriteFile(path, data, perm)
-	}
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-		return err
-	}
-	return os.WriteFile(path, data, perm)
-}
-
-func (c Controller) chmodReadable(path string) error {
-	if c.ChmodReadable != nil {
-		return c.ChmodReadable(path)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(path, info.Mode().Perm()|0444)
-}
-
-func (c Controller) sleep(duration time.Duration) {
-	if c.Sleep != nil {
-		c.Sleep(duration)
-		return
-	}
-	time.Sleep(duration)
 }
