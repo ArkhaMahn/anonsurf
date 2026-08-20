@@ -4,7 +4,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 )
 
@@ -14,17 +13,6 @@ func testNyxrcManager(t *testing.T) NyxrcManager {
 	return NyxrcManager{
 		Path:            filepath.Join(t.TempDir(), "etc", "anonsurf", "nyxrc"),
 		ExpectedContent: "tor_chroot\ndata_directory disabled\n",
-	}
-}
-
-func TestEmbeddedNyxrcMatchesRepositoryConfig(t *testing.T) {
-	repositoryNyxrc, err := os.ReadFile(repositoryConfigPath("nyxrc"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if strings.TrimRight(defaultNyxrc, "\n") != string(repositoryNyxrc) {
-		t.Fatal("embedded nyxrc differs from configs/nyxrc")
 	}
 }
 

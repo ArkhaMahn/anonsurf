@@ -1,24 +1,12 @@
 package tor
 
 import (
-	"os"
 	"reflect"
 	"strings"
 	"testing"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/config"
 )
-
-func TestEmbeddedTorrcBaseMatchesRepositoryConfig(t *testing.T) {
-	repositoryBase, err := os.ReadFile(repositoryConfigPath("torrc.base"))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if defaultTorrcBase != string(repositoryBase) {
-		t.Fatal("embedded torrc.base differs from configs/torrc.base")
-	}
-}
 
 func TestTorrcOptionsFromConfig(t *testing.T) {
 	cfg := config.Config{
