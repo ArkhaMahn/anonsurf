@@ -117,7 +117,7 @@ func (m TorrcManager) Write(content string) error {
 	if err := os.MkdirAll(filepath.Dir(m.Path), 0755); err != nil {
 		return fmt.Errorf("create torrc directory: %w", err)
 	}
-	if err := writeFileAtomically(m.Path, []byte(content), 0644); err != nil {
+	if err := writeFileAtomically(m.Path, []byte(content), 0600); err != nil {
 		return fmt.Errorf("write torrc: %w", err)
 	}
 	return nil

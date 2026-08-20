@@ -150,6 +150,13 @@ func TestTorrcManagerWriteCreatesDirectoryAndWritesAtomically(t *testing.T) {
 	if string(content) != "generated torrc\n" {
 		t.Fatalf("torrc = %q, want generated torrc", string(content))
 	}
+	info, err := os.Stat(manager.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0600 {
+		t.Fatalf("torrc mode = %v, want 0600", info.Mode().Perm())
+	}
 }
 
 func TestTorrcManagerWriteRejectsEmptyContentWithoutReplacingTorrc(t *testing.T) {
