@@ -29,7 +29,7 @@ GO-BUILD-ENV = GO111MODULE=on
 GO-PKG-PREFIX = .
 endif
 
-os_name="$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
+os_name := $(shell sed -n 's/^ID=//p' /etc/os-release 2>/dev/null | tr -d '"')
 
 .PHONY: build check test
 
@@ -79,7 +79,7 @@ check: test
 
 inst-launchers:
 	# Copy launchers
-	if [ $(os_name) = "parrot" ]; then \
+	if [ "$(os_name)" = "parrot" ]; then \
 		cp launchers/parrot/*.desktop $(DESTDIR)/usr/share/applications/; \
 	else \
 		cp launchers/debian/*.desktop $(DESTDIR)/usr/share/applications/; \
