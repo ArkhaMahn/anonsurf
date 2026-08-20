@@ -1,6 +1,6 @@
 # Build
 - Build dependencies: golang-go, valac, gcc, libnotify-dev, libvte-2.91-dev, git
-- Runtime dependencies: bleachbit, nyx, pkexec, sudo, tor, iptables, network-manager, psmisc, systemd, libglib2.0-0, libgtk-3-0, libnotify4, libvte-2.91-0
+- Runtime dependencies: bleachbit, nyx, pkexec, sudo, tor, iptables, network-manager, systemd, libglib2.0-0, libgtk-3-0, libnotify4, libvte-2.91-0
 - Commands to build:
 1. `git clone https://gitlab.com/parrotsec/packages/anonsurf/`
 2. `cd anonsurf && make build && sudo make install`

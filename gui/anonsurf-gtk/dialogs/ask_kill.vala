@@ -13,7 +13,12 @@ class ButtonKillYes: Button {
     try {
       Subprocess action_start_anonsurf = new Subprocess.newv({"/usr/lib/anonsurf/safekill"}, NONE);
       action_start_anonsurf.wait();
-      send_notification("Clear cache completed", "Killed processes and clear cache", NotifyLevel.Ok);
+      if (action_start_anonsurf.get_successful()) {
+        send_notification("Clear cache completed", "Killed processes and cleared cache", NotifyLevel.Ok);
+      } else {
+        string status = action_start_anonsurf.get_exit_status().to_string();
+        send_notification("Failed to clear cache", "Exit code: " + status, NotifyLevel.Error);
+      }
     } catch (GLib.Error error) {
       send_notification("Failed to do clear cache", error.message, NotifyLevel.Error);
     }
