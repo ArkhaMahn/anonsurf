@@ -1,10 +1,11 @@
 package tor
 
 import (
-	"os"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
 func IsAnonsurfRunning() bool {
-	_, err := os.Lstat("/run/systemd/units/invocation:anonsurfd.service")
-	return err == nil
+	controller := systemd.NewAnonsurfdController()
+	active, err := controller.IsActive()
+	return err == nil && active
 }
