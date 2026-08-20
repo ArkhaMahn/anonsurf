@@ -62,7 +62,10 @@ func run(args []string, deps dependencies) error {
 	case "new-torrc":
 		return generateTorrc(deps)
 	case "restore":
-		return deps.manager.Restore()
+		if err := deps.manager.Restore(); err != nil && !errors.Is(err, tor.ErrTorrcBackupNotFound) {
+			return err
+		}
+		return nil
 	default:
 		return fmt.Errorf("unknown argument %q", args[0])
 	}

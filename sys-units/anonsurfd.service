@@ -8,6 +8,7 @@ Type=oneshot
 ExecStart=/usr/lib/anonsurf/anondaemon start
 ExecReload=/usr/lib/anonsurf/anondaemon restart
 ExecStop=/usr/lib/anonsurf/anondaemon stop
+ExecStopPost=/usr/lib/anonsurf/anondaemon stop
 RemainAfterExit=yes
 TimeoutStartSec=120
 TimeoutStopSec=120

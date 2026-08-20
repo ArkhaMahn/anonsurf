@@ -59,7 +59,7 @@ func (c Controller) restoreIPv6State() error {
 	data, err := c.readFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return fmt.Errorf("IPv6 state is missing")
+			return nil
 		}
 		return fmt.Errorf("read IPv6 state: %w", err)
 	}
