@@ -15,11 +15,6 @@ const (
 	TorUnit       = "tor.service"
 )
 
-type Runner interface {
-	Run(command string, args ...string) error
-	Output(command string, args ...string) ([]byte, error)
-}
-
 type ExecRunner struct{}
 
 func (ExecRunner) Run(command string, args ...string) error {
@@ -35,28 +30,19 @@ func (ExecRunner) Output(command string, args ...string) ([]byte, error) {
 }
 
 type ServiceController struct {
-	Runner        Runner
-	SystemctlPath string
-	Unit          string
-	UseSudo       bool
-	Sudo          sys.Sudo
+	unit       string
+	privileged bool
 }
 
 func NewAnonsurfdController() ServiceController {
 	return ServiceController{
-		Runner:        ExecRunner{},
-		SystemctlPath: SystemctlPath,
-		Unit:          AnonsurfdUnit,
-		UseSudo:       true,
+		unit:       AnonsurfdUnit,
+		privileged: true,
 	}
 }
 
 func NewTorController() ServiceController {
-	return ServiceController{
-		Runner:        ExecRunner{},
-		SystemctlPath: SystemctlPath,
-		Unit:          TorUnit,
-	}
+	return ServiceController{unit: TorUnit}
 }
 
 func (c ServiceController) Start() error {
@@ -103,58 +89,25 @@ func (c ServiceController) IsActive() (bool, error) {
 }
 
 func (c ServiceController) queryState(action string, knownStates map[string]bool) (bool, error) {
-	runner := c.runner()
-	systemctlPath := c.systemctlPath()
-	unit := c.unit()
-
-	output, err := runner.Output(systemctlPath, action, unit)
+	output, err := (ExecRunner{}).Output(SystemctlPath, action, c.unit)
 	state := strings.TrimSpace(string(output))
 	if value, ok := knownStates[state]; ok {
 		return value, nil
 	}
 	if err != nil {
-		return false, fmt.Errorf("systemctl %s %s: %w", action, unit, err)
+		return false, fmt.Errorf("systemctl %s %s: %w", action, c.unit, err)
 	}
 	return false, fmt.Errorf("unexpected systemctl %s state %q", action, state)
 }
 
 func (c ServiceController) run(action string) error {
-	runner := c.runner()
-	systemctlPath := c.systemctlPath()
-	unit := c.unit()
-	command, args := c.runCommand(systemctlPath, action, unit)
-
-	if err := runner.Run(command, args...); err != nil {
-		return fmt.Errorf("systemctl %s %s: %w", action, unit, err)
+	command := SystemctlPath
+	args := []string{action, c.unit}
+	if c.privileged {
+		command, args = sys.PrivilegedCommand(command, args...)
+	}
+	if err := (ExecRunner{}).Run(command, args...); err != nil {
+		return fmt.Errorf("systemctl %s %s: %w", action, c.unit, err)
 	}
 	return nil
-}
-
-func (c ServiceController) runCommand(systemctlPath, action, unit string) (string, []string) {
-	args := []string{action, unit}
-	if c.UseSudo {
-		return c.Sudo.Command(systemctlPath, args...)
-	}
-	return systemctlPath, args
-}
-
-func (c ServiceController) runner() Runner {
-	if c.Runner != nil {
-		return c.Runner
-	}
-	return ExecRunner{}
-}
-
-func (c ServiceController) systemctlPath() string {
-	if c.SystemctlPath != "" {
-		return c.SystemctlPath
-	}
-	return SystemctlPath
-}
-
-func (c ServiceController) unit() string {
-	if c.Unit != "" {
-		return c.Unit
-	}
-	return AnonsurfdUnit
 }

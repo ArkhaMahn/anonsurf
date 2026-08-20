@@ -51,10 +51,10 @@ type dependencies struct {
 func defaultDependencies() dependencies {
 	return dependencies{
 		service:  systemd.NewAnonsurfdController(),
-		status:   status.NewReader(),
-		identity: anondaemon.NewIdentityClient(),
-		ipCheck:  netcheck.NewChecker(),
-		monitor:  anondaemon.NewMonitorClient(),
-		safeKill: safekill.NewRunner(),
+		status:   status.Reader{},
+		identity: anondaemon.IdentityClient{},
+		ipCheck:  netcheck.Checker{},
+		monitor:  anondaemon.MonitorClient{},
+		safeKill: safekill.Runner{},
 	}
 }

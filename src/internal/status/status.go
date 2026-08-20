@@ -27,45 +27,18 @@ type Snapshot struct {
 	DNSAddresses   []string
 }
 
-type Reader struct {
-	AnonSurfActive func() (bool, error)
-	TorActive      func() (bool, error)
-	DNSAddresses   func() ([]string, error)
-}
+type Reader struct{}
 
-func NewReader() Reader {
-	anonsurfd := systemd.NewAnonsurfdController()
-	torService := systemd.NewTorController()
-
-	return Reader{
-		AnonSurfActive: anonsurfd.IsActive,
-		TorActive:      torService.IsActive,
-		DNSAddresses: func() ([]string, error) {
-			return dns.ParseDNSAddresses(dns.ResolvConfPath)
-		},
-	}
-}
-
-func (r Reader) Snapshot() (Snapshot, error) {
-	if r.AnonSurfActive == nil {
-		return Snapshot{}, fmt.Errorf("missing AnonSurf status reader")
-	}
-	if r.TorActive == nil {
-		return Snapshot{}, fmt.Errorf("missing Tor status reader")
-	}
-	if r.DNSAddresses == nil {
-		return Snapshot{}, fmt.Errorf("missing DNS status reader")
-	}
-
-	anonsurfActive, err := r.AnonSurfActive()
+func (Reader) Snapshot() (Snapshot, error) {
+	anonsurfActive, err := systemd.NewAnonsurfdController().IsActive()
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("read AnonSurf status: %w", err)
 	}
-	torActive, err := r.TorActive()
+	torActive, err := systemd.NewTorController().IsActive()
 	if err != nil {
 		return Snapshot{}, fmt.Errorf("read Tor status: %w", err)
 	}
-	addresses, err := r.DNSAddresses()
+	addresses, err := dns.ParseDNSAddresses(dns.ResolvConfPath)
 	if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return Snapshot{}, fmt.Errorf("read DNS status: %w", err)
 	}

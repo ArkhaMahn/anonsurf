@@ -56,13 +56,6 @@ func (m Manager) createNetworkManagerHook(content string) error {
 	return m.writeNetworkManagerHook(content, 0644)
 }
 
-func (m Manager) setNetworkManagerHook(content string) error {
-	if err := m.backupNetworkManagerHook(); err != nil {
-		return err
-	}
-	return m.createNetworkManagerHook(content)
-}
-
 func (m Manager) backupNetworkManagerHook() error {
 	state, err := m.networkManagerHookState()
 	if err != nil {

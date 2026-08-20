@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	if err := safekill.NewRunner().Run(); err != nil {
+	if err := (safekill.Runner{}).Run(); err != nil {
 		fmt.Fprintln(os.Stderr, "safekill:", err)
 		os.Exit(1)
 	}
