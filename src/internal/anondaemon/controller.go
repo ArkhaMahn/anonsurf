@@ -33,17 +33,19 @@ type Controller struct {
 	DNS        DNSManager
 	TorService TorService
 
-	MakeTorrcPath       string
-	SysctlPath          string
-	IPTablesPath        string
-	IPTablesSavePath    string
-	IPTablesRestorePath string
-	IPTablesRulesPath   string
-	DNSStatePath        string
-	IPv6StatePath       string
-	TorrcPath           string
-	TorUser             string
-	TorExclude          []string
+	MakeTorrcPath          string
+	SysctlPath             string
+	IPTablesPath           string
+	IPTablesSavePath       string
+	IPTablesRestorePath    string
+	IPTablesRulesPath      string
+	DNSStatePath           string
+	IPv6StatePath          string
+	TorrcPath              string
+	TorrcBackupPath        string
+	TorrcMissingMarkerPath string
+	TorUser                string
+	TorExclude             []string
 
 	GenerateTorrc func() error
 	ReadFile      func(path string) ([]byte, error)

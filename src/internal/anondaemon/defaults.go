@@ -113,6 +113,20 @@ func (c Controller) torrcPath() string {
 	return tor.TorrcPath
 }
 
+func (c Controller) torrcBackupPath() string {
+	if c.TorrcBackupPath != "" {
+		return c.TorrcBackupPath
+	}
+	return tor.TorrcBackupPath
+}
+
+func (c Controller) torrcMissingMarkerPath() string {
+	if c.TorrcMissingMarkerPath != "" {
+		return c.TorrcMissingMarkerPath
+	}
+	return tor.TorrcMissingMarkerPath
+}
+
 func (c Controller) torUser() string {
 	if c.TorUser != "" {
 		return c.TorUser

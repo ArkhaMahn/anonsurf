@@ -110,18 +110,20 @@ func testController(t *testing.T) (Controller, *recordingRunner, *fakeDNSManager
 	dnsManager := &fakeDNSManager{}
 	torService := &fakeTorService{}
 	controller := Controller{
-		Runner:              runner,
-		DNS:                 dnsManager,
-		TorService:          torService,
-		MakeTorrcPath:       "/test/make-torrc",
-		SysctlPath:          "/test/sysctl",
-		IPTablesPath:        "/test/iptables",
-		IPTablesSavePath:    "/test/iptables-save",
-		IPTablesRestorePath: "/test/iptables-restore",
-		IPTablesRulesPath:   filepath.Join(dir, "state", "iptables.rules"),
-		DNSStatePath:        filepath.Join(dir, "state", "dns.changed"),
-		IPv6StatePath:       filepath.Join(dir, "state", "ipv6.state"),
-		TorrcPath:           filepath.Join(dir, "etc", "tor", "torrc"),
+		Runner:                 runner,
+		DNS:                    dnsManager,
+		TorService:             torService,
+		MakeTorrcPath:          "/test/make-torrc",
+		SysctlPath:             "/test/sysctl",
+		IPTablesPath:           "/test/iptables",
+		IPTablesSavePath:       "/test/iptables-save",
+		IPTablesRestorePath:    "/test/iptables-restore",
+		IPTablesRulesPath:      filepath.Join(dir, "state", "iptables.rules"),
+		DNSStatePath:           filepath.Join(dir, "state", "dns.changed"),
+		IPv6StatePath:          filepath.Join(dir, "state", "ipv6.state"),
+		TorrcPath:              filepath.Join(dir, "etc", "tor", "torrc"),
+		TorrcBackupPath:        filepath.Join(dir, "state", "torrc.backup"),
+		TorrcMissingMarkerPath: filepath.Join(dir, "state", "torrc.missing"),
 	}
 	controller.GenerateTorrc = func() error {
 		if err := os.MkdirAll(filepath.Dir(controller.TorrcPath), 0755); err != nil {

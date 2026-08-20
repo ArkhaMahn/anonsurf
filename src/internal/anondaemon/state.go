@@ -25,3 +25,23 @@ func (c Controller) restoreDNS() error {
 	}
 	return nil
 }
+
+func (c Controller) hasManagedState() (bool, error) {
+	paths := []string{
+		c.iptablesRulesPath(),
+		c.dnsStatePath(),
+		c.ipv6StatePath(),
+		c.torrcBackupPath(),
+		c.torrcMissingMarkerPath(),
+	}
+	for _, path := range paths {
+		exists, err := c.fileExists(path)
+		if err != nil {
+			return false, fmt.Errorf("check managed state %s: %w", path, err)
+		}
+		if exists {
+			return true, nil
+		}
+	}
+	return false, nil
+}

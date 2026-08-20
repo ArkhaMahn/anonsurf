@@ -3,6 +3,14 @@ package anondaemon
 import "fmt"
 
 func (c Controller) Stop() error {
+	managed, err := c.hasManagedState()
+	if err != nil {
+		return err
+	}
+	if !managed {
+		return nil
+	}
+
 	var failures errorCollector
 	failures.add("stop Tor service", c.torService().Stop())
 	failures.add("restore firewall", c.restoreFirewall())

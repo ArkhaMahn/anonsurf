@@ -45,6 +45,12 @@ func TestStartRollsBackFirewallFailure(t *testing.T) {
 			t.Fatalf("state file %s still exists: %v", path, statErr)
 		}
 	}
+	if err := controller.Stop(); err != nil {
+		t.Fatal(err)
+	}
+	if torService.stops != 1 {
+		t.Fatalf("cleanup stopped restored Tor service %d times", torService.stops)
+	}
 }
 
 func TestStopAttemptsEveryRestoreAfterFailure(t *testing.T) {
