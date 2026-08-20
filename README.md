@@ -4,6 +4,7 @@
 - Commands to build:
 1. `git clone https://gitlab.com/parrotsec/packages/anonsurf/`
 2. `cd anonsurf && make build && sudo make install`
+3. `make check`
 
 # Source layout
 - `src/`: Go command-line tools, SafeKill, and system backend.

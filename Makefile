@@ -33,7 +33,7 @@ endif
 
 os_name="$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
 
-.PHONY: build
+.PHONY: build check test
 
 all: build install
 
@@ -71,6 +71,13 @@ safekill: $(BUILD-DEST) $(GO-BUILD-DEPS)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/safekill $(GO-PKG-PREFIX)/cmd/safekill
 
 build: anonsurf-cli anonsurf-gtk dnstool make-torrc anondaemon safekill
+
+test: $(GO-BUILD-DEPS)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) test $(GO-PKG-PREFIX)/...
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
+
+check: test
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build $(GO-PKG-PREFIX)/cmd/...
 
 inst-launchers:
 	# Copy launchers
