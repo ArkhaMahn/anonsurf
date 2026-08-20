@@ -2,18 +2,19 @@ package netcheck
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"html"
 	"io"
+	"net"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
 )
 
-const TorCheckURL = "https://check.torproject.org/"
-
-var strongTagPattern = regexp.MustCompile(`(?is)<strong>\s*([^<]+)\s*</strong>`)
+const (
+	TorCheckURL     = "https://check.torproject.org/api/ip"
+	maxResponseSize = 64 << 10
+)
 
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
@@ -29,6 +30,11 @@ type Checker struct {
 	URL    string
 }
 
+type apiResponse struct {
+	IP    string `json:"IP"`
+	IsTor *bool  `json:"IsTor"`
+}
+
 func NewChecker() Checker {
 	return Checker{
 		Client: &http.Client{Timeout: 20 * time.Second},
@@ -39,7 +45,7 @@ func NewChecker() Checker {
 func (c Checker) Check(ctx context.Context) (Result, error) {
 	client := c.Client
 	if client == nil {
-		client = http.DefaultClient
+		client = &http.Client{Timeout: 20 * time.Second}
 	}
 	url := c.URL
 	if url == "" {
@@ -50,6 +56,7 @@ func (c Checker) Check(ctx context.Context) (Result, error) {
 	if err != nil {
 		return Result{}, err
 	}
+	request.Header.Set("Accept", "application/json")
 
 	response, err := client.Do(request)
 	if err != nil {
@@ -61,33 +68,27 @@ func (c Checker) Check(ctx context.Context) (Result, error) {
 		return Result{}, fmt.Errorf("Tor check returned HTTP %d", response.StatusCode)
 	}
 
-	body, err := io.ReadAll(io.LimitReader(response.Body, 1<<20))
+	body, err := io.ReadAll(io.LimitReader(response.Body, maxResponseSize+1))
 	if err != nil {
 		return Result{}, err
+	}
+	if len(body) > maxResponseSize {
+		return Result{}, fmt.Errorf("Tor check response exceeds %d bytes", maxResponseSize)
 	}
 	return ParseTorCheckResponse(string(body))
 }
 
 func ParseTorCheckResponse(body string) (Result, error) {
-	ip := parseStrongText(body)
-	if ip == "" {
-		return Result{}, fmt.Errorf("Tor check response does not include a public IP")
+	var response apiResponse
+	if err := json.Unmarshal([]byte(body), &response); err != nil {
+		return Result{}, fmt.Errorf("decode Tor check response: %w", err)
 	}
-
-	switch {
-	case strings.Contains(body, "Congratulations. This browser is configured to use Tor."):
-		return Result{IP: ip, IsTor: true}, nil
-	case strings.Contains(body, "Sorry. You are not using Tor."):
-		return Result{IP: ip, IsTor: false}, nil
-	default:
-		return Result{}, fmt.Errorf("Tor check response does not include a known Tor status")
+	ip := strings.TrimSpace(response.IP)
+	if net.ParseIP(ip) == nil {
+		return Result{}, fmt.Errorf("Tor check response has invalid public IP %q", response.IP)
 	}
-}
-
-func parseStrongText(body string) string {
-	match := strongTagPattern.FindStringSubmatch(body)
-	if len(match) < 2 {
-		return ""
+	if response.IsTor == nil {
+		return Result{}, fmt.Errorf("Tor check response does not include Tor status")
 	}
-	return strings.TrimSpace(html.UnescapeString(match[1]))
+	return Result{IP: ip, IsTor: *response.IsTor}, nil
 }
