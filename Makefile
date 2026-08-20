@@ -31,7 +31,7 @@ endif
 
 os_name := $(shell sed -n 's/^ID=//p' /etc/os-release 2>/dev/null | tr -d '"')
 
-.PHONY: build check test
+.PHONY: build check clean prepare-go-gopath test
 
 all: build install
 
@@ -43,7 +43,8 @@ $(BUILD-DEST):
 
 prepare-go-gopath: $(BUILD-DEST)
 	mkdir -p $(dir $(GO-GOPATH-SRC))
-	ln -sfn $(CURDIR)/$(GO-SRC-DIR) $(GO-GOPATH-SRC)
+	rm -rf $(GO-GOPATH-SRC)
+	cp -a $(CURDIR)/$(GO-SRC-DIR) $(GO-GOPATH-SRC)
 
 anonsurf-gtk: $(BUILD-DEST)
 	valac $(VALA-FLAGS) $(VALA-SRC-DIR)/anonsurf_gtk.vala \
@@ -71,7 +72,7 @@ safekill: $(BUILD-DEST) $(GO-BUILD-DEPS)
 build: anonsurf-cli anonsurf-gtk dnstool make-torrc anondaemon safekill
 
 test: $(GO-BUILD-DEPS)
-	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) test $(GO-PKG-PREFIX)/...
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) ANONSURF_SOURCE_ROOT=$(CURDIR) $(GO) test $(GO-PKG-PREFIX)/...
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
 
 check: test

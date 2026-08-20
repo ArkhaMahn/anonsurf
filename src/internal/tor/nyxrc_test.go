@@ -18,7 +18,7 @@ func testNyxrcManager(t *testing.T) NyxrcManager {
 }
 
 func TestEmbeddedNyxrcMatchesRepositoryConfig(t *testing.T) {
-	repositoryNyxrc, err := os.ReadFile(filepath.Join("..", "..", "..", "configs", "nyxrc"))
+	repositoryNyxrc, err := os.ReadFile(repositoryConfigPath("nyxrc"))
 	if err != nil {
 		t.Fatal(err)
 	}

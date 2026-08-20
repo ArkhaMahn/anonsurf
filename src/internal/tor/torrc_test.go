@@ -2,7 +2,6 @@ package tor
 
 import (
 	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -11,7 +10,7 @@ import (
 )
 
 func TestEmbeddedTorrcBaseMatchesRepositoryConfig(t *testing.T) {
-	repositoryBase, err := os.ReadFile(filepath.Join("..", "..", "..", "configs", "torrc.base"))
+	repositoryBase, err := os.ReadFile(repositoryConfigPath("torrc.base"))
 	if err != nil {
 		t.Fatal(err)
 	}
