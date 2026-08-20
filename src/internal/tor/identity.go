@@ -9,9 +9,11 @@ import (
 	"net"
 	"os"
 	"strings"
+	"time"
 )
 
 const DefaultCookieAuthFile = "/var/run/tor/control.authcookie"
+const DefaultControlTimeout = 10 * time.Second
 
 var (
 	ErrAnonSurfNotRunning  = errors.New("AnonSurf is not running")
@@ -30,14 +32,15 @@ type IdentityChanger struct {
 	ReadFile          func(path string) ([]byte, error)
 	Dial              ControlDialer
 	IsAnonSurfRunning func() bool
+	Timeout           time.Duration
 }
 
 func NewIdentityChanger() IdentityChanger {
 	return IdentityChanger{
 		TorrcPath:         TorrcPath,
 		ReadFile:          os.ReadFile,
-		Dial:              net.Dial,
 		IsAnonSurfRunning: IsAnonsurfRunning,
+		Timeout:           DefaultControlTimeout,
 	}
 }
 
@@ -95,14 +98,23 @@ func (c IdentityChanger) Change() error {
 	}
 
 	dial := c.Dial
+	timeout := c.Timeout
+	if timeout <= 0 {
+		timeout = DefaultControlTimeout
+	}
 	if dial == nil {
-		dial = net.Dial
+		dial = func(network, address string) (net.Conn, error) {
+			return net.DialTimeout(network, address, timeout)
+		}
 	}
 	conn, err := dial("tcp", config.Address)
 	if err != nil {
 		return fmt.Errorf("connect Tor control port: %w", err)
 	}
 	defer conn.Close()
+	if err := conn.SetDeadline(time.Now().Add(timeout)); err != nil {
+		return fmt.Errorf("set Tor control deadline: %w", err)
+	}
 
 	return requestNewIdentity(conn, hex.EncodeToString(cookieData))
 }
