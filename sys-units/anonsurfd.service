@@ -5,6 +5,8 @@ After=network-online.target NetworkManager.service
 
 [Service]
 Type=oneshot
+StateDirectory=anonsurf
+StateDirectoryMode=0700
 ExecStart=/usr/lib/anonsurf/anondaemon start
 ExecReload=/usr/lib/anonsurf/anondaemon restart
 ExecStop=/usr/lib/anonsurf/anondaemon stop

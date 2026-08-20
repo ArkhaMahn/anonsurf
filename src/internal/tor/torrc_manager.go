@@ -55,7 +55,7 @@ func (m TorrcManager) Backup() error {
 	info, err := os.Stat(m.Path)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(filepath.Dir(markerPath), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(markerPath), 0700); err != nil {
 				return fmt.Errorf("create torrc state directory: %w", err)
 			}
 			if err := writeFileAtomically(markerPath, []byte("missing\n"), 0600); err != nil {
@@ -69,7 +69,7 @@ func (m TorrcManager) Backup() error {
 	if err != nil {
 		return fmt.Errorf("read torrc: %w", err)
 	}
-	if err := os.MkdirAll(filepath.Dir(m.BackupPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(m.BackupPath), 0700); err != nil {
 		return fmt.Errorf("create torrc backup directory: %w", err)
 	}
 	if err := writeFileAtomically(m.BackupPath, content, info.Mode().Perm()); err != nil {
