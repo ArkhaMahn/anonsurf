@@ -4,6 +4,17 @@ import "fmt"
 
 const stateMarkerContent = "anonsurf\n"
 
+func (c Controller) markActive() error {
+	return c.writeFile(c.activeStatePath(), []byte(stateMarkerContent), 0600)
+}
+
+func (c Controller) clearActive() error {
+	if err := c.removeFile(c.activeStatePath()); err != nil {
+		return fmt.Errorf("remove active state: %w", err)
+	}
+	return nil
+}
+
 func (c Controller) markDNSChanged() error {
 	return c.writeFile(c.dnsStatePath(), []byte(stateMarkerContent), 0600)
 }
@@ -28,6 +39,7 @@ func (c Controller) restoreDNS() error {
 
 func (c Controller) hasManagedState() (bool, error) {
 	paths := []string{
+		c.activeStatePath(),
 		c.iptablesRulesPath(),
 		c.dnsStatePath(),
 		c.ipv6StatePath(),

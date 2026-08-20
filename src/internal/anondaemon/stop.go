@@ -17,7 +17,10 @@ func (c Controller) Stop() error {
 	failures.add("restore DNS settings", c.restoreDNS())
 	failures.add("restore torrc", c.restoreTorrc())
 	failures.add("restore IPv6 state", c.restoreIPv6State())
-	return failures.err()
+	if err := failures.err(); err != nil {
+		return err
+	}
+	return c.clearActive()
 }
 
 func (c Controller) restoreTorrc() error {

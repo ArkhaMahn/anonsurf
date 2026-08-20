@@ -41,6 +41,9 @@ func (c Controller) Start() error {
 	if err := c.torService().Start(); err != nil {
 		return c.failStart(fmt.Errorf("start Tor service: %w", err), state)
 	}
+	if err := c.markActive(); err != nil {
+		return c.failStart(fmt.Errorf("mark daemon active: %w", err), state)
+	}
 	return nil
 }
 

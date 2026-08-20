@@ -53,6 +53,23 @@ func TestStartRollsBackFirewallFailure(t *testing.T) {
 	}
 }
 
+func TestStartAndStopPersistActiveState(t *testing.T) {
+	controller, _, _, _ := testController(t)
+
+	if err := controller.Start(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(controller.ActiveStatePath); err != nil {
+		t.Fatalf("active state was not created: %v", err)
+	}
+	if err := controller.Stop(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(controller.ActiveStatePath); !os.IsNotExist(err) {
+		t.Fatalf("active state still exists: %v", err)
+	}
+}
+
 func TestStopAttemptsEveryRestoreAfterFailure(t *testing.T) {
 	controller, runner, dnsManager, torService := testController(t)
 	stopErr := errors.New("stop failed")
@@ -66,6 +83,7 @@ func TestStopAttemptsEveryRestoreAfterFailure(t *testing.T) {
 	}
 	for path, content := range map[string]string{
 		controller.IPTablesRulesPath: "*filter\nCOMMIT\n",
+		controller.ActiveStatePath:   stateMarkerContent,
 		controller.DNSStatePath:      stateMarkerContent,
 		controller.IPv6StatePath:     "1\n0\n",
 	} {
@@ -92,6 +110,9 @@ func TestStopAttemptsEveryRestoreAfterFailure(t *testing.T) {
 	}
 	if !runner.called(controller.SysctlPath, "-w", ipv6DefaultKey+"=0") {
 		t.Fatal("IPv6 default state was not restored")
+	}
+	if _, statErr := os.Stat(controller.ActiveStatePath); statErr != nil {
+		t.Fatalf("active state was removed after failed cleanup: %v", statErr)
 	}
 }
 

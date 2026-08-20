@@ -13,6 +13,7 @@ const (
 	IPTablesSavePath    = "/usr/sbin/iptables-save"
 	IPTablesRestorePath = "/usr/sbin/iptables-restore"
 	IPTablesRulesPath   = "/var/lib/anonsurf/iptables.rules"
+	ActiveStatePath     = "/var/lib/anonsurf/active"
 	DNSStatePath        = "/var/lib/anonsurf/dns.changed"
 	IPv6StatePath       = "/var/lib/anonsurf/ipv6.state"
 	defaultTorUser      = "debian-tor"
@@ -90,6 +91,13 @@ func (c Controller) iptablesRulesPath() string {
 		return c.IPTablesRulesPath
 	}
 	return IPTablesRulesPath
+}
+
+func (c Controller) activeStatePath() string {
+	if c.ActiveStatePath != "" {
+		return c.ActiveStatePath
+	}
+	return ActiveStatePath
 }
 
 func (c Controller) dnsStatePath() string {

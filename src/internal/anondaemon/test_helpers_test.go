@@ -119,6 +119,7 @@ func testController(t *testing.T) (Controller, *recordingRunner, *fakeDNSManager
 		IPTablesSavePath:       "/test/iptables-save",
 		IPTablesRestorePath:    "/test/iptables-restore",
 		IPTablesRulesPath:      filepath.Join(dir, "state", "iptables.rules"),
+		ActiveStatePath:        filepath.Join(dir, "state", "active"),
 		DNSStatePath:           filepath.Join(dir, "state", "dns.changed"),
 		IPv6StatePath:          filepath.Join(dir, "state", "ipv6.state"),
 		TorrcPath:              filepath.Join(dir, "etc", "tor", "torrc"),

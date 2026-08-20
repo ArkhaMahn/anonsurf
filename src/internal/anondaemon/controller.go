@@ -39,6 +39,7 @@ type Controller struct {
 	IPTablesSavePath       string
 	IPTablesRestorePath    string
 	IPTablesRulesPath      string
+	ActiveStatePath        string
 	DNSStatePath           string
 	IPv6StatePath          string
 	TorrcPath              string
