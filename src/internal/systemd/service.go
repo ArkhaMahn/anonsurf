@@ -12,7 +12,7 @@ import (
 const (
 	SystemctlPath = "/usr/bin/systemctl"
 	AnonsurfdUnit = "anonsurfd.service"
-	TorUnit       = "tor.service"
+	TorUnit       = "tor@default.service"
 )
 
 type ExecRunner struct{}
