@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"os"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/monitor"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
@@ -56,7 +54,7 @@ func defaultDependencies() dependencies {
 		status:   status.NewReader(),
 		identity: anondaemon.NewIdentityClient(),
 		ipCheck:  netcheck.NewChecker(),
-		monitor:  monitor.NewNyxMonitor(os.Stdin, os.Stdout, os.Stderr),
+		monitor:  anondaemon.NewMonitorClient(),
 		safeKill: safekill.NewRunner(),
 	}
 }
