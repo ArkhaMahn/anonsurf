@@ -116,6 +116,7 @@ mk-folders:
 	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
 	mkdir -p $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/usr/share/applications/
+	mkdir -p $(DESTDIR)/usr/share/icons/
 	mkdir -p $(DESTDIR)/lib/systemd/system/
 
 install: mk-folders inst-bins inst-configs inst-launchers inst-icons inst-perms

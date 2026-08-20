@@ -1,2 +1,3 @@
 build/release/anonsurf-gtk usr/bin/
 launchers/parrot/*.desktop usr/share/applications/
+icons/*.png usr/share/icons/
