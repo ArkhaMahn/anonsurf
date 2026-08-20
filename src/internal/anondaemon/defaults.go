@@ -14,9 +14,10 @@ const (
 	IPTablesPath              = "/usr/sbin/iptables"
 	IPTablesSavePath          = "/usr/sbin/iptables-save"
 	IPTablesRestorePath       = "/usr/sbin/iptables-restore"
-	IPTablesRulesPath         = "/etc/network/iptables.rules"
+	IPTablesRulesPath         = "/var/lib/anonsurf/iptables.rules"
+	DNSStatePath              = "/var/lib/anonsurf/dns.changed"
+	IPv6StatePath             = "/var/lib/anonsurf/ipv6.state"
 	TorControlCookie          = tor.DefaultCookieAuthFile
-	KillallPath               = "killall"
 	defaultTorUser            = "debian-tor"
 	defaultCookieTimeout      = time.Second
 	defaultCookiePollInterval = 100 * time.Millisecond
@@ -96,6 +97,20 @@ func (c Controller) iptablesRulesPath() string {
 	return IPTablesRulesPath
 }
 
+func (c Controller) dnsStatePath() string {
+	if c.DNSStatePath != "" {
+		return c.DNSStatePath
+	}
+	return DNSStatePath
+}
+
+func (c Controller) ipv6StatePath() string {
+	if c.IPv6StatePath != "" {
+		return c.IPv6StatePath
+	}
+	return IPv6StatePath
+}
+
 func (c Controller) torrcPath() string {
 	if c.TorrcPath != "" {
 		return c.TorrcPath
@@ -108,13 +123,6 @@ func (c Controller) torCookiePath() string {
 		return c.TorCookiePath
 	}
 	return TorControlCookie
-}
-
-func (c Controller) killallPath() string {
-	if c.KillallPath != "" {
-		return c.KillallPath
-	}
-	return KillallPath
 }
 
 func (c Controller) torUser() string {

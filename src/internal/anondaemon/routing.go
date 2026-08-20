@@ -19,7 +19,7 @@ func (c Controller) saveIPTablesRules() error {
 	if err != nil {
 		return fmt.Errorf("save iptables rules: %w", err)
 	}
-	if err := c.writeFile(path, rules, 0644); err != nil {
+	if err := c.writeFile(path, rules, 0600); err != nil {
 		return fmt.Errorf("write iptables backup: %w", err)
 	}
 	return nil
@@ -30,6 +30,32 @@ func (c Controller) applyIPTablesRules(routing tor.RoutingConfig) error {
 		if err := c.run(c.iptablesPath(), args...); err != nil {
 			return fmt.Errorf("apply iptables rule %s: %w", strings.Join(args, " "), err)
 		}
+	}
+	return nil
+}
+
+func (c Controller) restoreFirewall() error {
+	exists, err := c.fileExists(c.iptablesRulesPath())
+	if err != nil {
+		return fmt.Errorf("check iptables backup: %w", err)
+	}
+	if !exists {
+		return nil
+	}
+	return c.restoreIPTablesRules()
+}
+
+func (c Controller) restoreIPTablesRules() error {
+	path := c.iptablesRulesPath()
+	rules, err := c.readFile(path)
+	if err != nil {
+		return fmt.Errorf("read iptables backup: %w", err)
+	}
+	if err := c.runWithInput(c.iptablesRestorePath(), rules); err != nil {
+		return fmt.Errorf("restore iptables rules: %w", err)
+	}
+	if err := c.removeFile(path); err != nil {
+		return fmt.Errorf("remove iptables backup: %w", err)
 	}
 	return nil
 }
@@ -56,7 +82,6 @@ func (c Controller) iptablesRules(routing tor.RoutingConfig) [][]string {
 		[]string{"-t", "nat", "-A", "OUTPUT", "-p", "icmp", "-j", "REDIRECT", "--to-ports", routing.TransPort},
 		[]string{"-A", "OUTPUT", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "ACCEPT"},
-		[]string{"-A", "OUTPUT", "-j", "REJECT"},
 		[]string{"-A", "INPUT", "-m", "state", "--state", "ESTABLISHED", "-j", "ACCEPT"},
 		[]string{"-A", "INPUT", "-i", "lo", "-j", "ACCEPT"},
 		[]string{"-A", "INPUT", "-j", "DROP"},
@@ -66,5 +91,6 @@ func (c Controller) iptablesRules(routing tor.RoutingConfig) [][]string {
 		[]string{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-p", "tcp", "-m", "tcp", "--tcp-flags", "FIN,SYN,RST,ACK", "SYN", "-m", "state", "--state", "NEW", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-d", "127.0.0.1/32", "-o", "lo", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-d", "127.0.0.1/32", "-p", "tcp", "-m", "tcp", "--dport", routing.TransPort, "--tcp-flags", "FIN,SYN,RST,ACK", "SYN", "-j", "ACCEPT"},
+		[]string{"-A", "OUTPUT", "-j", "REJECT"},
 	)
 }

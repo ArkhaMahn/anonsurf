@@ -13,31 +13,69 @@ import (
 const torDNSAddress = "127.0.0.1"
 
 func (c Controller) Start() error {
-	if err := c.generateTorrc(); err != nil {
-		return fmt.Errorf("generate torrc: %w", err)
-	}
-	if exists, err := c.fileExists(c.torrcPath()); err != nil {
-		return fmt.Errorf("check torrc: %w", err)
-	} else if !exists {
-		return ErrTorrcNotFound
-	}
-
-	if err := c.startSurf(); err != nil {
-		return err
-	}
-
+	state := startTransition{}
 	active, err := c.torService().IsActive()
 	if err != nil {
 		return fmt.Errorf("check Tor service: %w", err)
 	}
-	if !active {
-		if err := c.torService().Start(); err != nil {
-			return fmt.Errorf("start Tor service: %w", err)
-		}
+	state.torWasActive = active
+
+	if err := c.generateTorrc(); err != nil {
+		return fmt.Errorf("generate torrc: %w", err)
+	}
+	state.torrcGenerated = true
+
+	if exists, err := c.fileExists(c.torrcPath()); err != nil {
+		return c.failStart(fmt.Errorf("check torrc: %w", err), state)
+	} else if !exists {
+		return c.failStart(ErrTorrcNotFound, state)
+	}
+	routing, err := c.readTorRoutingConfig()
+	if err != nil {
+		return c.failStart(err, state)
+	}
+	if err := c.startSurf(routing, &state); err != nil {
+		return c.failStart(err, state)
+	}
+
+	state.torStartAttempted = true
+	if err := c.torService().Start(); err != nil {
+		return c.failStart(fmt.Errorf("start Tor service: %w", err), state)
 	}
 
 	c.prepareControlCookie()
 	return nil
+}
+
+func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition) error {
+	if err := c.torService().Stop(); err != nil {
+		return fmt.Errorf("stop Tor service before routing: %w", err)
+	}
+
+	if err := c.dnsManager().MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
+		return fmt.Errorf("backup DNS settings: %w", err)
+	}
+	if err := c.markDNSChanged(); err != nil {
+		return fmt.Errorf("mark DNS state: %w", err)
+	}
+	state.dnsTouched = true
+	if err := c.dnsManager().CreateAddrs([]string{torDNSAddress}); err != nil {
+		return fmt.Errorf("set Tor DNS: %w", err)
+	}
+
+	if err := c.captureIPv6State(); err != nil {
+		return fmt.Errorf("capture IPv6 state: %w", err)
+	}
+	state.ipv6Touched = true
+	if err := c.disableIPv6(); err != nil {
+		return err
+	}
+
+	if err := c.saveIPTablesRules(); err != nil {
+		return err
+	}
+	state.firewallTouched = true
+	return c.applyIPTablesRules(routing)
 }
 
 func (c Controller) readTorRoutingConfig() (tor.RoutingConfig, error) {
@@ -46,49 +84,6 @@ func (c Controller) readTorRoutingConfig() (tor.RoutingConfig, error) {
 		return tor.RoutingConfig{}, fmt.Errorf("read torrc: %w", err)
 	}
 	return tor.ParseRoutingConfig(strings.NewReader(string(data)))
-}
-
-func (c Controller) startSurf() error {
-	active, err := c.torService().IsActive()
-	if err != nil {
-		return fmt.Errorf("check Tor service before routing: %w", err)
-	}
-	if active {
-		if err := c.torService().Stop(); err != nil {
-			return fmt.Errorf("stop Tor service before routing: %w", err)
-		}
-	}
-
-	routing, err := c.readTorRoutingConfig()
-	if err != nil {
-		return err
-	}
-
-	if err := c.dnsManager().MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
-		return fmt.Errorf("backup DNS settings: %w", err)
-	}
-	if err := c.dnsManager().CreateAddrs([]string{torDNSAddress}); err != nil {
-		return fmt.Errorf("set Tor DNS: %w", err)
-	}
-	if err := c.disableIPv6(); err != nil {
-		return err
-	}
-	if err := c.saveIPTablesRules(); err != nil {
-		return err
-	}
-	return c.applyIPTablesRules(routing)
-}
-
-func (c Controller) disableIPv6() error {
-	for _, setting := range []string{
-		"net.ipv6.conf.all.disable_ipv6=1",
-		"net.ipv6.conf.default.disable_ipv6=1",
-	} {
-		if err := c.run(c.sysctlPath(), "-w", setting); err != nil {
-			return fmt.Errorf("disable IPv6: %w", err)
-		}
-	}
-	return nil
 }
 
 func isSkippableDNSBackupError(err error) bool {

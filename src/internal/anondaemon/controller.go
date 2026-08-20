@@ -41,9 +41,10 @@ type Controller struct {
 	IPTablesSavePath    string
 	IPTablesRestorePath string
 	IPTablesRulesPath   string
+	DNSStatePath        string
+	IPv6StatePath       string
 	TorrcPath           string
 	TorCookiePath       string
-	KillallPath         string
 	TorUser             string
 	TorExclude          []string
 	CookieTimeout       time.Duration
