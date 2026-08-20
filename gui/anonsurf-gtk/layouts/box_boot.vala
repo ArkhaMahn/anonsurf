@@ -14,28 +14,18 @@ public class LabelBootStatus: Label {
 
 public class ButtonEnableBoot: Switch {
   public ThreadPool<ThreadEnableAnonSurf> pool;
+  private bool updating_state;
 
   public ButtonEnableBoot() {
-    this.notify["active"].connect(() => {
-      /*
-        When a signal is sent, this code block is called.
-        To check if user clicked on the switch button, get_state_flags() must be used
-        StateFlags:
-        - GTK_STATE_FLAG_PRELIGHT: User clicked
-          + Int value 130: Switch from enable to disable
-          + Int value 2178: Switch from disable to enable
-        - GTK_STATE_FLAG_BACKDROP: Value of "State" is changed using set_state
-      */
-      switch (this.get_state_flags()) {
-        case 2178: // Click enable
+    this.state_set.connect((state) => {
+      if (!this.updating_state) {
+        if (state) {
           on_enable_boot();
-          break;
-        case 130: // Click disable
+        } else {
           on_disable_boot();
-          break;
-        default:
-          break;
+        }
       }
+      return false;
     });
 
     try {
@@ -70,12 +60,9 @@ public class ButtonEnableBoot: Switch {
       return;
     }
 
-    // StateFlags: GTK_STATE_FLAG_BACKDROP
-    if (is_enabled_boot == true) {
-      this.set_state(true);
-    } else {
-      this.set_state(false);
-    }
+    this.updating_state = true;
+    this.set_state(is_enabled_boot);
+    this.updating_state = false;
   }
 }
 
