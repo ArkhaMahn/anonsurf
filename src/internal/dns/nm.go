@@ -16,8 +16,8 @@ const (
 	NMHookHandleResolvConf     = "[main]\ndns=default\nrc-manager=symlink\n"
 )
 
-func NMReloadService() error {
-	cmd := exec.Command("/usr/bin/systemctl", "reload", "NetworkManager")
+func reloadNetworkManager() error {
+	cmd := exec.Command("/usr/bin/nmcli", "general", "reload")
 	return cmd.Run()
 }
 
@@ -46,7 +46,7 @@ func (m Manager) writeNetworkManagerHook(content string, perm os.FileMode) error
 	if err := writeFileAtomically(NMHookScript, []byte(content), perm); err != nil {
 		return err
 	}
-	return NMReloadService()
+	return reloadNetworkManager()
 }
 
 func (m Manager) createNetworkManagerHook(content string) error {
@@ -134,7 +134,7 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 		if err := removeFileIfExists(NMHookScript); err != nil {
 			return state, err
 		}
-		if err := NMReloadService(); err != nil {
+		if err := reloadNetworkManager(); err != nil {
 			return state, err
 		}
 	default:
