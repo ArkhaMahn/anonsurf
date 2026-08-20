@@ -12,6 +12,9 @@ override_dh_auto_test:
 	make test GO-BUILD-MODE=gopath
 
 override_dh_fixperms:
+	dh_fixperms
+	chmod +x debian/anonsurf/usr/lib/anonsurf/anondaemon
+	chmod +x debian/anonsurf/usr/lib/anonsurf/make-torrc
 	chmod +x debian/anonsurf/usr/lib/anonsurf/safekill
 
 override_dh_auto_install:
