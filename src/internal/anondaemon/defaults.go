@@ -9,7 +9,6 @@ import (
 const (
 	MakeTorrcPath       = "/usr/lib/anonsurf/make-torrc"
 	SysctlPath          = "/sbin/sysctl"
-	IPTablesPath        = "/usr/sbin/iptables"
 	IPTablesSavePath    = "/usr/sbin/iptables-save"
 	IPTablesRestorePath = "/usr/sbin/iptables-restore"
 	IPTablesRulesPath   = "/var/lib/anonsurf/iptables.rules"
@@ -64,13 +63,6 @@ func (c Controller) sysctlPath() string {
 		return c.SysctlPath
 	}
 	return SysctlPath
-}
-
-func (c Controller) iptablesPath() string {
-	if c.IPTablesPath != "" {
-		return c.IPTablesPath
-	}
-	return IPTablesPath
 }
 
 func (c Controller) iptablesSavePath() string {

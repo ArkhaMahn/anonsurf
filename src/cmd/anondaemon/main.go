@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
@@ -31,7 +30,7 @@ type dependencies struct {
 }
 
 func main() {
-	if err := run(os.Args[1:], os.Stdout, os.Stderr, defaultDependencies()); err != nil {
+	if err := run(os.Args[1:], defaultDependencies()); err != nil {
 		fmt.Fprintln(os.Stderr, "anondaemon:", err)
 		os.Exit(1)
 	}
@@ -45,7 +44,7 @@ func defaultDependencies() dependencies {
 	}
 }
 
-func run(args []string, stdout, stderr io.Writer, deps dependencies) error {
+func run(args []string, deps dependencies) error {
 	if len(args) != 1 {
 		return fmt.Errorf("expected one command: start, stop, restart, changeid, or monitor")
 	}

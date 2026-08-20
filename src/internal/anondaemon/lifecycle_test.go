@@ -204,18 +204,6 @@ func TestIPv6StateRestoresPerInterfaceOverrides(t *testing.T) {
 	}
 }
 
-func TestStopDoesNotFlushFirewallWithoutBackup(t *testing.T) {
-	controller, runner, _, _ := testController(t)
-
-	if err := controller.Stop(); err != nil {
-		t.Fatal(err)
-	}
-
-	if runner.called(controller.IPTablesPath, "-F") {
-		t.Fatal("firewall was flushed without an AnonSurf backup")
-	}
-}
-
 func TestRestoreFirewallCompletesMissingManagedTables(t *testing.T) {
 	tests := []struct {
 		name   string

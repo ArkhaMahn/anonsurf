@@ -48,10 +48,6 @@ func dnstRestoreBackup(manager dns.Manager) error {
 	return dnstShowStatus(manager)
 }
 
-func dnstCreateBackup(manager dns.Manager) error {
-	return manager.MakeBackup()
-}
-
 func dnstWriteAddresses(manager dns.Manager, hasDHCP bool, listAddr []string) error {
 	if hasDHCP {
 		if len(listAddr) == 0 {
@@ -112,7 +108,7 @@ func main() {
 			if err := requireAdmin(); err != nil {
 				return err
 			}
-			return dnstCreateBackup(manager)
+			return manager.MakeBackup()
 		},
 	}
 

@@ -13,7 +13,6 @@ const (
 )
 
 var (
-	ErrBackupNotFound         = errors.New("resolv.conf backup not found")
 	ErrBackupSkippedLocalhost = errors.New("skip backup because resolv.conf only points to localhost")
 	ErrBackupSkippedSymlink   = errors.New("skip backup because resolv.conf is a symlink")
 )
@@ -113,20 +112,6 @@ func (m Manager) CreateAddrs(listAddr []string) error {
 	return m.createNetworkManagerHook(NMHookDontManageResolvConf)
 }
 
-func (m Manager) RestoreFromBackup() error {
-	restored, err := m.restoreResolverBackup()
-	if err != nil {
-		return err
-	}
-	if !restored {
-		return ErrBackupNotFound
-	}
-	if err := removeFileIfExists(m.ResolvConfBackup); err != nil {
-		return fmt.Errorf("remove restored backup: %w", err)
-	}
-	return nil
-}
-
 func (m Manager) restoreResolverBackup() (bool, error) {
 	exists, err := fileExists(m.ResolvConfBackup)
 	if err != nil {
@@ -215,20 +200,4 @@ func (m Manager) DHCPAddresses() ([]string, error) {
 		return nil, err
 	}
 	return GetListValidAddresses(addresses), nil
-}
-
-func ResolvCreateDHCPOnly() error {
-	return NewManager().CreateDHCPOnly()
-}
-
-func ResolvCreateAddrs(listAddr []string) error {
-	return NewManager().CreateAddrs(listAddr)
-}
-
-func ResolvRestoreFromBackup() error {
-	return NewManager().RestoreFromBackup()
-}
-
-func ResolvMakeBackup() error {
-	return NewManager().MakeBackup()
 }

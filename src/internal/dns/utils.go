@@ -16,16 +16,6 @@ type AddrFromParams struct {
 	Invalid     []string
 }
 
-func ConvertSeqAddrToString(addresses []string) string {
-	var dnsAddrInText strings.Builder
-	for _, address := range addresses {
-		dnsAddrInText.WriteString("nameserver ")
-		dnsAddrInText.WriteString(address)
-		dnsAddrInText.WriteString("\n")
-	}
-	return dnsAddrInText.String()
-}
-
 func HasOnlyLocalhost(listAddr []string) bool {
 	if len(listAddr) == 1 && (listAddr[0] == "localhost" || listAddr[0] == "127.0.0.1") {
 		return true
@@ -77,8 +67,14 @@ func RenderResolvConf(listDNSAddr []string) (string, error) {
 		return "", ErrNoValidDNSAddress
 	}
 
-	dnsAddr := ConvertSeqAddrToString(deduplicatedListAddr)
-	return "# Written by DNSTool\n" + dnsAddr, nil
+	var content strings.Builder
+	content.WriteString("# Written by DNSTool\n")
+	for _, address := range deduplicatedListAddr {
+		content.WriteString("nameserver ")
+		content.WriteString(address)
+		content.WriteString("\n")
+	}
+	return content.String(), nil
 }
 
 func WriteDNSToSystem(listDNSAddr []string, resolvConfPath string) error {

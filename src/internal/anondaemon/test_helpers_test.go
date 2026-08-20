@@ -115,7 +115,6 @@ func testController(t *testing.T) (Controller, *recordingRunner, *fakeDNSManager
 		TorService:             torService,
 		MakeTorrcPath:          "/test/make-torrc",
 		SysctlPath:             "/test/sysctl",
-		IPTablesPath:           "/test/iptables",
 		IPTablesSavePath:       "/test/iptables-save",
 		IPTablesRestorePath:    "/test/iptables-restore",
 		IPTablesRulesPath:      filepath.Join(dir, "state", "iptables.rules"),

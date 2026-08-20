@@ -35,7 +35,6 @@ type Controller struct {
 
 	MakeTorrcPath          string
 	SysctlPath             string
-	IPTablesPath           string
 	IPTablesSavePath       string
 	IPTablesRestorePath    string
 	IPTablesRulesPath      string

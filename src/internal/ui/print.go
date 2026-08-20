@@ -35,10 +35,6 @@ func PrintErrorDNSLeak() {
 	fmt.Println(Red + "\nDetected Non-Tor address[es]. This may cause information leaks." + Reset)
 }
 
-func PrintAnonsurfRunning() {
-	fmt.Println("- " + Red + "Address" + Reset + ": AnonSurf is running")
-}
-
 func PrintInfoAddresses() {
 	fmt.Println("- " + Red + "Address[es]" + Reset + ":")
 }

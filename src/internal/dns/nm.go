@@ -181,11 +181,3 @@ func (m Manager) networkManagerHookMissingMarker() string {
 	}
 	return NMHookMissingMarker
 }
-
-func NMCreateHookUnmanage() error {
-	return NewManager().setNetworkManagerHook(NMHookDontManageResolvConf)
-}
-
-func NMCreateHookDHCP() error {
-	return NewManager().setNetworkManagerHook(NMHookHandleResolvConf)
-}
