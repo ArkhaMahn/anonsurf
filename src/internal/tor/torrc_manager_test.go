@@ -12,8 +12,9 @@ func testTorrcManager(t *testing.T) TorrcManager {
 
 	dir := t.TempDir()
 	return TorrcManager{
-		Path:       filepath.Join(dir, "etc", "tor", "torrc"),
-		BackupPath: filepath.Join(dir, "etc", "tor", "torrc.bak"),
+		Path:              filepath.Join(dir, "etc", "tor", "torrc"),
+		BackupPath:        filepath.Join(dir, "etc", "tor", "torrc.bak"),
+		MissingMarkerPath: filepath.Join(dir, "var", "lib", "anonsurf", "torrc.missing"),
 	}
 }
 
@@ -25,6 +26,9 @@ func TestNewTorrcManagerUsesParrotPaths(t *testing.T) {
 	}
 	if manager.BackupPath != TorrcBackupPath {
 		t.Fatalf("BackupPath = %q, want %q", manager.BackupPath, TorrcBackupPath)
+	}
+	if manager.MissingMarkerPath != TorrcMissingMarkerPath {
+		t.Fatalf("MissingMarkerPath = %q, want %q", manager.MissingMarkerPath, TorrcMissingMarkerPath)
 	}
 }
 
@@ -74,12 +78,26 @@ func TestTorrcManagerBackupCreatesBackupAndPreservesExistingBackup(t *testing.T)
 	}
 }
 
-func TestTorrcManagerBackupReturnsReadErrorWhenTorrcIsMissing(t *testing.T) {
+func TestTorrcManagerRestoresMissingTorrcState(t *testing.T) {
 	manager := testTorrcManager(t)
 
-	err := manager.Backup()
-	if err == nil {
-		t.Fatal("expected missing torrc error")
+	if err := manager.Backup(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(manager.MissingMarkerPath); err != nil {
+		t.Fatalf("missing marker was not created: %v", err)
+	}
+	if err := manager.Write("generated torrc\n"); err != nil {
+		t.Fatal(err)
+	}
+	if err := manager.Restore(); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(manager.Path); !os.IsNotExist(err) {
+		t.Fatalf("generated torrc still exists: %v", err)
+	}
+	if _, err := os.Stat(manager.MissingMarkerPath); !os.IsNotExist(err) {
+		t.Fatalf("missing marker still exists: %v", err)
 	}
 }
 

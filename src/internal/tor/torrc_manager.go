@@ -9,38 +9,57 @@ import (
 )
 
 const (
-	TorrcPath       = "/etc/tor/torrc"
-	TorrcBackupPath = "/etc/tor/torrc.bak"
+	TorrcPath              = "/etc/tor/torrc"
+	TorrcBackupPath        = "/etc/tor/torrc.bak"
+	TorrcMissingMarkerPath = "/var/lib/anonsurf/torrc.missing"
 )
 
 var (
 	ErrEmptyTorrc          = errors.New("torrc content is empty")
 	ErrTorrcBackupExists   = errors.New("torrc backup already exists")
 	ErrTorrcBackupNotFound = errors.New("torrc backup not found")
+	ErrTorrcBackupConflict = errors.New("torrc backup state is inconsistent")
 )
 
 type TorrcManager struct {
-	Path       string
-	BackupPath string
+	Path              string
+	BackupPath        string
+	MissingMarkerPath string
 }
 
 func NewTorrcManager() TorrcManager {
 	return TorrcManager{
-		Path:       TorrcPath,
-		BackupPath: TorrcBackupPath,
+		Path:              TorrcPath,
+		BackupPath:        TorrcBackupPath,
+		MissingMarkerPath: TorrcMissingMarkerPath,
 	}
 }
 
-// Backup preserves the first backup so repeated generation cannot overwrite the original torrc.
 func (m TorrcManager) Backup() error {
-	if exists, err := fileExists(m.BackupPath); err != nil {
+	backupExists, err := fileExists(m.BackupPath)
+	if err != nil {
 		return fmt.Errorf("check torrc backup: %w", err)
-	} else if exists {
+	}
+	markerPath := m.missingMarkerPath()
+	markerExists, err := fileExists(markerPath)
+	if err != nil {
+		return fmt.Errorf("check missing torrc marker: %w", err)
+	}
+	if backupExists || markerExists {
 		return ErrTorrcBackupExists
 	}
 
 	info, err := os.Stat(m.Path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			if err := os.MkdirAll(filepath.Dir(markerPath), 0755); err != nil {
+				return fmt.Errorf("create torrc state directory: %w", err)
+			}
+			if err := writeFileAtomically(markerPath, []byte("missing\n"), 0600); err != nil {
+				return fmt.Errorf("write missing torrc marker: %w", err)
+			}
+			return nil
+		}
 		return fmt.Errorf("stat torrc: %w", err)
 	}
 	content, err := os.ReadFile(m.Path)
@@ -56,21 +75,38 @@ func (m TorrcManager) Backup() error {
 	return nil
 }
 
-// Restore moves the backup back into place, matching the legacy make-torrc restore behavior.
 func (m TorrcManager) Restore() error {
-	if exists, err := fileExists(m.BackupPath); err != nil {
+	backupExists, err := fileExists(m.BackupPath)
+	if err != nil {
 		return fmt.Errorf("check torrc backup: %w", err)
-	} else if !exists {
-		return ErrTorrcBackupNotFound
+	}
+	markerPath := m.missingMarkerPath()
+	markerExists, err := fileExists(markerPath)
+	if err != nil {
+		return fmt.Errorf("check missing torrc marker: %w", err)
+	}
+	if backupExists && markerExists {
+		return ErrTorrcBackupConflict
 	}
 
-	if err := os.Rename(m.BackupPath, m.Path); err != nil {
-		return fmt.Errorf("restore torrc backup: %w", err)
+	if backupExists {
+		if err := os.Rename(m.BackupPath, m.Path); err != nil {
+			return fmt.Errorf("restore torrc backup: %w", err)
+		}
+		return nil
+	}
+	if !markerExists {
+		return ErrTorrcBackupNotFound
+	}
+	if err := os.Remove(m.Path); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remove generated torrc: %w", err)
+	}
+	if err := os.Remove(markerPath); err != nil {
+		return fmt.Errorf("remove missing torrc marker: %w", err)
 	}
 	return nil
 }
 
-// Write rejects empty rendered config and replaces torrc with a same-directory atomic rename.
 func (m TorrcManager) Write(content string) error {
 	if strings.TrimSpace(content) == "" {
 		return ErrEmptyTorrc
@@ -82,6 +118,13 @@ func (m TorrcManager) Write(content string) error {
 		return fmt.Errorf("write torrc: %w", err)
 	}
 	return nil
+}
+
+func (m TorrcManager) missingMarkerPath() string {
+	if m.MissingMarkerPath != "" {
+		return m.MissingMarkerPath
+	}
+	return TorrcMissingMarkerPath
 }
 
 func fileExists(path string) (bool, error) {

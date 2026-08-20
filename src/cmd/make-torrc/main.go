@@ -85,14 +85,14 @@ func generateTorrc(deps dependencies) error {
 		return fmt.Errorf("render torrc: %w", err)
 	}
 
+	if err := deps.nyxrc.Ensure(); err != nil {
+		return fmt.Errorf("ensure nyxrc: %w", err)
+	}
 	if err := deps.manager.Backup(); err != nil && !errors.Is(err, tor.ErrTorrcBackupExists) {
 		return fmt.Errorf("backup torrc: %w", err)
 	}
 	if err := deps.manager.Write(rendered); err != nil {
 		return fmt.Errorf("write torrc: %w", err)
-	}
-	if err := deps.nyxrc.Ensure(); err != nil {
-		return fmt.Errorf("ensure nyxrc: %w", err)
 	}
 
 	return nil
