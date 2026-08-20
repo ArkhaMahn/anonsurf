@@ -3,6 +3,8 @@ package anondaemon
 import (
 	"errors"
 	"os"
+	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -166,6 +168,39 @@ func TestStopAttemptsEveryRestoreAfterFailure(t *testing.T) {
 	}
 	if _, statErr := os.Stat(controller.ActiveStatePath); statErr != nil {
 		t.Fatalf("active state was removed after failed cleanup: %v", statErr)
+	}
+}
+
+func TestIPv6StateRestoresPerInterfaceOverrides(t *testing.T) {
+	controller, runner, _, _ := testController(t)
+	for name, value := range map[string]string{
+		"lo":    "1\n",
+		"wlan0": "0\n",
+	} {
+		path := filepath.Join(controller.IPv6ConfPath, name, "disable_ipv6")
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(value), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := controller.captureIPv6State(); err != nil {
+		t.Fatal(err)
+	}
+	if err := controller.restoreIPv6State(); err != nil {
+		t.Fatal(err)
+	}
+
+	expected := []string{
+		commandKey(controller.SysctlPath, "-w", ipv6AllKey+"=0"),
+		commandKey(controller.SysctlPath, "-w", ipv6DefaultKey+"=0"),
+		commandKey(controller.SysctlPath, "-w", "net.ipv6.conf.lo.disable_ipv6=1"),
+		commandKey(controller.SysctlPath, "-w", "net.ipv6.conf.wlan0.disable_ipv6=0"),
+	}
+	if !reflect.DeepEqual(runner.runs, expected) {
+		t.Fatalf("IPv6 restore calls = %#v, want %#v", runner.runs, expected)
 	}
 }
 

@@ -16,6 +16,7 @@ const (
 	ActiveStatePath     = "/var/lib/anonsurf/active"
 	DNSStatePath        = "/var/lib/anonsurf/dns.changed"
 	IPv6StatePath       = "/var/lib/anonsurf/ipv6.state"
+	IPv6ConfPath        = "/proc/sys/net/ipv6/conf"
 	defaultTorUser      = "debian-tor"
 )
 
@@ -112,6 +113,13 @@ func (c Controller) ipv6StatePath() string {
 		return c.IPv6StatePath
 	}
 	return IPv6StatePath
+}
+
+func (c Controller) ipv6ConfPath() string {
+	if c.IPv6ConfPath != "" {
+		return c.IPv6ConfPath
+	}
+	return IPv6ConfPath
 }
 
 func (c Controller) torrcPath() string {

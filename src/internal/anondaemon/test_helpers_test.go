@@ -122,6 +122,7 @@ func testController(t *testing.T) (Controller, *recordingRunner, *fakeDNSManager
 		ActiveStatePath:        filepath.Join(dir, "state", "active"),
 		DNSStatePath:           filepath.Join(dir, "state", "dns.changed"),
 		IPv6StatePath:          filepath.Join(dir, "state", "ipv6.state"),
+		IPv6ConfPath:           filepath.Join(dir, "proc", "sys", "net", "ipv6", "conf"),
 		TorrcPath:              filepath.Join(dir, "etc", "tor", "torrc"),
 		TorrcBackupPath:        filepath.Join(dir, "state", "torrc.backup"),
 		TorrcMissingMarkerPath: filepath.Join(dir, "state", "torrc.missing"),
@@ -136,8 +137,15 @@ func testController(t *testing.T) (Controller, *recordingRunner, *fakeDNSManager
 	controller.RunWithInput = func(command string, _ []byte, args ...string) error {
 		return runner.Run(command, args...)
 	}
-	runner.outputs[commandKey(controller.SysctlPath, "-n", ipv6AllKey)] = []byte("0\n")
-	runner.outputs[commandKey(controller.SysctlPath, "-n", ipv6DefaultKey)] = []byte("0\n")
+	for name, value := range map[string]string{"all": "0\n", "default": "0\n"} {
+		path := filepath.Join(controller.IPv6ConfPath, name, "disable_ipv6")
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(path, []byte(value), 0644); err != nil {
+			t.Fatal(err)
+		}
+	}
 	runner.outputs[commandKey(controller.IPTablesSavePath)] = []byte("*filter\nCOMMIT\n")
 	return controller, runner, dnsManager, torService
 }

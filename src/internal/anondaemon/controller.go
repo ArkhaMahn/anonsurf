@@ -42,6 +42,7 @@ type Controller struct {
 	ActiveStatePath        string
 	DNSStatePath           string
 	IPv6StatePath          string
+	IPv6ConfPath           string
 	TorrcPath              string
 	TorrcBackupPath        string
 	TorrcMissingMarkerPath string
