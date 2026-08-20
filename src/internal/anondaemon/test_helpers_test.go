@@ -2,12 +2,10 @@ package anondaemon
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 )
 
 type recordingRunner struct {
@@ -124,9 +122,6 @@ func testController(t *testing.T) (Controller, *recordingRunner, *fakeDNSManager
 		DNSStatePath:        filepath.Join(dir, "state", "dns.changed"),
 		IPv6StatePath:       filepath.Join(dir, "state", "ipv6.state"),
 		TorrcPath:           filepath.Join(dir, "etc", "tor", "torrc"),
-		TorCookiePath:       filepath.Join(dir, "run", "tor", "control.authcookie"),
-		CookieTimeout:       -time.Second,
-		WarningWriter:       io.Discard,
 	}
 	controller.GenerateTorrc = func() error {
 		if err := os.MkdirAll(filepath.Dir(controller.TorrcPath), 0755); err != nil {

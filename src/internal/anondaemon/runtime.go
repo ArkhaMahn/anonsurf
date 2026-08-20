@@ -2,24 +2,10 @@ package anondaemon
 
 import (
 	"bytes"
-	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"time"
 )
-
-func (c Controller) warningWriter() io.Writer {
-	if c.WarningWriter != nil {
-		return c.WarningWriter
-	}
-	return os.Stderr
-}
-
-func (c Controller) warnf(format string, args ...any) {
-	fmt.Fprintf(c.warningWriter(), format+"\n", args...)
-}
 
 func (c Controller) readFile(path string) ([]byte, error) {
 	if c.ReadFile != nil {
@@ -86,17 +72,6 @@ func (c Controller) removeFile(path string) error {
 	return nil
 }
 
-func (c Controller) chmodReadable(path string) error {
-	if c.ChmodReadable != nil {
-		return c.ChmodReadable(path)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		return err
-	}
-	return os.Chmod(path, info.Mode().Perm()|0444)
-}
-
 func (c Controller) runWithInput(command string, input []byte, args ...string) error {
 	if c.RunWithInput != nil {
 		return c.RunWithInput(command, input, args...)
@@ -106,12 +81,4 @@ func (c Controller) runWithInput(command string, input []byte, args ...string) e
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	return cmd.Run()
-}
-
-func (c Controller) sleep(duration time.Duration) {
-	if c.Sleep != nil {
-		c.Sleep(duration)
-		return
-	}
-	time.Sleep(duration)
 }

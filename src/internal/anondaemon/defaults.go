@@ -1,26 +1,21 @@
 package anondaemon
 
 import (
-	"time"
-
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
 const (
-	MakeTorrcPath             = "/usr/lib/anonsurf/make-torrc"
-	SysctlPath                = "/sbin/sysctl"
-	IPTablesPath              = "/usr/sbin/iptables"
-	IPTablesSavePath          = "/usr/sbin/iptables-save"
-	IPTablesRestorePath       = "/usr/sbin/iptables-restore"
-	IPTablesRulesPath         = "/var/lib/anonsurf/iptables.rules"
-	DNSStatePath              = "/var/lib/anonsurf/dns.changed"
-	IPv6StatePath             = "/var/lib/anonsurf/ipv6.state"
-	TorControlCookie          = tor.DefaultCookieAuthFile
-	defaultTorUser            = "debian-tor"
-	defaultCookieTimeout      = time.Second
-	defaultCookiePollInterval = 100 * time.Millisecond
+	MakeTorrcPath       = "/usr/lib/anonsurf/make-torrc"
+	SysctlPath          = "/sbin/sysctl"
+	IPTablesPath        = "/usr/sbin/iptables"
+	IPTablesSavePath    = "/usr/sbin/iptables-save"
+	IPTablesRestorePath = "/usr/sbin/iptables-restore"
+	IPTablesRulesPath   = "/var/lib/anonsurf/iptables.rules"
+	DNSStatePath        = "/var/lib/anonsurf/dns.changed"
+	IPv6StatePath       = "/var/lib/anonsurf/ipv6.state"
+	defaultTorUser      = "debian-tor"
 )
 
 func (c Controller) generateTorrc() error {
@@ -118,13 +113,6 @@ func (c Controller) torrcPath() string {
 	return tor.TorrcPath
 }
 
-func (c Controller) torCookiePath() string {
-	if c.TorCookiePath != "" {
-		return c.TorCookiePath
-	}
-	return TorControlCookie
-}
-
 func (c Controller) torUser() string {
 	if c.TorUser != "" {
 		return c.TorUser
@@ -137,18 +125,4 @@ func (c Controller) torExclude() []string {
 		return c.TorExclude
 	}
 	return []string{"192.168.0.0/16", "172.16.0.0/12", "10.0.0.0/8", "127.0.0.0/9", "127.128.0.0/10"}
-}
-
-func (c Controller) cookieTimeout() time.Duration {
-	if c.CookieTimeout != 0 {
-		return c.CookieTimeout
-	}
-	return defaultCookieTimeout
-}
-
-func (c Controller) cookiePollInterval() time.Duration {
-	if c.CookiePollInterval > 0 {
-		return c.CookiePollInterval
-	}
-	return defaultCookiePollInterval
 }

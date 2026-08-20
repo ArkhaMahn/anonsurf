@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
@@ -42,8 +41,6 @@ func (c Controller) Start() error {
 	if err := c.torService().Start(); err != nil {
 		return c.failStart(fmt.Errorf("start Tor service: %w", err), state)
 	}
-
-	c.prepareControlCookie()
 	return nil
 }
 
@@ -88,37 +85,4 @@ func (c Controller) readTorRoutingConfig() (tor.RoutingConfig, error) {
 
 func isSkippableDNSBackupError(err error) bool {
 	return errors.Is(err, dns.ErrBackupSkippedLocalhost) || errors.Is(err, dns.ErrBackupSkippedSymlink)
-}
-
-func (c Controller) prepareControlCookie() {
-	cookiePath := c.torCookiePath()
-	exists, err := c.waitForFile(cookiePath, c.cookieTimeout(), c.cookiePollInterval())
-	if err != nil {
-		c.warnf("Tor control cookie check failed for %s: %v", cookiePath, err)
-		return
-	}
-	if !exists {
-		c.warnf("Tor control cookie %s was not created; identity changes may be unavailable", cookiePath)
-		return
-	}
-	if err := c.chmodReadable(cookiePath); err != nil {
-		c.warnf("Tor control cookie permissions were not updated for %s: %v", cookiePath, err)
-	}
-}
-
-func (c Controller) waitForFile(path string, timeout, interval time.Duration) (bool, error) {
-	exists, err := c.fileExists(path)
-	if exists || err != nil || timeout <= 0 {
-		return exists, err
-	}
-
-	deadline := time.Now().Add(timeout)
-	for time.Now().Before(deadline) {
-		c.sleep(interval)
-		exists, err = c.fileExists(path)
-		if exists || err != nil {
-			return exists, err
-		}
-	}
-	return false, nil
 }

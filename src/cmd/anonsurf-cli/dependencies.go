@@ -4,12 +4,12 @@ import (
 	"context"
 	"os"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/monitor"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
 type serviceController interface {
@@ -54,7 +54,7 @@ func defaultDependencies() dependencies {
 	return dependencies{
 		service:  systemd.NewAnonsurfdController(),
 		status:   status.NewReader(),
-		identity: tor.NewIdentityChanger(),
+		identity: anondaemon.NewIdentityClient(),
 		ipCheck:  netcheck.NewChecker(),
 		monitor:  monitor.NewNyxMonitor(os.Stdin, os.Stdout, os.Stderr),
 		safeKill: safekill.NewRunner(),

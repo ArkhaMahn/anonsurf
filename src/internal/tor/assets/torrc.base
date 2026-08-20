@@ -40,3 +40,4 @@ EnforceDistinctSubnets 1
 # Set cookie authentication
 CookieAuthentication 1
 CookieAuthFile /var/run/tor/control.authcookie
+CookieAuthFileGroupReadable 0
