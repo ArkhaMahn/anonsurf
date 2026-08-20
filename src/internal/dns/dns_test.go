@@ -131,6 +131,30 @@ func TestManagerCreateAddrsRejectsInvalidWithoutReplacingExistingDNS(t *testing.
 	}
 }
 
+func TestManagerCreateDHCPOnlyRemovesResolverBeforeReload(t *testing.T) {
+	manager := testManager(t)
+	if err := os.WriteFile(manager.ResolvConfPath, []byte("nameserver 1.1.1.1\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	manager.ReloadNetworkManager = func() error {
+		if _, err := os.Lstat(manager.ResolvConfPath); !os.IsNotExist(err) {
+			t.Fatalf("resolv.conf still exists during reload: %v", err)
+		}
+		hook, err := os.ReadFile(manager.NetworkManagerHookPath)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(hook) != NMHookHandleResolvConf {
+			t.Fatalf("NetworkManager hook = %q, want %q", string(hook), NMHookHandleResolvConf)
+		}
+		return nil
+	}
+
+	if err := manager.CreateDHCPOnly(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestManagerMakeBackupSkipsLocalhostAndCopiesValidDNS(t *testing.T) {
 	manager := testManager(t)
 	if err := os.WriteFile(manager.ResolvConfPath, []byte("nameserver 127.0.0.1\n"), 0644); err != nil {

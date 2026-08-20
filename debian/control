@@ -20,7 +20,7 @@ Homepage: https://www.parrotsec.org/
 Package: anonsurf
 Architecture: any
 Priority: optional
-Depends: ${shlibs:Depends}, ${misc:Depends}, iptables, psmisc, tor, systemd | systemctl, sudo
+Depends: ${shlibs:Depends}, ${misc:Depends}, iptables, network-manager, psmisc, tor, systemd | systemctl, sudo
 Recommends: tor-geoipdb, parrot-menu
 Suggests: bleachbit, gnunet-gtk, gnunet, vidalia, resolvconf, onionshare, connect-proxy, snowflake-client, obfs4proxy
 Description: Anonymization toolkit for Parrot Security OS

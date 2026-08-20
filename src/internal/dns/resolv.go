@@ -87,13 +87,10 @@ func copyFile(src, dst string) error {
 }
 
 func (m Manager) CreateDHCPOnly() error {
-	if err := m.createNetworkManagerHook(NMHookHandleResolvConf); err != nil {
-		return err
-	}
 	if err := removeFileIfExists(m.ResolvConfPath); err != nil {
 		return fmt.Errorf("remove current DNS settings: %w", err)
 	}
-	return nil
+	return m.createNetworkManagerHook(NMHookHandleResolvConf)
 }
 
 func (m Manager) CreateAddrs(listAddr []string) error {
