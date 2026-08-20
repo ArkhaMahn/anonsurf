@@ -17,27 +17,7 @@ var (
 	ErrBackupSkippedSymlink   = errors.New("skip backup because resolv.conf is a symlink")
 )
 
-type Manager struct {
-	ResolvConfPath                  string
-	ResolvConfBackup                string
-	NetworkManagerHookPath          string
-	NetworkManagerHookBackup        string
-	NetworkManagerHookMissingMarker string
-	ReloadNetworkManager            func() error
-	NetworkManagerDNSServers        func() ([]string, error)
-}
-
-func NewManager() Manager {
-	return Manager{
-		ResolvConfPath:                  ResolvConfPath,
-		ResolvConfBackup:                ResolvConfBackup,
-		NetworkManagerHookPath:          NMHookScript,
-		NetworkManagerHookBackup:        NMHookBackup,
-		NetworkManagerHookMissingMarker: NMHookMissingMarker,
-		ReloadNetworkManager:            NMReloadService,
-		NetworkManagerDNSServers:        NMGetDNSServers,
-	}
-}
+type Manager struct{}
 
 func removeFileIfExists(path string) error {
 	err := os.Remove(path)
@@ -93,7 +73,7 @@ func (m Manager) CreateDHCPOnly() error {
 	if err := m.backupNetworkManagerHook(); err != nil {
 		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
 	}
-	if err := removeFileIfExists(m.ResolvConfPath); err != nil {
+	if err := removeFileIfExists(ResolvConfPath); err != nil {
 		return fmt.Errorf("remove current DNS settings: %w", err)
 	}
 	return m.createNetworkManagerHook(NMHookHandleResolvConf)
@@ -106,29 +86,29 @@ func (m Manager) CreateAddrs(listAddr []string) error {
 	if err := m.backupNetworkManagerHook(); err != nil {
 		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
 	}
-	if err := WriteDNSToSystem(listAddr, m.ResolvConfPath); err != nil {
+	if err := WriteDNSToSystem(listAddr, ResolvConfPath); err != nil {
 		return fmt.Errorf("write DNS settings: %w", err)
 	}
 	return m.createNetworkManagerHook(NMHookDontManageResolvConf)
 }
 
 func (m Manager) restoreResolverBackup() (bool, error) {
-	exists, err := fileExists(m.ResolvConfBackup)
+	exists, err := fileExists(ResolvConfBackup)
 	if err != nil {
 		return false, fmt.Errorf("check backup: %w", err)
 	}
 	if !exists {
 		return false, nil
 	}
-	info, err := os.Stat(m.ResolvConfBackup)
+	info, err := os.Stat(ResolvConfBackup)
 	if err != nil {
 		return false, fmt.Errorf("stat backup: %w", err)
 	}
-	content, err := os.ReadFile(m.ResolvConfBackup)
+	content, err := os.ReadFile(ResolvConfBackup)
 	if err != nil {
 		return false, fmt.Errorf("read backup: %w", err)
 	}
-	if err := writeFileAtomically(m.ResolvConfPath, content, info.Mode().Perm()); err != nil {
+	if err := writeFileAtomically(ResolvConfPath, content, info.Mode().Perm()); err != nil {
 		return false, fmt.Errorf("restore backup: %w", err)
 	}
 	return true, nil
@@ -140,7 +120,7 @@ func (m Manager) RestoreBackupOrDHCP() error {
 		return err
 	}
 	if !restoredBackup {
-		if err := removeFileIfExists(m.ResolvConfPath); err != nil {
+		if err := removeFileIfExists(ResolvConfPath); err != nil {
 			return fmt.Errorf("remove current DNS settings: %w", err)
 		}
 	}
@@ -150,7 +130,7 @@ func (m Manager) RestoreBackupOrDHCP() error {
 		return fmt.Errorf("restore NetworkManager DNS ownership: %w", err)
 	}
 	if restoredBackup {
-		if err := removeFileIfExists(m.ResolvConfBackup); err != nil {
+		if err := removeFileIfExists(ResolvConfBackup); err != nil {
 			return fmt.Errorf("remove restored backup: %w", err)
 		}
 	}
@@ -161,15 +141,15 @@ func (m Manager) RestoreBackupOrDHCP() error {
 }
 
 func (m Manager) MakeBackup() error {
-	exists, err := fileExists(m.ResolvConfPath)
+	exists, err := fileExists(ResolvConfPath)
 	if err != nil {
 		return fmt.Errorf("check resolv.conf: %w", err)
 	}
 	if !exists {
-		return fmt.Errorf("missing %s", m.ResolvConfPath)
+		return fmt.Errorf("missing %s", ResolvConfPath)
 	}
 
-	hasOnlyLocalhost, err := SystemHasOnlyLocalhost(m.ResolvConfPath)
+	hasOnlyLocalhost, err := SystemHasOnlyLocalhost(ResolvConfPath)
 	if err != nil {
 		return fmt.Errorf("read resolv.conf: %w", err)
 	}
@@ -177,7 +157,7 @@ func (m Manager) MakeBackup() error {
 		return ErrBackupSkippedLocalhost
 	}
 
-	isSymlink, err := SystemDNSFileIsSymlink(m.ResolvConfPath)
+	isSymlink, err := SystemDNSFileIsSymlink(ResolvConfPath)
 	if err != nil {
 		return fmt.Errorf("check resolv.conf symlink: %w", err)
 	}
@@ -185,17 +165,17 @@ func (m Manager) MakeBackup() error {
 		return ErrBackupSkippedSymlink
 	}
 
-	if err := os.MkdirAll(filepath.Dir(m.ResolvConfBackup), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(ResolvConfBackup), 0755); err != nil {
 		return fmt.Errorf("create backup directory: %w", err)
 	}
-	if err := copyFile(m.ResolvConfPath, m.ResolvConfBackup); err != nil {
+	if err := copyFile(ResolvConfPath, ResolvConfBackup); err != nil {
 		return fmt.Errorf("create backup: %w", err)
 	}
 	return nil
 }
 
 func (m Manager) DHCPAddresses() ([]string, error) {
-	addresses, err := m.NetworkManagerDNSServers()
+	addresses, err := NMGetDNSServers()
 	if err != nil {
 		return nil, err
 	}

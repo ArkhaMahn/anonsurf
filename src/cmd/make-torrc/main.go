@@ -9,50 +9,16 @@ import (
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
-type torrcManager interface {
-	Backup() error
-	Restore() error
-	Write(content string) error
-}
-
-type nyxrcManager interface {
-	Ensure() error
-}
-
-type bridgeResolver interface {
-	Resolve(options tor.TorrcOptions) (tor.TorrcOptions, error)
-}
-
-type dependencies struct {
-	configPath     string
-	loadConfig     func(path string) (config.Config, error)
-	resolveBridges bridgeResolver
-	renderTorrc    func(options tor.TorrcOptions) (string, error)
-	manager        torrcManager
-	nyxrc          nyxrcManager
-}
-
 func main() {
-	if err := run(os.Args[1:], defaultDependencies()); err != nil {
+	if err := run(os.Args[1:]); err != nil {
 		fmt.Fprintln(os.Stderr, "make-torrc:", err)
 		os.Exit(1)
 	}
 }
 
-func defaultDependencies() dependencies {
-	return dependencies{
-		configPath:     config.SystemPath,
-		loadConfig:     config.Load,
-		resolveBridges: tor.NewBridgeResolver(),
-		renderTorrc:    tor.RenderTorrc,
-		manager:        tor.NewTorrcManager(),
-		nyxrc:          tor.NewNyxrcManager(),
-	}
-}
-
-func run(args []string, deps dependencies) error {
+func run(args []string) error {
 	if len(args) == 0 {
-		return generateTorrc(deps)
+		return generateTorrc()
 	}
 	if len(args) > 1 {
 		return fmt.Errorf("expected at most one argument")
@@ -60,9 +26,9 @@ func run(args []string, deps dependencies) error {
 
 	switch args[0] {
 	case "new-torrc":
-		return generateTorrc(deps)
+		return generateTorrc()
 	case "restore":
-		if err := deps.manager.Restore(); err != nil && !errors.Is(err, tor.ErrTorrcBackupNotFound) {
+		if err := (tor.TorrcManager{}).Restore(); err != nil && !errors.Is(err, tor.ErrTorrcBackupNotFound) {
 			return err
 		}
 		return nil
@@ -71,30 +37,31 @@ func run(args []string, deps dependencies) error {
 	}
 }
 
-func generateTorrc(deps dependencies) error {
-	cfg, err := deps.loadConfig(deps.configPath)
+func generateTorrc() error {
+	cfg, err := config.Load(config.SystemPath)
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
 
 	options := tor.TorrcOptionsFromConfig(cfg)
-	options, err = deps.resolveBridges.Resolve(options)
+	options, err = (tor.BridgeResolver{}).Resolve(options)
 	if err != nil {
 		return fmt.Errorf("resolve bridges: %w", err)
 	}
 
-	rendered, err := deps.renderTorrc(options)
+	rendered, err := tor.RenderTorrc(options)
 	if err != nil {
 		return fmt.Errorf("render torrc: %w", err)
 	}
 
-	if err := deps.nyxrc.Ensure(); err != nil {
+	if err := (tor.NyxrcManager{}).Ensure(); err != nil {
 		return fmt.Errorf("ensure nyxrc: %w", err)
 	}
-	if err := deps.manager.Backup(); err != nil && !errors.Is(err, tor.ErrTorrcBackupExists) {
+	manager := tor.TorrcManager{}
+	if err := manager.Backup(); err != nil && !errors.Is(err, tor.ErrTorrcBackupExists) {
 		return fmt.Errorf("backup torrc: %w", err)
 	}
-	if err := deps.manager.Write(rendered); err != nil {
+	if err := manager.Write(rendered); err != nil {
 		return fmt.Errorf("write torrc: %w", err)
 	}
 

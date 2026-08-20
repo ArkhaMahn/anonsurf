@@ -24,8 +24,8 @@ type ipv6State struct {
 }
 
 func (c Controller) captureIPv6State() error {
-	path := c.ipv6StatePath()
-	exists, err := c.fileExists(path)
+	path := IPv6StatePath
+	exists, err := fileExists(path)
 	if err != nil {
 		return err
 	}
@@ -41,11 +41,11 @@ func (c Controller) captureIPv6State() error {
 	if err != nil {
 		return err
 	}
-	return c.writeFile(path, append(content, '\n'), 0600)
+	return writeFile(path, append(content, '\n'), 0600)
 }
 
 func (c Controller) currentIPv6State() (ipv6State, error) {
-	entries, err := os.ReadDir(c.ipv6ConfPath())
+	entries, err := os.ReadDir(IPv6ConfPath)
 	if err != nil {
 		return ipv6State{}, fmt.Errorf("read IPv6 interfaces: %w", err)
 	}
@@ -62,8 +62,8 @@ func (c Controller) currentIPv6State() (ipv6State, error) {
 
 	state := ipv6State{Settings: make([]ipv6Setting, 0, len(interfaces))}
 	for _, name := range interfaces {
-		path := filepath.Join(c.ipv6ConfPath(), name, "disable_ipv6")
-		data, err := c.readFile(path)
+		path := filepath.Join(IPv6ConfPath, name, "disable_ipv6")
+		data, err := readFile(path)
 		if err != nil {
 			return ipv6State{}, fmt.Errorf("read IPv6 state for %s: %w", name, err)
 		}
@@ -101,8 +101,8 @@ func (c Controller) disableIPv6() error {
 }
 
 func (c Controller) restoreIPv6State() error {
-	path := c.ipv6StatePath()
-	data, err := c.readFile(path)
+	path := IPv6StatePath
+	data, err := readFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -116,7 +116,7 @@ func (c Controller) restoreIPv6State() error {
 	if err := c.restoreExistingIPv6State(state); err != nil {
 		return err
 	}
-	if err := c.removeFile(path); err != nil {
+	if err := removeFile(path); err != nil {
 		return fmt.Errorf("remove IPv6 state: %w", err)
 	}
 	return nil
@@ -196,7 +196,7 @@ func (c Controller) restoreExistingIPv6State(state ipv6State) error {
 				continue
 			}
 		}
-		if err := c.run(c.sysctlPath(), "-w", setting.Key+"="+setting.Value); err != nil {
+		if err := c.run(SysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
 			failures.add(setting.Key, err)
 		}
 	}
@@ -219,7 +219,7 @@ func (c Controller) ipv6SettingExists(key string) (bool, error) {
 	if !ok {
 		return false, fmt.Errorf("invalid IPv6 state key %q", key)
 	}
-	return c.fileExists(filepath.Join(c.ipv6ConfPath(), name, "disable_ipv6"))
+	return fileExists(filepath.Join(IPv6ConfPath, name, "disable_ipv6"))
 }
 
 func ipv6InterfaceName(key string) (string, bool) {
@@ -238,7 +238,7 @@ func ipv6InterfaceName(key string) (string, bool) {
 func (c Controller) setIPv6State(state ipv6State) error {
 	var failures errorCollector
 	for _, setting := range state.Settings {
-		if err := c.run(c.sysctlPath(), "-w", setting.Key+"="+setting.Value); err != nil {
+		if err := c.run(SysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
 			failures.add(setting.Key, err)
 		}
 	}

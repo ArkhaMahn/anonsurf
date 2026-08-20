@@ -17,26 +17,15 @@ const NyxrcPath = "/etc/anonsurf/nyxrc"
 
 var ErrEmptyNyxrc = errors.New("nyxrc content is empty")
 
-type NyxrcManager struct {
-	Path            string
-	ExpectedContent string
-}
+type NyxrcManager struct{}
 
-func NewNyxrcManager() NyxrcManager {
-	return NyxrcManager{
-		Path:            NyxrcPath,
-		ExpectedContent: defaultNyxrc,
-	}
-}
-
-// Ensure writes nyxrc only when missing or when the expected config is not present.
-func (m NyxrcManager) Ensure() error {
-	expected := strings.TrimRight(m.ExpectedContent, "\n")
+func (NyxrcManager) Ensure() error {
+	expected := strings.TrimRight(defaultNyxrc, "\n")
 	if strings.TrimSpace(expected) == "" {
 		return ErrEmptyNyxrc
 	}
 
-	current, err := os.ReadFile(m.Path)
+	current, err := os.ReadFile(NyxrcPath)
 	if err == nil && strings.Contains(string(current), expected) {
 		return nil
 	}
@@ -44,10 +33,10 @@ func (m NyxrcManager) Ensure() error {
 		return fmt.Errorf("read nyxrc: %w", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(m.Path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(NyxrcPath), 0755); err != nil {
 		return fmt.Errorf("create nyxrc directory: %w", err)
 	}
-	if err := writeFileAtomically(m.Path, []byte(expected+"\n"), 0644); err != nil {
+	if err := writeFileAtomically(NyxrcPath, []byte(expected+"\n"), 0644); err != nil {
 		return fmt.Errorf("write nyxrc: %w", err)
 	}
 	return nil

@@ -40,16 +40,13 @@ func ParseNetworkManagerDNSOutput(output string) []string {
 }
 
 func (m Manager) writeNetworkManagerHook(content string, perm os.FileMode) error {
-	if err := os.MkdirAll(filepath.Dir(m.NetworkManagerHookPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(NMHookScript), 0755); err != nil {
 		return err
 	}
-	if err := writeFileAtomically(m.NetworkManagerHookPath, []byte(content), perm); err != nil {
+	if err := writeFileAtomically(NMHookScript, []byte(content), perm); err != nil {
 		return err
 	}
-	if m.ReloadNetworkManager == nil {
-		return nil
-	}
-	return m.ReloadNetworkManager()
+	return NMReloadService()
 }
 
 func (m Manager) createNetworkManagerHook(content string) error {
@@ -65,24 +62,24 @@ func (m Manager) backupNetworkManagerHook() error {
 		return nil
 	}
 
-	info, err := os.Stat(m.NetworkManagerHookPath)
+	info, err := os.Stat(NMHookScript)
 	if err != nil {
 		if os.IsNotExist(err) {
-			if err := os.MkdirAll(filepath.Dir(m.networkManagerHookMissingMarker()), 0700); err != nil {
+			if err := os.MkdirAll(filepath.Dir(NMHookMissingMarker), 0700); err != nil {
 				return err
 			}
-			return writeFileAtomically(m.networkManagerHookMissingMarker(), []byte("missing\n"), 0600)
+			return writeFileAtomically(NMHookMissingMarker, []byte("missing\n"), 0600)
 		}
 		return err
 	}
-	content, err := os.ReadFile(m.NetworkManagerHookPath)
+	content, err := os.ReadFile(NMHookScript)
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(m.networkManagerHookBackup()), 0700); err != nil {
+	if err := os.MkdirAll(filepath.Dir(NMHookBackup), 0700); err != nil {
 		return err
 	}
-	return writeFileAtomically(m.networkManagerHookBackup(), content, info.Mode().Perm())
+	return writeFileAtomically(NMHookBackup, content, info.Mode().Perm())
 }
 
 type networkManagerHookState int
@@ -94,11 +91,11 @@ const (
 )
 
 func (m Manager) networkManagerHookState() (networkManagerHookState, error) {
-	backupExists, err := fileExists(m.networkManagerHookBackup())
+	backupExists, err := fileExists(NMHookBackup)
 	if err != nil {
 		return networkManagerHookUnmanaged, err
 	}
-	markerExists, err := fileExists(m.networkManagerHookMissingMarker())
+	markerExists, err := fileExists(NMHookMissingMarker)
 	if err != nil {
 		return networkManagerHookUnmanaged, err
 	}
@@ -122,11 +119,11 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 
 	switch state {
 	case networkManagerHookBackedUp:
-		info, err := os.Stat(m.networkManagerHookBackup())
+		info, err := os.Stat(NMHookBackup)
 		if err != nil {
 			return state, err
 		}
-		content, err := os.ReadFile(m.networkManagerHookBackup())
+		content, err := os.ReadFile(NMHookBackup)
 		if err != nil {
 			return state, err
 		}
@@ -134,13 +131,11 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 			return state, err
 		}
 	case networkManagerHookMissing:
-		if err := removeFileIfExists(m.NetworkManagerHookPath); err != nil {
+		if err := removeFileIfExists(NMHookScript); err != nil {
 			return state, err
 		}
-		if m.ReloadNetworkManager != nil {
-			if err := m.ReloadNetworkManager(); err != nil {
-				return state, err
-			}
+		if err := NMReloadService(); err != nil {
+			return state, err
 		}
 	default:
 		if err := m.createNetworkManagerHook(NMHookHandleResolvConf); err != nil {
@@ -153,24 +148,10 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 func (m Manager) clearNetworkManagerHookState(state networkManagerHookState) error {
 	switch state {
 	case networkManagerHookBackedUp:
-		return removeFileIfExists(m.networkManagerHookBackup())
+		return removeFileIfExists(NMHookBackup)
 	case networkManagerHookMissing:
-		return removeFileIfExists(m.networkManagerHookMissingMarker())
+		return removeFileIfExists(NMHookMissingMarker)
 	default:
 		return nil
 	}
-}
-
-func (m Manager) networkManagerHookBackup() string {
-	if m.NetworkManagerHookBackup != "" {
-		return m.NetworkManagerHookBackup
-	}
-	return NMHookBackup
-}
-
-func (m Manager) networkManagerHookMissingMarker() string {
-	if m.NetworkManagerHookMissingMarker != "" {
-		return m.NetworkManagerHookMissingMarker
-	}
-	return NMHookMissingMarker
 }

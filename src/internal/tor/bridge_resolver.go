@@ -17,29 +17,9 @@ const BridgesPath = "/etc/anonsurf/bridges.txt"
 
 var ErrNoBridgeEntries = errors.New("no bridge entries found")
 
-// ExecutableLookup is injected so tests do not depend on host-installed transports.
-type ExecutableLookup func(name string) (string, error)
+type BridgeResolver struct{}
 
-// BridgeSelector is injected because auto-bridge selection is intentionally non-deterministic.
-type BridgeSelector func(entries []string) (string, error)
-
-// BridgeResolver turns config-derived bridge options into render-ready torrc options.
-type BridgeResolver struct {
-	BridgeListPath string
-
-	LookupExecutable ExecutableLookup
-	SelectBridge     BridgeSelector
-}
-
-func NewBridgeResolver() BridgeResolver {
-	return BridgeResolver{
-		BridgeListPath:   BridgesPath,
-		LookupExecutable: exec.LookPath,
-		SelectBridge:     SelectRandomBridge,
-	}
-}
-
-func ParseBridgeEntries(reader io.Reader) ([]string, error) {
+func parseBridgeEntries(reader io.Reader) ([]string, error) {
 	var entries []string
 	scanner := bufio.NewScanner(reader)
 
@@ -60,18 +40,17 @@ func ParseBridgeEntries(reader io.Reader) ([]string, error) {
 	return entries, nil
 }
 
-func LoadBridgeEntries(path string) ([]string, error) {
+func loadBridgeEntries(path string) ([]string, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	return ParseBridgeEntries(file)
+	return parseBridgeEntries(file)
 }
 
-// SelectRandomBridge selects one bridge using crypto/rand to avoid predictable defaults.
-func SelectRandomBridge(entries []string) (string, error) {
+func selectRandomBridge(entries []string) (string, error) {
 	if len(entries) == 0 {
 		return "", ErrNoBridgeEntries
 	}
@@ -83,28 +62,17 @@ func SelectRandomBridge(entries []string) (string, error) {
 	return entries[index.Int64()], nil
 }
 
-// Resolve selects auto bridges and fills transport plugin paths without rendering torrc.
-func (r BridgeResolver) Resolve(options TorrcOptions) (TorrcOptions, error) {
+func (BridgeResolver) Resolve(options TorrcOptions) (TorrcOptions, error) {
 	if !options.AutoBridge && strings.TrimSpace(options.BridgeAddress) == "" {
 		return options, nil
 	}
 
-	if r.BridgeListPath == "" {
-		r.BridgeListPath = BridgesPath
-	}
-	if r.LookupExecutable == nil {
-		r.LookupExecutable = exec.LookPath
-	}
-	if r.SelectBridge == nil {
-		r.SelectBridge = SelectRandomBridge
-	}
-
 	if options.AutoBridge {
-		entries, err := LoadBridgeEntries(r.BridgeListPath)
+		entries, err := loadBridgeEntries(BridgesPath)
 		if err != nil {
 			return options, fmt.Errorf("load bridge entries: %w", err)
 		}
-		selected, err := r.SelectBridge(entries)
+		selected, err := selectRandomBridge(entries)
 		if err != nil {
 			return options, fmt.Errorf("select bridge: %w", err)
 		}
@@ -118,7 +86,7 @@ func (r BridgeResolver) Resolve(options TorrcOptions) (TorrcOptions, error) {
 	switch transport {
 	case "obfs4":
 		if strings.TrimSpace(options.Obfs4ProxyPath) == "" {
-			path, err := lookupExecutablePath(r.LookupExecutable, "obfs4proxy")
+			path, err := lookupExecutablePath("obfs4proxy")
 			if err != nil {
 				return options, fmt.Errorf("find obfs4proxy: %w", err)
 			}
@@ -126,7 +94,7 @@ func (r BridgeResolver) Resolve(options TorrcOptions) (TorrcOptions, error) {
 		}
 	case "snowflake":
 		if strings.TrimSpace(options.SnowflakeClientPath) == "" {
-			path, err := lookupExecutablePath(r.LookupExecutable, "snowflake-client")
+			path, err := lookupExecutablePath("snowflake-client")
 			if err != nil {
 				return options, fmt.Errorf("find snowflake-client: %w", err)
 			}
@@ -137,8 +105,8 @@ func (r BridgeResolver) Resolve(options TorrcOptions) (TorrcOptions, error) {
 	return options, nil
 }
 
-func lookupExecutablePath(lookup ExecutableLookup, name string) (string, error) {
-	path, err := lookup(name)
+func lookupExecutablePath(name string) (string, error) {
+	path, err := exec.LookPath(name)
 	if err != nil {
 		return "", err
 	}

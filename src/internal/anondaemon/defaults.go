@@ -1,7 +1,6 @@
 package anondaemon
 
 import (
-	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
@@ -16,135 +15,24 @@ const (
 	DNSStatePath        = "/var/lib/anonsurf/dns.changed"
 	IPv6StatePath       = "/var/lib/anonsurf/ipv6.state"
 	IPv6ConfPath        = "/proc/sys/net/ipv6/conf"
+	TorrcPath           = tor.TorrcPath
+	TorrcBackupPath     = tor.TorrcBackupPath
+	TorrcMissingPath    = tor.TorrcMissingMarkerPath
 	defaultTorUser      = "debian-tor"
 )
 
 func (c Controller) generateTorrc() error {
-	if c.GenerateTorrc != nil {
-		return c.GenerateTorrc()
-	}
-	return c.run(c.makeTorrcPath())
+	return c.run(MakeTorrcPath)
 }
 
 func (c Controller) run(command string, args ...string) error {
-	return c.runner().Run(command, args...)
+	return (systemd.ExecRunner{}).Run(command, args...)
 }
 
-func (c Controller) runner() Runner {
-	if c.Runner != nil {
-		return c.Runner
-	}
-	return systemd.ExecRunner{}
-}
-
-func (c Controller) dnsManager() DNSManager {
-	if c.DNS != nil {
-		return c.DNS
-	}
-	return dns.NewManager()
-}
-
-func (c Controller) torService() TorService {
-	if c.TorService != nil {
-		return c.TorService
-	}
-	return systemd.NewTorController()
-}
-
-func (c Controller) makeTorrcPath() string {
-	if c.MakeTorrcPath != "" {
-		return c.MakeTorrcPath
-	}
-	return MakeTorrcPath
-}
-
-func (c Controller) sysctlPath() string {
-	if c.SysctlPath != "" {
-		return c.SysctlPath
-	}
-	return SysctlPath
-}
-
-func (c Controller) iptablesSavePath() string {
-	if c.IPTablesSavePath != "" {
-		return c.IPTablesSavePath
-	}
-	return IPTablesSavePath
-}
-
-func (c Controller) iptablesRestorePath() string {
-	if c.IPTablesRestorePath != "" {
-		return c.IPTablesRestorePath
-	}
-	return IPTablesRestorePath
-}
-
-func (c Controller) iptablesRulesPath() string {
-	if c.IPTablesRulesPath != "" {
-		return c.IPTablesRulesPath
-	}
-	return IPTablesRulesPath
-}
-
-func (c Controller) activeStatePath() string {
-	if c.ActiveStatePath != "" {
-		return c.ActiveStatePath
-	}
-	return ActiveStatePath
-}
-
-func (c Controller) dnsStatePath() string {
-	if c.DNSStatePath != "" {
-		return c.DNSStatePath
-	}
-	return DNSStatePath
-}
-
-func (c Controller) ipv6StatePath() string {
-	if c.IPv6StatePath != "" {
-		return c.IPv6StatePath
-	}
-	return IPv6StatePath
-}
-
-func (c Controller) ipv6ConfPath() string {
-	if c.IPv6ConfPath != "" {
-		return c.IPv6ConfPath
-	}
-	return IPv6ConfPath
-}
-
-func (c Controller) torrcPath() string {
-	if c.TorrcPath != "" {
-		return c.TorrcPath
-	}
-	return tor.TorrcPath
-}
-
-func (c Controller) torrcBackupPath() string {
-	if c.TorrcBackupPath != "" {
-		return c.TorrcBackupPath
-	}
-	return tor.TorrcBackupPath
-}
-
-func (c Controller) torrcMissingMarkerPath() string {
-	if c.TorrcMissingMarkerPath != "" {
-		return c.TorrcMissingMarkerPath
-	}
-	return tor.TorrcMissingMarkerPath
-}
-
-func (c Controller) torUser() string {
-	if c.TorUser != "" {
-		return c.TorUser
-	}
-	return defaultTorUser
-}
-
-func (c Controller) torExclude() []string {
-	if len(c.TorExclude) > 0 {
-		return c.TorExclude
-	}
-	return []string{"192.168.0.0/16", "172.16.0.0/12", "10.0.0.0/8", "127.0.0.0/9", "127.128.0.0/10"}
+var torExcludedNetworks = [...]string{
+	"192.168.0.0/16",
+	"172.16.0.0/12",
+	"10.0.0.0/8",
+	"127.0.0.0/9",
+	"127.128.0.0/10",
 }

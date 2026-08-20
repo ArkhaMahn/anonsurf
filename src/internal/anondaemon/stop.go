@@ -1,6 +1,10 @@
 package anondaemon
 
-import "fmt"
+import (
+	"fmt"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
+)
 
 func (c Controller) Stop() error {
 	managed, err := c.hasManagedState()
@@ -12,7 +16,7 @@ func (c Controller) Stop() error {
 	}
 
 	var failures errorCollector
-	failures.add("stop Tor service", c.torService().Stop())
+	failures.add("stop Tor service", systemd.NewTorController().Stop())
 	failures.add("restore firewall", c.restoreFirewall())
 	failures.add("restore DNS settings", c.restoreDNS())
 	failures.add("restore torrc", c.restoreTorrc())
@@ -24,7 +28,7 @@ func (c Controller) Stop() error {
 }
 
 func (c Controller) restoreTorrc() error {
-	if err := c.run(c.makeTorrcPath(), "restore"); err != nil {
+	if err := c.run(MakeTorrcPath, "restore"); err != nil {
 		return fmt.Errorf("run torrc restore: %w", err)
 	}
 	return nil

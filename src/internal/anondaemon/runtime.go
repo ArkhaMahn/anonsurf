@@ -7,17 +7,11 @@ import (
 	"path/filepath"
 )
 
-func (c Controller) readFile(path string) ([]byte, error) {
-	if c.ReadFile != nil {
-		return c.ReadFile(path)
-	}
+func readFile(path string) ([]byte, error) {
 	return os.ReadFile(path)
 }
 
-func (c Controller) fileExists(path string) (bool, error) {
-	if c.FileExists != nil {
-		return c.FileExists(path)
-	}
+func fileExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
@@ -28,10 +22,7 @@ func (c Controller) fileExists(path string) (bool, error) {
 	return false, err
 }
 
-func (c Controller) writeFile(path string, data []byte, perm os.FileMode) error {
-	if c.WriteFile != nil {
-		return c.WriteFile(path, data, perm)
-	}
+func writeFile(path string, data []byte, perm os.FileMode) error {
 	dir := filepath.Dir(path)
 	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
@@ -61,10 +52,7 @@ func (c Controller) writeFile(path string, data []byte, perm os.FileMode) error 
 	return os.Rename(tempPath, path)
 }
 
-func (c Controller) removeFile(path string) error {
-	if c.RemoveFile != nil {
-		return c.RemoveFile(path)
-	}
+func removeFile(path string) error {
 	err := os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
 		return err
@@ -72,10 +60,7 @@ func (c Controller) removeFile(path string) error {
 	return nil
 }
 
-func (c Controller) runWithInput(command string, input []byte, args ...string) error {
-	if c.RunWithInput != nil {
-		return c.RunWithInput(command, input, args...)
-	}
+func runWithInput(command string, input []byte, args ...string) error {
 	cmd := exec.Command(command, args...)
 	cmd.Stdin = bytes.NewReader(input)
 	cmd.Stdout = os.Stdout

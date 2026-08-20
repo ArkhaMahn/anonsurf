@@ -1,5 +1,7 @@
 package anondaemon
 
+import "gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
+
 type startTransition struct {
 	torWasActive      bool
 	torStartAttempted bool
@@ -20,7 +22,7 @@ func (c Controller) failStart(operation error, state startTransition) error {
 func (c Controller) rollbackStart(state startTransition) error {
 	var failures errorCollector
 	if state.torStartAttempted {
-		failures.add("stop Tor service", c.torService().Stop())
+		failures.add("stop Tor service", systemd.NewTorController().Stop())
 	}
 	if state.firewallTouched {
 		failures.add("restore firewall", c.restoreFirewall())
@@ -35,7 +37,7 @@ func (c Controller) rollbackStart(state startTransition) error {
 		failures.add("restore torrc", c.restoreTorrc())
 	}
 	if state.torWasActive {
-		failures.add("restart original Tor service", c.torService().Start())
+		failures.add("restart original Tor service", systemd.NewTorController().Start())
 	}
 	return failures.err()
 }

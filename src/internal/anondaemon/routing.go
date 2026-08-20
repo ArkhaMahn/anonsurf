@@ -4,41 +4,42 @@ import (
 	"fmt"
 	"strings"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
 func (c Controller) saveIPTablesRules() error {
-	path := c.iptablesRulesPath()
-	if exists, err := c.fileExists(path); err != nil {
+	path := IPTablesRulesPath
+	if exists, err := fileExists(path); err != nil {
 		return fmt.Errorf("check iptables backup: %w", err)
 	} else if exists {
 		return nil
 	}
 
-	rules, err := c.runner().Output(c.iptablesSavePath())
+	rules, err := (systemd.ExecRunner{}).Output(IPTablesSavePath)
 	if err != nil {
 		return fmt.Errorf("save iptables rules: %w", err)
 	}
-	if err := c.writeFile(path, rules, 0600); err != nil {
+	if err := writeFile(path, rules, 0600); err != nil {
 		return fmt.Errorf("write iptables backup: %w", err)
 	}
 	return nil
 }
 
 func (c Controller) applyIPTablesRules(routing tor.RoutingConfig) error {
-	backup, err := c.readFile(c.iptablesRulesPath())
+	backup, err := readFile(IPTablesRulesPath)
 	if err != nil {
 		return fmt.Errorf("read iptables backup for apply: %w", err)
 	}
 	rules := c.renderIPTablesRules(routing, backup)
-	if err := c.runWithInput(c.iptablesRestorePath(), []byte(rules)); err != nil {
+	if err := runWithInput(IPTablesRestorePath, []byte(rules)); err != nil {
 		return fmt.Errorf("apply iptables rules: %w", err)
 	}
 	return nil
 }
 
 func (c Controller) restoreFirewall() error {
-	exists, err := c.fileExists(c.iptablesRulesPath())
+	exists, err := fileExists(IPTablesRulesPath)
 	if err != nil {
 		return fmt.Errorf("check iptables backup: %w", err)
 	}
@@ -49,16 +50,16 @@ func (c Controller) restoreFirewall() error {
 }
 
 func (c Controller) restoreIPTablesRules() error {
-	path := c.iptablesRulesPath()
-	rules, err := c.readFile(path)
+	path := IPTablesRulesPath
+	rules, err := readFile(path)
 	if err != nil {
 		return fmt.Errorf("read iptables backup: %w", err)
 	}
 	rules = ensureManagedIPTablesTables(rules)
-	if err := c.runWithInput(c.iptablesRestorePath(), rules); err != nil {
+	if err := runWithInput(IPTablesRestorePath, rules); err != nil {
 		return fmt.Errorf("restore iptables rules: %w", err)
 	}
-	if err := c.removeFile(path); err != nil {
+	if err := removeFile(path); err != nil {
 		return fmt.Errorf("remove iptables backup: %w", err)
 	}
 	return nil
@@ -185,14 +186,14 @@ func writeIPTablesTable(builder *strings.Builder, table string, definitions []st
 }
 
 func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
-	torUser := c.torUser()
+	torUser := defaultTorUser
 	rules := [][]string{
 		{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "RETURN"},
 		{"-A", "OUTPUT", "-d", "127.0.0.1/32", "-p", "udp", "-m", "udp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
 		{"-A", "OUTPUT", "-p", "tcp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
 		{"-A", "OUTPUT", "-p", "udp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
 	}
-	for _, network := range c.torExclude() {
+	for _, network := range torExcludedNetworks {
 		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "RETURN"})
 	}
 	return append(rules,
@@ -203,9 +204,9 @@ func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 }
 
 func (c Controller) filterIPTablesRules(routing tor.RoutingConfig) [][]string {
-	torUser := c.torUser()
+	torUser := defaultTorUser
 	var rules [][]string
-	for _, network := range c.torExclude() {
+	for _, network := range torExcludedNetworks {
 		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "ACCEPT"})
 	}
 	return append(rules,

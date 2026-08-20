@@ -46,10 +46,10 @@ func TorrcOptionsFromConfig(cfg config.Config) TorrcOptions {
 }
 
 func RenderTorrc(options TorrcOptions) (string, error) {
-	return RenderTorrcWithBase(defaultTorrcBase, options)
+	return renderTorrcWithBase(defaultTorrcBase, options)
 }
 
-func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
+func renderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	base = strings.TrimRight(base, "\n")
 	if strings.TrimSpace(base) == "" {
 		return "", fmt.Errorf("torrc base is empty")

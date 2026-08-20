@@ -14,17 +14,17 @@ import (
 )
 
 func dnstShowStatus(manager dns.Manager) error {
-	addresses, err := dns.ParseDNSAddresses(manager.ResolvConfPath)
+	addresses, err := dns.ParseDNSAddresses(dns.ResolvConfPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			ui.PrintErrorResolvNotFound(manager.ResolvConfPath)
+			ui.PrintErrorResolvNotFound(dns.ResolvConfPath)
 			return nil
 		}
 		return err
 	}
 
 	if len(addresses) == 0 {
-		ui.PrintErrorResolvEmpty(manager.ResolvConfPath)
+		ui.PrintErrorResolvEmpty(dns.ResolvConfPath)
 	} else if tor.IsAnonsurfRunning() {
 		if dns.HasOnlyLocalhost(addresses) {
 			ui.PrintUnderTorDNS()
@@ -81,7 +81,7 @@ func requireAdmin() error {
 }
 
 func main() {
-	manager := dns.NewManager()
+	manager := dns.Manager{}
 
 	var rootCmd = &cobra.Command{
 		Use:           "dnstool",

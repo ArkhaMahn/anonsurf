@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
@@ -13,7 +14,7 @@ const torDNSAddress = "127.0.0.1"
 
 func (c Controller) Start() error {
 	state := startTransition{}
-	active, err := c.torService().IsActive()
+	active, err := systemd.NewTorController().IsActive()
 	if err != nil {
 		return fmt.Errorf("check Tor service: %w", err)
 	}
@@ -24,7 +25,7 @@ func (c Controller) Start() error {
 	}
 	state.torrcGenerated = true
 
-	if exists, err := c.fileExists(c.torrcPath()); err != nil {
+	if exists, err := fileExists(TorrcPath); err != nil {
 		return c.failStart(fmt.Errorf("check torrc: %w", err), state)
 	} else if !exists {
 		return c.failStart(ErrTorrcNotFound, state)
@@ -38,7 +39,7 @@ func (c Controller) Start() error {
 	}
 
 	state.torStartAttempted = true
-	if err := c.torService().Start(); err != nil {
+	if err := systemd.NewTorController().Start(); err != nil {
 		return c.failStart(fmt.Errorf("start Tor service: %w", err), state)
 	}
 	if err := c.markActive(); err != nil {
@@ -48,18 +49,18 @@ func (c Controller) Start() error {
 }
 
 func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition) error {
-	if err := c.torService().Stop(); err != nil {
+	if err := systemd.NewTorController().Stop(); err != nil {
 		return fmt.Errorf("stop Tor service before routing: %w", err)
 	}
 
-	if err := c.dnsManager().MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
+	if err := (dns.Manager{}).MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
 		return fmt.Errorf("backup DNS settings: %w", err)
 	}
 	if err := c.markDNSChanged(); err != nil {
 		return fmt.Errorf("mark DNS state: %w", err)
 	}
 	state.dnsTouched = true
-	if err := c.dnsManager().CreateAddrs([]string{torDNSAddress}); err != nil {
+	if err := (dns.Manager{}).CreateAddrs([]string{torDNSAddress}); err != nil {
 		return fmt.Errorf("set Tor DNS: %w", err)
 	}
 
@@ -79,7 +80,7 @@ func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition)
 }
 
 func (c Controller) readTorRoutingConfig() (tor.RoutingConfig, error) {
-	data, err := c.readFile(c.torrcPath())
+	data, err := readFile(TorrcPath)
 	if err != nil {
 		return tor.RoutingConfig{}, fmt.Errorf("read torrc: %w", err)
 	}

@@ -25,26 +25,9 @@ type ControlConfig struct {
 	CookieAuthFile string
 }
 
-type ControlDialer func(network, address string) (net.Conn, error)
+type IdentityChanger struct{}
 
-type IdentityChanger struct {
-	TorrcPath         string
-	ReadFile          func(path string) ([]byte, error)
-	Dial              ControlDialer
-	IsAnonSurfRunning func() bool
-	Timeout           time.Duration
-}
-
-func NewIdentityChanger() IdentityChanger {
-	return IdentityChanger{
-		TorrcPath:         TorrcPath,
-		ReadFile:          os.ReadFile,
-		IsAnonSurfRunning: IsAnonsurfRunning,
-		Timeout:           DefaultControlTimeout,
-	}
-}
-
-func ParseControlConfig(reader io.Reader) (ControlConfig, error) {
+func parseControlConfig(reader io.Reader) (ControlConfig, error) {
 	config := ControlConfig{CookieAuthFile: DefaultCookieAuthFile}
 	scanner := bufio.NewScanner(reader)
 
@@ -69,50 +52,31 @@ func ParseControlConfig(reader io.Reader) (ControlConfig, error) {
 	return config, nil
 }
 
-func (c IdentityChanger) Change() error {
-	if c.IsAnonSurfRunning != nil && !c.IsAnonSurfRunning() {
+func (IdentityChanger) Change() error {
+	if !IsAnonsurfRunning() {
 		return ErrAnonSurfNotRunning
 	}
 
-	readFile := c.ReadFile
-	if readFile == nil {
-		readFile = os.ReadFile
-	}
-	torrcPath := c.TorrcPath
-	if torrcPath == "" {
-		torrcPath = TorrcPath
-	}
-
-	torrcData, err := readFile(torrcPath)
+	torrcData, err := os.ReadFile(TorrcPath)
 	if err != nil {
 		return fmt.Errorf("read torrc: %w", err)
 	}
-	config, err := ParseControlConfig(strings.NewReader(string(torrcData)))
+	config, err := parseControlConfig(strings.NewReader(string(torrcData)))
 	if err != nil {
 		return fmt.Errorf("parse torrc control config: %w", err)
 	}
 
-	cookieData, err := readFile(config.CookieAuthFile)
+	cookieData, err := os.ReadFile(config.CookieAuthFile)
 	if err != nil {
 		return fmt.Errorf("read Tor control cookie: %w", err)
 	}
 
-	dial := c.Dial
-	timeout := c.Timeout
-	if timeout <= 0 {
-		timeout = DefaultControlTimeout
-	}
-	if dial == nil {
-		dial = func(network, address string) (net.Conn, error) {
-			return net.DialTimeout(network, address, timeout)
-		}
-	}
-	conn, err := dial("tcp", config.Address)
+	conn, err := net.DialTimeout("tcp", config.Address, DefaultControlTimeout)
 	if err != nil {
 		return fmt.Errorf("connect Tor control port: %w", err)
 	}
 	defer conn.Close()
-	if err := conn.SetDeadline(time.Now().Add(timeout)); err != nil {
+	if err := conn.SetDeadline(time.Now().Add(DefaultControlTimeout)); err != nil {
 		return fmt.Errorf("set Tor control deadline: %w", err)
 	}
 
