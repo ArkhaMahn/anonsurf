@@ -51,6 +51,7 @@ func (c Controller) restoreIPTablesRules() error {
 	if err != nil {
 		return fmt.Errorf("read iptables backup: %w", err)
 	}
+	rules = ensureManagedIPTablesTables(rules)
 	if err := c.runWithInput(c.iptablesRestorePath(), rules); err != nil {
 		return fmt.Errorf("restore iptables rules: %w", err)
 	}
@@ -58,6 +59,50 @@ func (c Controller) restoreIPTablesRules() error {
 		return fmt.Errorf("remove iptables backup: %w", err)
 	}
 	return nil
+}
+
+func ensureManagedIPTablesTables(rules []byte) []byte {
+	content := string(rules)
+	for _, table := range []struct {
+		name  string
+		empty string
+	}{
+		{
+			name: "filter",
+			empty: "*filter\n" +
+				":INPUT ACCEPT [0:0]\n" +
+				":FORWARD ACCEPT [0:0]\n" +
+				":OUTPUT ACCEPT [0:0]\n" +
+				"COMMIT\n",
+		},
+		{
+			name: "nat",
+			empty: "*nat\n" +
+				":PREROUTING ACCEPT [0:0]\n" +
+				":INPUT ACCEPT [0:0]\n" +
+				":OUTPUT ACCEPT [0:0]\n" +
+				":POSTROUTING ACCEPT [0:0]\n" +
+				"COMMIT\n",
+		},
+	} {
+		if hasIPTablesTable(content, table.name) {
+			continue
+		}
+		if content != "" && !strings.HasSuffix(content, "\n") {
+			content += "\n"
+		}
+		content += table.empty
+	}
+	return []byte(content)
+}
+
+func hasIPTablesTable(rules, table string) bool {
+	for _, line := range strings.Split(rules, "\n") {
+		if strings.TrimSpace(line) == "*"+table {
+			return true
+		}
+	}
+	return false
 }
 
 func (c Controller) iptablesRules(routing tor.RoutingConfig) [][]string {

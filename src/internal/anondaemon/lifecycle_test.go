@@ -128,6 +128,58 @@ func TestStopDoesNotFlushFirewallWithoutBackup(t *testing.T) {
 	}
 }
 
+func TestRestoreFirewallCompletesMissingManagedTables(t *testing.T) {
+	tests := []struct {
+		name   string
+		backup string
+	}{
+		{name: "empty backup"},
+		{
+			name: "filter only",
+			backup: "*filter\n" +
+				":INPUT DROP [0:0]\n" +
+				":FORWARD DROP [0:0]\n" +
+				":OUTPUT DROP [0:0]\n" +
+				"-A OUTPUT -d 203.0.113.0/24 -j ACCEPT\n" +
+				"COMMIT\n",
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			controller, _, _, _ := testController(t)
+			if err := controller.writeFile(controller.IPTablesRulesPath, []byte(test.backup), 0600); err != nil {
+				t.Fatal(err)
+			}
+
+			var restored string
+			controller.RunWithInput = func(command string, input []byte, args ...string) error {
+				if command != controller.IPTablesRestorePath {
+					t.Fatalf("restore command = %q", command)
+				}
+				restored = string(input)
+				return nil
+			}
+
+			if err := controller.restoreFirewall(); err != nil {
+				t.Fatal(err)
+			}
+			if strings.Count(restored, "*filter\n") != 1 {
+				t.Fatalf("filter table count = %d:\n%s", strings.Count(restored, "*filter\n"), restored)
+			}
+			if strings.Count(restored, "*nat\n") != 1 {
+				t.Fatalf("nat table count = %d:\n%s", strings.Count(restored, "*nat\n"), restored)
+			}
+			if test.backup != "" && !strings.Contains(restored, "-A OUTPUT -d 203.0.113.0/24 -j ACCEPT") {
+				t.Fatalf("original filter rule missing:\n%s", restored)
+			}
+			if _, err := os.Stat(controller.IPTablesRulesPath); !os.IsNotExist(err) {
+				t.Fatalf("iptables backup still exists: %v", err)
+			}
+		})
+	}
+}
+
 func TestIPTablesRejectRuleIsLast(t *testing.T) {
 	controller := Controller{}
 	rules := controller.iptablesRules(torRoutingConfig())
