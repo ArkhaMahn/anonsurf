@@ -1,11 +1,8 @@
 package tor
 
 import (
-	"bufio"
 	_ "embed"
 	"fmt"
-	"io"
-	"strconv"
 	"strings"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/config"
@@ -14,7 +11,6 @@ import (
 //go:embed assets/torrc.base
 var defaultTorrcBase string
 
-// TorrcOptions contains the config values that can be rendered without system side effects.
 type TorrcOptions struct {
 	UseSandbox          bool
 	UseSafeSocks        bool
@@ -35,7 +31,6 @@ type RoutingConfig struct {
 	VirtualAddrNetwork string
 }
 
-// TorrcOptionsFromConfig keeps config parsing separate from Tor-specific rendering rules.
 func TorrcOptionsFromConfig(cfg config.Config) TorrcOptions {
 	return TorrcOptions{
 		UseSandbox:          cfg.UseSandbox,
@@ -50,12 +45,10 @@ func TorrcOptionsFromConfig(cfg config.Config) TorrcOptions {
 	}
 }
 
-// RenderTorrc renders the embedded Parrot torrc base with the supplied options.
 func RenderTorrc(options TorrcOptions) (string, error) {
 	return RenderTorrcWithBase(defaultTorrcBase, options)
 }
 
-// RenderTorrcWithBase keeps rendering testable without reading or writing system files.
 func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	base = strings.TrimRight(base, "\n")
 	if strings.TrimSpace(base) == "" {
@@ -66,20 +59,22 @@ func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	var builder strings.Builder
-	builder.WriteString(base)
-	builder.WriteString("\n\n# Use sandbox\n")
-	builder.WriteString("Sandbox ")
-	builder.WriteString(torBool(options.UseSandbox))
 	bridgeSettings, err := renderBridgeSettings(options)
 	if err != nil {
 		return "", err
 	}
+	proxySettings, err := renderProxySettings(options)
+	if err != nil {
+		return "", err
+	}
+
+	var builder strings.Builder
+	builder.WriteString(base)
+	builder.WriteString("\n\n# Use sandbox\nSandbox ")
+	builder.WriteString(torBool(options.UseSandbox))
 	builder.WriteString("\n\n")
 	builder.WriteString(bridgeSettings)
-	builder.WriteString("\n\n# Use SafeSocks\n")
-	builder.WriteString("SafeSocks ")
+	builder.WriteString("\n\n# Use SafeSocks\nSafeSocks ")
 	builder.WriteString(torBool(options.UseSafeSocks))
 	builder.WriteString("\n\n")
 	if options.RejectPlainPorts {
@@ -89,10 +84,6 @@ func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	}
 	builder.WriteString(plaintextPorts)
 	builder.WriteString("\n")
-	proxySettings, err := renderProxySettings(options)
-	if err != nil {
-		return "", err
-	}
 	if proxySettings != "" {
 		builder.WriteString("\n")
 		builder.WriteString(proxySettings)
@@ -100,196 +91,4 @@ func RenderTorrcWithBase(base string, options TorrcOptions) (string, error) {
 	}
 
 	return builder.String(), nil
-}
-
-func renderBridgeSettings(options TorrcOptions) (string, error) {
-	address := strings.TrimSpace(options.BridgeAddress)
-	if options.AutoBridge && address == "" {
-		return "", fmt.Errorf("auto bridge requires a selected bridge address")
-	}
-	if address == "" {
-		return "# Bridge setting: No bridge", nil
-	}
-
-	transport, err := bridgeTransport(address)
-	if err != nil {
-		return "", err
-	}
-
-	var builder strings.Builder
-	builder.WriteString("# Enable bridge mode\nUseBridges 1\n")
-	switch transport {
-	case "obfs4":
-		if strings.TrimSpace(options.Obfs4ProxyPath) == "" {
-			return "", fmt.Errorf("obfs4 bridge requires obfs4proxy path")
-		}
-		builder.WriteString("ClientTransportPlugin obfs4 exec ")
-		builder.WriteString(strings.TrimSpace(options.Obfs4ProxyPath))
-		builder.WriteString(" managed\n")
-	case "snowflake":
-		if strings.TrimSpace(options.SnowflakeClientPath) == "" {
-			return "", fmt.Errorf("snowflake bridge requires snowflake-client path")
-		}
-		builder.WriteString("ClientTransportPlugin snowflake exec ")
-		builder.WriteString(strings.TrimSpace(options.SnowflakeClientPath))
-		builder.WriteString("\n")
-	case "meek":
-		return "", fmt.Errorf("meek bridges are not supported")
-	}
-
-	builder.WriteString("\nBridge ")
-	builder.WriteString(address)
-	return builder.String(), nil
-}
-
-func bridgeTransport(address string) (string, error) {
-	fields := strings.Fields(address)
-	if len(fields) == 0 {
-		return "", fmt.Errorf("bridge address is empty")
-	}
-
-	switch fields[0] {
-	case "obfs4", "snowflake", "meek":
-		return fields[0], nil
-	default:
-		return "", nil
-	}
-}
-
-func renderProxySettings(options TorrcOptions) (string, error) {
-	address := strings.TrimSpace(options.HTTPProxyAddress)
-	credential := strings.TrimSpace(options.HTTPProxyCredential)
-
-	if address == "" {
-		if credential != "" {
-			return "", fmt.Errorf("proxy credential requires proxy address")
-		}
-		return "", nil
-	}
-	if err := validateTorrcSingleLine("proxy address", address); err != nil {
-		return "", err
-	}
-	if credential != "" {
-		if err := validateTorrcSingleLine("proxy credential", credential); err != nil {
-			return "", err
-		}
-	}
-
-	var builder strings.Builder
-	builder.WriteString("# Set proxy address\n")
-	if options.ProxyIsHTTPS {
-		builder.WriteString("HTTPSProxy ")
-		builder.WriteString(address)
-		builder.WriteString("\n")
-		if credential != "" {
-			builder.WriteString("HTTPSProxyAuthenticator ")
-			builder.WriteString(credential)
-			builder.WriteString("\n")
-		}
-		return strings.TrimRight(builder.String(), "\n"), nil
-	}
-
-	if credential != "" {
-		return "", fmt.Errorf("HTTP proxy credentials require proxy_is_https=true")
-	}
-	builder.WriteString("HTTPProxy ")
-	builder.WriteString(address)
-	return builder.String(), nil
-}
-
-func validateTorrcSingleLine(name, value string) error {
-	if strings.ContainsAny(value, "\r\n") {
-		return fmt.Errorf("%s must be a single line", name)
-	}
-	return nil
-}
-
-func torBool(value bool) string {
-	if value {
-		return "1"
-	}
-	return "0"
-}
-
-func normalizePlaintextPorts(portList string) (string, error) {
-	parts := strings.Split(portList, ",")
-	ports := make([]string, 0, len(parts))
-	seen := make(map[int]bool)
-
-	for _, part := range parts {
-		value := strings.TrimSpace(part)
-		if value == "" {
-			return "", fmt.Errorf("empty plaintext port")
-		}
-
-		port, err := strconv.Atoi(value)
-		if err != nil || port < 1 || port > 65535 {
-			return "", fmt.Errorf("invalid plaintext port %q", value)
-		}
-		if seen[port] {
-			continue
-		}
-		seen[port] = true
-		ports = append(ports, strconv.Itoa(port))
-	}
-	if len(ports) == 0 {
-		return "", fmt.Errorf("no plaintext ports configured")
-	}
-
-	return strings.Join(ports, ","), nil
-}
-
-func ParseRoutingConfig(reader io.Reader) (RoutingConfig, error) {
-	var config RoutingConfig
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		fields := strings.Fields(stripComment(scanner.Text()))
-		if len(fields) < 2 {
-			continue
-		}
-		switch fields[0] {
-		case "VirtualAddrNetwork":
-			if config.VirtualAddrNetwork == "" {
-				config.VirtualAddrNetwork = fields[1]
-			}
-		case "TransPort":
-			if config.TransPort == "" {
-				config.TransPort = portValue(fields[1])
-			}
-		case "DNSPort":
-			if config.DNSPort == "" {
-				config.DNSPort = portValue(fields[1])
-			}
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return config, err
-	}
-	if config.TransPort == "" {
-		return config, fmt.Errorf("Tor TransPort not found")
-	}
-	if config.DNSPort == "" {
-		return config, fmt.Errorf("Tor DNSPort not found")
-	}
-	if config.VirtualAddrNetwork == "" {
-		return config, fmt.Errorf("Tor VirtualAddrNetwork not found")
-	}
-	return config, nil
-}
-
-func portValue(value string) string {
-	if before, _, ok := strings.Cut(value, "/"); ok {
-		value = before
-	}
-	if index := strings.LastIndex(value, ":"); index >= 0 {
-		return value[index+1:]
-	}
-	return value
-}
-
-func stripComment(line string) string {
-	if index := strings.Index(line, "#"); index >= 0 {
-		return line[:index]
-	}
-	return line
 }
