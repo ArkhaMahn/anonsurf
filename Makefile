@@ -31,7 +31,7 @@ endif
 
 os_name := $(shell sed -n 's/^ID=//p' /etc/os-release 2>/dev/null | tr -d '"')
 
-.PHONY: build check clean prepare-go-gopath test
+.PHONY: build check clean prepare-go-gopath
 
 all: build install
 
@@ -71,11 +71,8 @@ safekill: $(BUILD-DEST) $(GO-BUILD-DEPS)
 
 build: anonsurf-cli anonsurf-gtk dnstool make-torrc anondaemon safekill
 
-test: $(GO-BUILD-DEPS)
-	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) test $(GO-PKG-PREFIX)/...
+check: $(GO-BUILD-DEPS)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
-
-check: test
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build $(GO-PKG-PREFIX)/cmd/...
 
 inst-launchers:

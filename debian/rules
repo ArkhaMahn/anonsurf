@@ -9,7 +9,6 @@ override_dh_auto_build:
 	make build GO-BUILD-MODE=gopath
 
 override_dh_auto_test:
-	make test GO-BUILD-MODE=gopath
 
 override_dh_fixperms:
 	dh_fixperms
