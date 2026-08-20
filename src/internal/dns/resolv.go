@@ -119,11 +119,14 @@ func (m Manager) RestoreFromBackup() error {
 
 func (m Manager) RestoreBackupOrDHCP() error {
 	if err := m.RestoreFromBackup(); err == nil {
+		if err := m.createNetworkManagerHook(NMHookHandleResolvConf); err != nil {
+			return fmt.Errorf("restore NetworkManager DNS ownership: %w", err)
+		}
 		return nil
 	} else if !errors.Is(err, ErrBackupNotFound) {
 		return err
 	}
-	return m.createNetworkManagerHook(NMHookHandleResolvConf)
+	return m.CreateDHCPOnly()
 }
 
 func (m Manager) MakeBackup() error {
