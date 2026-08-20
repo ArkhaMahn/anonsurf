@@ -1,10 +1,10 @@
 anonsurf (6.0.0+parrot0) echo; urgency=medium
 
-  * New version 6.0 with the Go command-line migration.
-  * Build command-line tools from Go sources and keep the Vala GUI.
-  * Update Tor configuration generation, DNS tooling and AnonSurf CLI UX.
+  * New version 6.0 with the Go command-line and daemon migration.
+  * Build command-line tools and the system daemon from Go sources.
+  * Update routing, Tor configuration generation, DNS tooling and AnonSurf CLI UX.
 
- -- Dario Camonita <danterolle@parrotsec.org>  Tue, 28 Jul 2026 12:07:00 +0200
+ -- Dario "danterolle" Camonita <danterolle@parrotsec.org>  Tue, 28 Jul 2026 12:07:00 +0200
 
 anonsurf (5.0.0+parrot1) lory; urgency=medium
 

@@ -22,7 +22,7 @@ public class DialogAboutAnonSurf: AboutDialog {
     this.set_icon_name("anonsurf");
     this.set_logo_icon_name("anonsurf");
     this.set_program_name("AnonSurf");
-    this.set_version("5.0.0");
+    this.set_version("6.0.0");
     this.set_artists(artists);
     this.set_authors(authors);
     this.set_comments("Anonymous Toolkit of ParrotOS");

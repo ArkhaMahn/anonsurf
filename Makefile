@@ -5,7 +5,8 @@ VALA-FLAGS += --vapidir /usr/share/vala/vapi/ --pkg vte-2.91 # Use libvte to cre
 VALA-FLAGS += -X -Wno-incompatible-pointer-types # Suppress Vala's warning. Check https://stackoverflow.com/a/66559047
 VALA-FLAGS += -X -Wno-discarded-qualifiers # Supress Vala's warning. Check https://stackoverflow.com/a/66559047
 
-VALA-SRC-DIR = src_nim/anonsurf-gtk
+VALA-SRC-DIR = gui/anonsurf-gtk
+VALA-SRC-CONTROLS = $(VALA-SRC-DIR)/controls
 VALA-SRC-LAYOUTS = $(VALA-SRC-DIR)/layouts
 VALA-SRC-DIALOGS = $(VALA-SRC-DIR)/dialogs
 VALA-SRC-SYS = $(VALA-SRC-DIR)/system_interactions
@@ -49,6 +50,7 @@ prepare-go-gopath: $(BUILD-DEST)
 anonsurf-gtk: $(BUILD-DEST)
 	valac $(VALA-FLAGS) $(VALA-SRC-DIR)/anonsurf_gtk.vala \
 	$(VALA-SRC-LAYOUTS)/box_boot.vala $(VALA-SRC-LAYOUTS)/box_controller.vala $(VALA-SRC-LAYOUTS)/titlebar.vala \
+	$(VALA-SRC-CONTROLS)/network_buttons.vala $(VALA-SRC-CONTROLS)/tor_buttons.vala \
 	$(VALA-SRC-DIALOGS)/about.vala $(VALA-SRC-DIALOGS)/tor_controller.vala $(VALA-SRC-DIALOGS)/ask_kill.vala \
 	$(VALA-SRC-SYS)/notifications.vala $(VALA-SRC-SYS)/system_tray_icon.vala $(VALA-SRC-SYS)/system_tray_menu.vala $(VALA-SRC-SYS)/threads.vala \
 	-o $(BUILD-DEST)/anonsurf-gtk
@@ -62,7 +64,13 @@ dnstool: $(BUILD-DEST) $(GO-BUILD-DEPS)
 make-torrc: $(BUILD-DEST) $(GO-BUILD-DEPS)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/make-torrc $(GO-PKG-PREFIX)/cmd/make-torrc
 
-build: anonsurf-cli anonsurf-gtk dnstool make-torrc
+anondaemon: $(BUILD-DEST) $(GO-BUILD-DEPS)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anondaemon $(GO-PKG-PREFIX)/cmd/anondaemon
+
+safekill: $(BUILD-DEST) $(GO-BUILD-DEPS)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/safekill $(GO-PKG-PREFIX)/cmd/safekill
+
+build: anonsurf-cli anonsurf-gtk dnstool make-torrc anondaemon safekill
 
 inst-launchers:
 	# Copy launchers
@@ -87,10 +95,11 @@ inst-bins:
 	cp build/release/anonsurf-gtk $(DESTDIR)/usr/bin/anonsurf-gtk
 	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
 	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
-	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
+	cp build/release/anondaemon $(DESTDIR)/usr/lib/anonsurf/anondaemon
+	cp build/release/safekill $(DESTDIR)/usr/lib/anonsurf/safekill
 
 inst-perms:
-	chmod +x $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
+	chmod +x $(DESTDIR)/usr/lib/anonsurf/anondaemon $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
 
 inst-icons:
 	cp icons/*.png $(DESTDIR)/usr/share/icons/.

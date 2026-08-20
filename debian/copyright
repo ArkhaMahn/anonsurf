@@ -14,13 +14,12 @@ License: GPL-3.0+
 
 Files:
   build/*
+  gui/*
   sys-units/*
   src/*
-  src_nim/*
   configs/*
   Makefile
   README.md
-  scripts/*
 Copyright:
   2020-2024, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
   2026, Dario Camonita <danterolle@parrotsec.org>

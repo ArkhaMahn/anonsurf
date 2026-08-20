@@ -2,6 +2,7 @@ package anondaemon
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"time"
@@ -10,10 +11,7 @@ import (
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
-var (
-	ErrCommandNotImplemented = errors.New("daemon command is not implemented")
-	ErrTorrcNotFound         = errors.New("torrc not found")
-)
+var ErrTorrcNotFound = errors.New("torrc not found")
 
 type Runner interface {
 	Run(command string, args ...string) error
@@ -71,5 +69,11 @@ func NewController() Controller {
 }
 
 func (c Controller) Restart() error {
-	return ErrCommandNotImplemented
+	if err := c.Stop(); err != nil {
+		return fmt.Errorf("stop before restart: %w", err)
+	}
+	if err := c.Start(); err != nil {
+		return fmt.Errorf("start after restart: %w", err)
+	}
+	return nil
 }

@@ -20,9 +20,9 @@ Homepage: https://www.parrotsec.org/
 Package: anonsurf
 Architecture: any
 Priority: optional
-Depends: ${shlibs:Depends}, ${misc:Depends}, bash (>= 5.0), iptables, tor, systemd | systemctl, sudo
+Depends: ${shlibs:Depends}, ${misc:Depends}, iptables, psmisc, tor, systemd | systemctl, sudo
 Recommends: tor-geoipdb, parrot-menu
-Suggests: gnunet-gtk, gnunet, vidalia, resolvconf, onionshare, connect-proxy, bleachbit, snowflake-client, obfs4proxy
+Suggests: bleachbit, gnunet-gtk, gnunet, vidalia, resolvconf, onionshare, connect-proxy, snowflake-client, obfs4proxy
 Description: Anonymization toolkit for Parrot Security OS
  AnonSurf is an anonymization toolkit that helps
  prevent tracking and surveillance of the end-user.
