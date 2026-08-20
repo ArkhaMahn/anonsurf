@@ -93,8 +93,19 @@ func (m TorrcManager) Restore() error {
 	}
 
 	if backupExists {
-		if err := os.Rename(m.BackupPath, m.Path); err != nil {
+		info, err := os.Stat(m.BackupPath)
+		if err != nil {
+			return fmt.Errorf("stat torrc backup: %w", err)
+		}
+		content, err := os.ReadFile(m.BackupPath)
+		if err != nil {
+			return fmt.Errorf("read torrc backup: %w", err)
+		}
+		if err := writeFileAtomically(m.Path, content, info.Mode().Perm()); err != nil {
 			return fmt.Errorf("restore torrc backup: %w", err)
+		}
+		if err := os.Remove(m.BackupPath); err != nil {
+			return fmt.Errorf("remove torrc backup: %w", err)
 		}
 		return nil
 	}
