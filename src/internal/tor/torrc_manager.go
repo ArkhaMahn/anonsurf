@@ -10,7 +10,7 @@ import (
 
 const (
 	TorrcPath              = "/etc/tor/torrc"
-	TorrcBackupPath        = "/etc/tor/torrc.bak"
+	TorrcBackupPath        = "/var/lib/anonsurf/torrc.backup"
 	TorrcMissingMarkerPath = "/var/lib/anonsurf/torrc.missing"
 )
 
@@ -44,6 +44,9 @@ func (m TorrcManager) Backup() error {
 	markerExists, err := fileExists(markerPath)
 	if err != nil {
 		return fmt.Errorf("check missing torrc marker: %w", err)
+	}
+	if backupExists && markerExists {
+		return ErrTorrcBackupConflict
 	}
 	if backupExists || markerExists {
 		return ErrTorrcBackupExists
