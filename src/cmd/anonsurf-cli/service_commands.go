@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
 func serviceCommand(use, short string, run func() error, success string) *cobra.Command {
@@ -21,7 +23,7 @@ func serviceCommand(use, short string, run func() error, success string) *cobra.
 	}
 }
 
-func serviceCommandWithSafeKill(use, short string, run func() error, success string, safeKill safeKillRunner) *cobra.Command {
+func serviceCommandWithSafeKill(use, short string, run func() error, success string, safeKill safekill.Runner) *cobra.Command {
 	var useSafeKill bool
 	cmd := &cobra.Command{
 		Use:   use,
@@ -29,9 +31,6 @@ func serviceCommandWithSafeKill(use, short string, run func() error, success str
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if useSafeKill {
-				if safeKill == nil {
-					return fmt.Errorf("%s safe-kill: runner unavailable", use)
-				}
 				if err := safeKill.Run(); err != nil {
 					return fmt.Errorf("%s safe-kill: %w", use, err)
 				}
@@ -48,7 +47,7 @@ func serviceCommandWithSafeKill(use, short string, run func() error, success str
 	return cmd
 }
 
-func statusBootCommand(service serviceController) *cobra.Command {
+func statusBootCommand(service systemd.ServiceController) *cobra.Command {
 	return &cobra.Command{
 		Use:   "status-boot",
 		Short: "Show whether AnonSurf starts at boot",

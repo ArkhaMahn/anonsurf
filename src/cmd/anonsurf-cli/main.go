@@ -6,6 +6,11 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
 const version = "6.0.0"
@@ -19,16 +24,12 @@ func main() {
 }
 
 func execute(args []string, stdout, stderr io.Writer) error {
-	return executeWithDependencies(args, stdout, stderr, defaultDependencies())
-}
-
-func executeWithDependencies(args []string, stdout, stderr io.Writer, deps dependencies) error {
-	rootCmd := newRootCommand(stdout, stderr, deps)
+	rootCmd := newRootCommand(stdout, stderr)
 	rootCmd.SetArgs(args)
 	return rootCmd.Execute()
 }
 
-func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command {
+func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:           "anonsurf",
 		Short:         "Manage AnonSurf system-wide Tor routing",
@@ -51,17 +52,20 @@ func newRootCommand(stdout, stderr io.Writer, deps dependencies) *cobra.Command 
 	rootCmd.SetVersionTemplate("AnonSurf {{.Version}}\n")
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
+	service := systemd.NewAnonsurfdController()
+	monitor := anondaemon.MonitorClient{}
+	safeKill := safekill.Runner{}
 	rootCmd.AddCommand(
-		serviceCommandWithSafeKill("start", "Start system-wide Tor transparent routing", deps.service.Start, "AnonSurf started.", deps.safeKill),
-		serviceCommandWithSafeKill("stop", "Stop AnonSurf and return to clearnet", deps.service.Stop, "AnonSurf stopped.", deps.safeKill),
-		serviceCommandWithSafeKill("restart", "Restart AnonSurf routing", deps.service.Restart, "AnonSurf restarted.", deps.safeKill),
-		statusCommand(deps.status, deps.monitor),
-		monitorCommand(deps.monitor),
-		changeIDCommand(deps.identity),
-		myIPCommand(deps.ipCheck),
-		serviceCommand("enable-boot", "Enable AnonSurf at system startup", deps.service.Enable, "AnonSurf enabled at startup."),
-		serviceCommand("disable-boot", "Disable AnonSurf at system startup", deps.service.Disable, "AnonSurf disabled at startup."),
-		statusBootCommand(deps.service),
+		serviceCommandWithSafeKill("start", "Start system-wide Tor transparent routing", service.Start, "AnonSurf started.", safeKill),
+		serviceCommandWithSafeKill("stop", "Stop AnonSurf and return to clearnet", service.Stop, "AnonSurf stopped.", safeKill),
+		serviceCommandWithSafeKill("restart", "Restart AnonSurf routing", service.Restart, "AnonSurf restarted.", safeKill),
+		statusCommand(status.Reader{}, monitor),
+		monitorCommand(monitor),
+		changeIDCommand(anondaemon.IdentityClient{}),
+		myIPCommand(netcheck.Checker{}),
+		serviceCommand("enable-boot", "Enable AnonSurf at system startup", service.Enable, "AnonSurf enabled at startup."),
+		serviceCommand("disable-boot", "Disable AnonSurf at system startup", service.Disable, "AnonSurf disabled at startup."),
+		statusBootCommand(service),
 	)
 
 	return rootCmd

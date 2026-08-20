@@ -4,9 +4,11 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 )
 
-func changeIDCommand(changer identityChanger) *cobra.Command {
+func changeIDCommand(changer anondaemon.IdentityClient) *cobra.Command {
 	return &cobra.Command{
 		Use:     "changeid",
 		Aliases: []string{"newnym"},
@@ -23,7 +25,7 @@ func changeIDCommand(changer identityChanger) *cobra.Command {
 	}
 }
 
-func myIPCommand(checker ipChecker) *cobra.Command {
+func myIPCommand(checker netcheck.Checker) *cobra.Command {
 	return &cobra.Command{
 		Use:     "myip",
 		Aliases: []string{"ip"},
