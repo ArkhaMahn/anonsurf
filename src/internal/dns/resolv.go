@@ -19,20 +19,24 @@ var (
 )
 
 type Manager struct {
-	ResolvConfPath           string
-	ResolvConfBackup         string
-	NetworkManagerHookPath   string
-	ReloadNetworkManager     func() error
-	NetworkManagerDNSServers func() ([]string, error)
+	ResolvConfPath                  string
+	ResolvConfBackup                string
+	NetworkManagerHookPath          string
+	NetworkManagerHookBackup        string
+	NetworkManagerHookMissingMarker string
+	ReloadNetworkManager            func() error
+	NetworkManagerDNSServers        func() ([]string, error)
 }
 
 func NewManager() Manager {
 	return Manager{
-		ResolvConfPath:           ResolvConfPath,
-		ResolvConfBackup:         ResolvConfBackup,
-		NetworkManagerHookPath:   NMHookScript,
-		ReloadNetworkManager:     NMReloadService,
-		NetworkManagerDNSServers: NMGetDNSServers,
+		ResolvConfPath:                  ResolvConfPath,
+		ResolvConfBackup:                ResolvConfBackup,
+		NetworkManagerHookPath:          NMHookScript,
+		NetworkManagerHookBackup:        NMHookBackup,
+		NetworkManagerHookMissingMarker: NMHookMissingMarker,
+		ReloadNetworkManager:            NMReloadService,
+		NetworkManagerDNSServers:        NMGetDNSServers,
 	}
 }
 
@@ -87,6 +91,9 @@ func copyFile(src, dst string) error {
 }
 
 func (m Manager) CreateDHCPOnly() error {
+	if err := m.backupNetworkManagerHook(); err != nil {
+		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
+	}
 	if err := removeFileIfExists(m.ResolvConfPath); err != nil {
 		return fmt.Errorf("remove current DNS settings: %w", err)
 	}
@@ -97,6 +104,9 @@ func (m Manager) CreateAddrs(listAddr []string) error {
 	if len(listAddr) == 0 {
 		return ErrNoValidDNSAddress
 	}
+	if err := m.backupNetworkManagerHook(); err != nil {
+		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
+	}
 	if err := WriteDNSToSystem(listAddr, m.ResolvConfPath); err != nil {
 		return fmt.Errorf("write DNS settings: %w", err)
 	}
@@ -104,29 +114,65 @@ func (m Manager) CreateAddrs(listAddr []string) error {
 }
 
 func (m Manager) RestoreFromBackup() error {
-	exists, err := fileExists(m.ResolvConfBackup)
+	restored, err := m.restoreResolverBackup()
 	if err != nil {
-		return fmt.Errorf("check backup: %w", err)
+		return err
 	}
-	if !exists {
+	if !restored {
 		return ErrBackupNotFound
 	}
-	if err := os.Rename(m.ResolvConfBackup, m.ResolvConfPath); err != nil {
-		return fmt.Errorf("restore backup: %w", err)
+	if err := removeFileIfExists(m.ResolvConfBackup); err != nil {
+		return fmt.Errorf("remove restored backup: %w", err)
 	}
 	return nil
 }
 
+func (m Manager) restoreResolverBackup() (bool, error) {
+	exists, err := fileExists(m.ResolvConfBackup)
+	if err != nil {
+		return false, fmt.Errorf("check backup: %w", err)
+	}
+	if !exists {
+		return false, nil
+	}
+	info, err := os.Stat(m.ResolvConfBackup)
+	if err != nil {
+		return false, fmt.Errorf("stat backup: %w", err)
+	}
+	content, err := os.ReadFile(m.ResolvConfBackup)
+	if err != nil {
+		return false, fmt.Errorf("read backup: %w", err)
+	}
+	if err := writeFileAtomically(m.ResolvConfPath, content, info.Mode().Perm()); err != nil {
+		return false, fmt.Errorf("restore backup: %w", err)
+	}
+	return true, nil
+}
+
 func (m Manager) RestoreBackupOrDHCP() error {
-	if err := m.RestoreFromBackup(); err == nil {
-		if err := m.createNetworkManagerHook(NMHookHandleResolvConf); err != nil {
-			return fmt.Errorf("restore NetworkManager DNS ownership: %w", err)
-		}
-		return nil
-	} else if !errors.Is(err, ErrBackupNotFound) {
+	restoredBackup, err := m.restoreResolverBackup()
+	if err != nil {
 		return err
 	}
-	return m.CreateDHCPOnly()
+	if !restoredBackup {
+		if err := removeFileIfExists(m.ResolvConfPath); err != nil {
+			return fmt.Errorf("remove current DNS settings: %w", err)
+		}
+	}
+
+	hookState, err := m.restoreNetworkManagerHook()
+	if err != nil {
+		return fmt.Errorf("restore NetworkManager DNS ownership: %w", err)
+	}
+	if restoredBackup {
+		if err := removeFileIfExists(m.ResolvConfBackup); err != nil {
+			return fmt.Errorf("remove restored backup: %w", err)
+		}
+	}
+	if err := m.clearNetworkManagerHookState(hookState); err != nil {
+		return fmt.Errorf("clear NetworkManager hook backup: %w", err)
+	}
+	return nil
 }
 
 func (m Manager) MakeBackup() error {

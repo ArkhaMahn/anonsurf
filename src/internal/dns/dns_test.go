@@ -13,9 +13,11 @@ func testManager(t *testing.T) Manager {
 
 	dir := t.TempDir()
 	return Manager{
-		ResolvConfPath:         filepath.Join(dir, "resolv.conf"),
-		ResolvConfBackup:       filepath.Join(dir, "anonsurf", "resolv.conf.bak"),
-		NetworkManagerHookPath: filepath.Join(dir, "NetworkManager", "conf.d", "90-dns-none.conf"),
+		ResolvConfPath:                  filepath.Join(dir, "resolv.conf"),
+		ResolvConfBackup:                filepath.Join(dir, "anonsurf", "resolv.conf.bak"),
+		NetworkManagerHookPath:          filepath.Join(dir, "NetworkManager", "conf.d", "90-dns-none.conf"),
+		NetworkManagerHookBackup:        filepath.Join(dir, "state", "network-manager-hook.backup"),
+		NetworkManagerHookMissingMarker: filepath.Join(dir, "state", "network-manager-hook.missing"),
 		ReloadNetworkManager: func() error {
 			return nil
 		},
