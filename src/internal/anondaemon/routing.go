@@ -26,10 +26,13 @@ func (c Controller) saveIPTablesRules() error {
 }
 
 func (c Controller) applyIPTablesRules(routing tor.RoutingConfig) error {
-	for _, args := range c.iptablesRules(routing) {
-		if err := c.run(c.iptablesPath(), args...); err != nil {
-			return fmt.Errorf("apply iptables rule %s: %w", strings.Join(args, " "), err)
-		}
+	backup, err := c.readFile(c.iptablesRulesPath())
+	if err != nil {
+		return fmt.Errorf("read iptables backup for apply: %w", err)
+	}
+	rules := c.renderIPTablesRules(routing, backup)
+	if err := c.runWithInput(c.iptablesRestorePath(), []byte(rules)); err != nil {
+		return fmt.Errorf("apply iptables rules: %w", err)
 	}
 	return nil
 }
@@ -63,35 +66,14 @@ func (c Controller) restoreIPTablesRules() error {
 
 func ensureManagedIPTablesTables(rules []byte) []byte {
 	content := string(rules)
-	for _, table := range []struct {
-		name  string
-		empty string
-	}{
-		{
-			name: "filter",
-			empty: "*filter\n" +
-				":INPUT ACCEPT [0:0]\n" +
-				":FORWARD ACCEPT [0:0]\n" +
-				":OUTPUT ACCEPT [0:0]\n" +
-				"COMMIT\n",
-		},
-		{
-			name: "nat",
-			empty: "*nat\n" +
-				":PREROUTING ACCEPT [0:0]\n" +
-				":INPUT ACCEPT [0:0]\n" +
-				":OUTPUT ACCEPT [0:0]\n" +
-				":POSTROUTING ACCEPT [0:0]\n" +
-				"COMMIT\n",
-		},
-	} {
-		if hasIPTablesTable(content, table.name) {
+	for _, table := range []string{"filter", "nat"} {
+		if hasIPTablesTable(content, table) {
 			continue
 		}
 		if content != "" && !strings.HasSuffix(content, "\n") {
 			content += "\n"
 		}
-		content += table.empty
+		content += emptyIPTablesTable(table)
 	}
 	return []byte(content)
 }
@@ -105,26 +87,128 @@ func hasIPTablesTable(rules, table string) bool {
 	return false
 }
 
-func (c Controller) iptablesRules(routing tor.RoutingConfig) [][]string {
+type iptablesChain struct {
+	name   string
+	policy string
+}
+
+func defaultIPTablesChains(table string) []iptablesChain {
+	switch table {
+	case "filter":
+		return []iptablesChain{
+			{name: "INPUT", policy: "ACCEPT"},
+			{name: "FORWARD", policy: "ACCEPT"},
+			{name: "OUTPUT", policy: "ACCEPT"},
+		}
+	case "nat":
+		return []iptablesChain{
+			{name: "PREROUTING", policy: "ACCEPT"},
+			{name: "INPUT", policy: "ACCEPT"},
+			{name: "OUTPUT", policy: "ACCEPT"},
+			{name: "POSTROUTING", policy: "ACCEPT"},
+		}
+	default:
+		return nil
+	}
+}
+
+func emptyIPTablesTable(table string) string {
+	var builder strings.Builder
+	builder.WriteString("*")
+	builder.WriteString(table)
+	builder.WriteString("\n")
+	for _, chain := range defaultIPTablesChains(table) {
+		fmt.Fprintf(&builder, ":%s %s [0:0]\n", chain.name, chain.policy)
+	}
+	builder.WriteString("COMMIT\n")
+	return builder.String()
+}
+
+func iptablesChainDefinitions(backup []byte, table string) []string {
+	var definitions []string
+	seen := make(map[string]bool)
+	inTable := false
+
+	for _, line := range strings.Split(string(backup), "\n") {
+		line = strings.TrimSpace(line)
+		switch {
+		case line == "*"+table:
+			inTable = true
+			continue
+		case strings.HasPrefix(line, "*") || line == "COMMIT":
+			inTable = false
+		}
+		if !inTable || !strings.HasPrefix(line, ":") {
+			continue
+		}
+
+		fields := strings.Fields(line)
+		if len(fields) < 2 {
+			continue
+		}
+		name := strings.TrimPrefix(fields[0], ":")
+		if name == "" || seen[name] {
+			continue
+		}
+		seen[name] = true
+		definitions = append(definitions, fmt.Sprintf(":%s %s [0:0]", name, fields[1]))
+	}
+
+	for _, chain := range defaultIPTablesChains(table) {
+		if !seen[chain.name] {
+			definitions = append(definitions, fmt.Sprintf(":%s %s [0:0]", chain.name, chain.policy))
+		}
+	}
+	return definitions
+}
+
+func (c Controller) renderIPTablesRules(routing tor.RoutingConfig, backup []byte) string {
+	var builder strings.Builder
+	writeIPTablesTable(&builder, "filter", iptablesChainDefinitions(backup, "filter"), c.filterIPTablesRules(routing))
+	writeIPTablesTable(&builder, "nat", iptablesChainDefinitions(backup, "nat"), c.natIPTablesRules(routing))
+	return builder.String()
+}
+
+func writeIPTablesTable(builder *strings.Builder, table string, definitions []string, rules [][]string) {
+	builder.WriteString("*")
+	builder.WriteString(table)
+	builder.WriteString("\n")
+	for _, definition := range definitions {
+		builder.WriteString(definition)
+		builder.WriteString("\n")
+	}
+	for _, rule := range rules {
+		builder.WriteString(strings.Join(rule, " "))
+		builder.WriteString("\n")
+	}
+	builder.WriteString("COMMIT\n")
+}
+
+func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 	torUser := c.torUser()
-	commands := [][]string{
-		{"-F"},
-		{"-t", "nat", "-F"},
-		{"-t", "nat", "-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "RETURN"},
-		{"-t", "nat", "-A", "OUTPUT", "-d", "127.0.0.1/32", "-p", "udp", "-m", "udp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
-		{"-t", "nat", "-A", "OUTPUT", "-p", "tcp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
-		{"-t", "nat", "-A", "OUTPUT", "-p", "udp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
+	rules := [][]string{
+		{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "RETURN"},
+		{"-A", "OUTPUT", "-d", "127.0.0.1/32", "-p", "udp", "-m", "udp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
+		{"-A", "OUTPUT", "-p", "tcp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
+		{"-A", "OUTPUT", "-p", "udp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
 	}
 	for _, network := range c.torExclude() {
-		commands = append(commands,
-			[]string{"-t", "nat", "-A", "OUTPUT", "-d", network, "-j", "RETURN"},
-			[]string{"-A", "OUTPUT", "-d", network, "-j", "ACCEPT"},
-		)
+		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "RETURN"})
 	}
-	return append(commands,
-		[]string{"-t", "nat", "-A", "OUTPUT", "-p", "tcp", "--syn", "-j", "REDIRECT", "--to-ports", routing.TransPort},
-		[]string{"-t", "nat", "-A", "OUTPUT", "-p", "udp", "-j", "REDIRECT", "--to-ports", routing.TransPort},
-		[]string{"-t", "nat", "-A", "OUTPUT", "-p", "icmp", "-j", "REDIRECT", "--to-ports", routing.TransPort},
+	return append(rules,
+		[]string{"-A", "OUTPUT", "-p", "tcp", "--syn", "-j", "REDIRECT", "--to-ports", routing.TransPort},
+		[]string{"-A", "OUTPUT", "-p", "udp", "-j", "REDIRECT", "--to-ports", routing.TransPort},
+		[]string{"-A", "OUTPUT", "-p", "icmp", "-j", "REDIRECT", "--to-ports", routing.TransPort},
+	)
+}
+
+func (c Controller) filterIPTablesRules(routing tor.RoutingConfig) [][]string {
+	torUser := c.torUser()
+	var rules [][]string
+	for _, network := range c.torExclude() {
+		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "ACCEPT"})
+	}
+	return append(rules,
 		[]string{"-A", "OUTPUT", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "ACCEPT"},
 		[]string{"-A", "INPUT", "-m", "state", "--state", "ESTABLISHED", "-j", "ACCEPT"},

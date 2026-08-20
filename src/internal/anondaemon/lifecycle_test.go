@@ -13,11 +13,16 @@ func TestStartRollsBackFirewallFailure(t *testing.T) {
 	controller, runner, dnsManager, torService := testController(t)
 	torService.active = true
 	applyErr := errors.New("iptables failed")
-	runner.failRun = func(command string, args []string) error {
-		if command == controller.IPTablesPath && len(args) == 1 && args[0] == "-F" {
+	restoreCalls := 0
+	controller.RunWithInput = func(command string, _ []byte, args ...string) error {
+		if command == controller.IPTablesRestorePath {
+			restoreCalls++
+		}
+		if restoreCalls == 1 {
+			runner.runs = append(runner.runs, commandKey(command, args...))
 			return applyErr
 		}
-		return nil
+		return runner.Run(command, args...)
 	}
 
 	err := controller.Start()
@@ -67,6 +72,54 @@ func TestStartAndStopPersistActiveState(t *testing.T) {
 	}
 	if _, err := os.Stat(controller.ActiveStatePath); !os.IsNotExist(err) {
 		t.Fatalf("active state still exists: %v", err)
+	}
+}
+
+func TestApplyIPTablesRulesUsesAtomicRestore(t *testing.T) {
+	controller, runner, _, _ := testController(t)
+	backup := "*filter\n" +
+		":INPUT DROP [12:34]\n" +
+		":FORWARD DROP [0:0]\n" +
+		":OUTPUT DROP [0:0]\n" +
+		":CUSTOM - [0:0]\n" +
+		"COMMIT\n"
+	if err := controller.writeFile(controller.IPTablesRulesPath, []byte(backup), 0600); err != nil {
+		t.Fatal(err)
+	}
+
+	var restored string
+	restoreCalls := 0
+	controller.RunWithInput = func(command string, input []byte, args ...string) error {
+		restoreCalls++
+		if command != controller.IPTablesRestorePath {
+			t.Fatalf("restore command = %q", command)
+		}
+		restored = string(input)
+		return nil
+	}
+
+	if err := controller.applyIPTablesRules(torRoutingConfig()); err != nil {
+		t.Fatal(err)
+	}
+	if restoreCalls != 1 {
+		t.Fatalf("restore calls = %d, want 1", restoreCalls)
+	}
+	if len(runner.runs) != 0 {
+		t.Fatalf("unexpected sequential iptables calls: %#v", runner.runs)
+	}
+	for _, expected := range []string{
+		"*filter\n",
+		":INPUT DROP [0:0]\n",
+		":CUSTOM - [0:0]\n",
+		"-A OUTPUT -m owner --uid-owner debian-tor -j ACCEPT\n",
+		"-A OUTPUT -j REJECT\n",
+		"*nat\n",
+		":PREROUTING ACCEPT [0:0]\n",
+		"-A OUTPUT -m owner --uid-owner debian-tor -j RETURN\n",
+	} {
+		if !strings.Contains(restored, expected) {
+			t.Fatalf("restore input missing %q:\n%s", expected, restored)
+		}
 	}
 }
 
@@ -182,7 +235,7 @@ func TestRestoreFirewallCompletesMissingManagedTables(t *testing.T) {
 
 func TestIPTablesRejectRuleIsLast(t *testing.T) {
 	controller := Controller{}
-	rules := controller.iptablesRules(torRoutingConfig())
+	rules := controller.filterIPTablesRules(torRoutingConfig())
 	last := rules[len(rules)-1]
 	if got := strings.Join(last, " "); got != "-A OUTPUT -j REJECT" {
 		t.Fatalf("last iptables rule = %q", got)
