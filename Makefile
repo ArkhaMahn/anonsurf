@@ -1,5 +1,4 @@
 VALA-FLAGS = --pkg gtk+-3.0 # GTK3
-VALA-FLAGS += --pkg libsoup-2.4 # Use libsoup to parse HTML, build-time requires libsoup2.4-dev
 VALA-FLAGS += --pkg libnotify # Use libnotify to send notifications, build-time requires libnotify-dev
 VALA-FLAGS += --vapidir /usr/share/vala/vapi/ --pkg vte-2.91 # Use libvte to create a terminal. build-time requires libvte-2.91-dev. Libvte binding is at /usr/share/vala/vapi/vte-2.91.vapi
 VALA-FLAGS += -X -Wno-incompatible-pointer-types # Suppress Vala's warning. Check https://stackoverflow.com/a/66559047

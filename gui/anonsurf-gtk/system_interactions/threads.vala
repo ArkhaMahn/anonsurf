@@ -1,138 +1,93 @@
-/*
-Create thread pools that start, stop AnonSurf; enable / disable AnonSurf at boot or
-Check current Public IP and see if it's under Tor network
-*/
-
+private Subprocess run_systemctl(string action) throws GLib.Error {
+  Subprocess process = new Subprocess.newv({
+    "/usr/bin/pkexec",
+    "/usr/bin/systemctl",
+    action,
+    "anonsurfd.service"
+  }, STDOUT_SILENCE | STDERR_SILENCE);
+  process.wait();
+  return process;
+}
 
 public class ThreadStartAnonSurf {
   public bool is_action_start { private set; get; }
 
   public ThreadStartAnonSurf(bool is_action_start) {
-    if (is_action_start) {
-      this.is_action_start = true;
-    } else {
-      this.is_action_start = false;
-    }
-  }
-
-  private void start_anonsurf() {
-    try {
-      Subprocess action_start_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "start"}, STDOUT_SILENCE | STDERR_SILENCE);
-      action_start_anonsurf.wait();
-
-      int exit_code = action_start_anonsurf.get_exit_status();
-      if (exit_code == 0) {
-        send_notification("Start AnonSurf", "AnonSurf is activated", NotifyLevel.Ok);
-      } else {
-        send_notification("Start AnonSurf", "AnonSurf couldn't start. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
-      }
-    } catch (GLib.Error error) {
-      send_notification("Start AnonSurf", error.message, NotifyLevel.Error);
-    }
-  }
-
-
-  private void stop_anonsurf() {
-    try {
-      Subprocess action_stop_anonsurf = new Subprocess.newv({"/usr/sbin/service", "anonsurfd", "stop"}, STDOUT_SILENCE | STDERR_SILENCE);
-      action_stop_anonsurf.wait();
-
-      int exit_code = action_stop_anonsurf.get_exit_status();
-      if (exit_code == 0) {
-        send_notification("Stop AnonSurf", "AnonSurf is deactivated", NotifyLevel.Warn);
-      } else {
-        send_notification("Stop AnonSurf", "AnonSurf couldn't stop. Exit code: "  + exit_code.to_string(), NotifyLevel.Error);
-      }
-    } catch (GLib.Error error) {
-      send_notification("Stop AnonSurf", error.message, NotifyLevel.Error);
-    }
+    this.is_action_start = is_action_start;
   }
 
   public void run() {
-    if (this.is_action_start == true) {
-      start_anonsurf();
-    } else {
-      stop_anonsurf();
+    string action = this.is_action_start ? "start" : "stop";
+    string title = this.is_action_start ? "Start AnonSurf" : "Stop AnonSurf";
+
+    try {
+      Subprocess process = run_systemctl(action);
+      if (process.get_successful()) {
+        string message = this.is_action_start ? "AnonSurf is activated" : "AnonSurf is deactivated";
+        NotifyLevel level = this.is_action_start ? NotifyLevel.Ok : NotifyLevel.Warn;
+        send_notification(title, message, level);
+      } else {
+        string status = process.get_exit_status().to_string();
+        send_notification(title, "Action failed. Exit code: " + status, NotifyLevel.Error);
+      }
+    } catch (GLib.Error error) {
+      send_notification(title, error.message, NotifyLevel.Error);
     }
   }
 }
-
 
 public class ThreadEnableAnonSurf {
   public bool is_action_enable { private set; get; }
 
   public ThreadEnableAnonSurf(bool is_action_enable) {
-    if (is_action_enable) {
-      this.is_action_enable = true;
-    } else {
-      this.is_action_enable = false;
-    }
-  }
-
-  /*
-    Given flags STDOUT_SILENCE | STDERR_SILENCE -> No StdOut nor StdErr shows
-  */
-
-  private void enable_anonsurf() {
-    try {
-      Subprocess action_enable_anonsurf = new Subprocess.newv({"/usr/bin/systemctl", "enable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
-      action_enable_anonsurf.wait();
-
-      int exit_code = action_enable_anonsurf.get_exit_status();
-      if (exit_code == 0) {
-        send_notification("AnonSurf startup", "AnonSurf is enabled at boot", NotifyLevel.Ok);
-      } else {
-        send_notification("AnonSurf startup", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
-      }
-    } catch (GLib.Error error) {
-      send_notification("AnonSurf startup", error.message, NotifyLevel.Error);
-    }
-  }
-
-  private void disable_anonsurf() {
-    try {
-      Subprocess action_disable_anonsurf = new Subprocess.newv({"/usr/bin/systemctl", "disable", "anonsurfd"}, STDOUT_SILENCE | STDERR_SILENCE);
-      action_disable_anonsurf.wait();
-
-      int exit_code = action_disable_anonsurf.get_exit_status();
-      if (exit_code == 0) {
-        send_notification("AnonSurf startup", "AnonSurf is no longer enabled at boot", NotifyLevel.Warn);
-      } else {
-        send_notification("AnonSurf startup", "AnonSurf failed to disable at boot. Exit code: " + exit_code.to_string(), NotifyLevel.Error);
-      }
-    } catch (GLib.Error error) {
-      send_notification("AnonSurf startup", error.message, NotifyLevel.Error);
-    }
+    this.is_action_enable = is_action_enable;
   }
 
   public void run() {
-    if (this.is_action_enable == true) {
-      enable_anonsurf();
-    } else {
-      disable_anonsurf();
+    string action = this.is_action_enable ? "enable" : "disable";
+
+    try {
+      Subprocess process = run_systemctl(action);
+      if (process.get_successful()) {
+        string message = this.is_action_enable
+          ? "AnonSurf is enabled at boot"
+          : "AnonSurf is no longer enabled at boot";
+        NotifyLevel level = this.is_action_enable ? NotifyLevel.Ok : NotifyLevel.Warn;
+        send_notification("AnonSurf startup", message, level);
+      } else {
+        string status = process.get_exit_status().to_string();
+        send_notification("AnonSurf startup", "Action failed. Exit code: " + status, NotifyLevel.Error);
+      }
+    } catch (GLib.Error error) {
+      send_notification("AnonSurf startup", error.message, NotifyLevel.Error);
     }
   }
 }
 
-
 public class ThreadMyIP {
   public void run() {
-    /*
-      https://wiki.gnome.org/Projects/Vala/LibSoupSample
-    */
-    Soup.Session session = new Soup.Session();
-    Soup.Message message = new Soup.Message("GET", "https://check.torproject.org/");
+    try {
+      Subprocess process = new Subprocess.newv({
+        "/usr/bin/anonsurf",
+        "myip"
+      }, STDOUT_PIPE | STDERR_PIPE);
+      string? stdout_buf;
+      string? stderr_buf;
+      process.communicate_utf8(null, null, out stdout_buf, out stderr_buf);
+      string stdout_text = stdout_buf ?? "";
+      string stderr_text = stderr_buf ?? "Unknown error";
 
-    session.send_message(message);
-    string recv_data = (string)message.response_body.data;
-
-    if (recv_data.contains("Congratulations. This browser is configured to use Tor.")) {
-      send_notification("IP check", "Your connection is under Tor network", NotifyLevel.Ok);
-    }
-    else if (recv_data.contains("Sorry. You are not using Tor.")) {
-      send_notification("IP check", "Your connection is not under Tor network", NotifyLevel.Warn);
-    } else {
-      send_notification("CIP check", "Unexpected response data", NotifyLevel.Error);
+      if (!process.get_successful()) {
+        send_notification("IP check", stderr_text.strip(), NotifyLevel.Error);
+      } else if (stdout_text.contains("Tor:       yes")) {
+        send_notification("IP check", "Your connection is under Tor network", NotifyLevel.Ok);
+      } else if (stdout_text.contains("Tor:       no")) {
+        send_notification("IP check", "Your connection is not under Tor network", NotifyLevel.Warn);
+      } else {
+        send_notification("IP check", "Unexpected AnonSurf response", NotifyLevel.Error);
+      }
+    } catch (GLib.Error error) {
+      send_notification("IP check", error.message, NotifyLevel.Error);
     }
   }
 }

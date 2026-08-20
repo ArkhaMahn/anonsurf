@@ -11,7 +11,6 @@ Build-Depends:
  gcc (>= 10),
  bash-completion,
  valac,
- libsoup2.4-dev,
  libnotify-dev,
  libvte-2.91-dev,
 Build-Depends-Indep: pkg-config
@@ -35,7 +34,7 @@ Description: Anonymization toolkit for Parrot Security OS
 Package: anonsurf-gtk
 Architecture: any
 Priority: optional
-Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf, nyx, pkexec
+Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf-cli, nyx, pkexec
 Recommends: parrot-menu
 Description: Graphical interface for AnonSurf
  AnonSurf's graphical interface and desktop launcher written in Vala.
