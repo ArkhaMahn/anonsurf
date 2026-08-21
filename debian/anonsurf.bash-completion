@@ -1,6 +1,2 @@
-# bash completion for anonsurf
-# https://askubuntu.com/a/95214
-# https://www.cyberciti.biz/faq/add-bash-auto-completion-in-ubuntu-linux/
-
 complete -W 'start stop restart status monitor changeid newnym myip ip enable-boot disable-boot status-boot help' anonsurf
 complete -W 'help address status create-backup restore-backup' dnstool

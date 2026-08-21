@@ -16,8 +16,8 @@ Architecture: any
 Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}, iptables, network-manager, procps, tor, systemd | systemctl, sudo
 Breaks: anonsurf-gtk (<< 6.0.0~)
-Recommends: bleachbit, tor-geoipdb, parrot-menu
-Suggests: gnunet-gtk, gnunet, vidalia, resolvconf, onionshare, connect-proxy, snowflake-client, obfs4proxy
+Recommends: bleachbit, tor-geoipdb
+Suggests: obfs4proxy, snowflake-client
 Description: Anonymization toolkit for Parrot Security OS
  AnonSurf is an anonymization toolkit that helps
  prevent tracking and surveillance of the end-user.

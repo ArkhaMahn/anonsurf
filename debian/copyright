@@ -9,10 +9,10 @@ Copyright:
   2013 - 2020, Lorenzo "Palinuro" Faletra <palinuro@parrotsec.org>
   2020, Lisetta "Sheireen" Ferrero <sheireen@parrotsec.org>
   2020, Francesco "Mibofra" Bonanno <mibofra@parrotsec.org>
+  2026, Dario "danterolle" Camonita <danterolle@parrotsec.org>
 License: GPL-3.0+
 
 Files:
-  build/*
   sys-units/*
   src/*
   configs/*
@@ -20,14 +20,15 @@ Files:
   README.md
 Copyright:
   2020-2024, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
-  2026, Dario Camonita <danterolle@parrotsec.org>
+  2026, Dario "danterolle" Camonita <danterolle@parrotsec.org>
 License: GPL-3.0+
 
 Files:
-  debian/anonsurf.manpages
+  debian/anonsurf-cli.manpages
 Copyright:
   2020, Nong Hoang "DmKnght" Tu <dmknght@parrotsec.org>
   2020, John "RightToPrivacy" Meagher <righttoprivacy@tutanota.com>
+  2026, Dario "danterolle" Camonita <danterolle@parrotsec.org>
 License: GPL-3.0+
 
 Files:
