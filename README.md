@@ -1,6 +1,6 @@
 # Build
 - Build dependencies: golang-go, git
-- Runtime dependencies: bleachbit, nyx, sudo, tor, iptables, network-manager, systemd
+- Runtime dependencies: bleachbit, nyx, sudo, tor, iptables, network-manager, procps, systemd
 - Commands to build:
 1. `git clone https://gitlab.com/parrotsec/packages/anonsurf/`
 2. `cd anonsurf && make build && sudo make install`
