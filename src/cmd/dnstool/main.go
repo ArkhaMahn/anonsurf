@@ -87,6 +87,7 @@ func main() {
 		Use:           "dnstool",
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		Args:          cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ui.ShowHelp()
 			return dnstShowStatus(manager)
@@ -96,6 +97,7 @@ func main() {
 	statusCmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show current DNS status",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return dnstShowStatus(manager)
 		},
@@ -104,6 +106,7 @@ func main() {
 	createBackupCmd := &cobra.Command{
 		Use:   "create-backup",
 		Short: "Create a backup of resolv.conf",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := requireAdmin(); err != nil {
 				return err
@@ -115,6 +118,7 @@ func main() {
 	restoreBackupCmd := &cobra.Command{
 		Use:   "restore-backup",
 		Short: "Restore resolv.conf from backup",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := requireAdmin(); err != nil {
 				return err
