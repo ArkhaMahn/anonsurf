@@ -30,6 +30,6 @@ Description: Anonymization toolkit for Parrot Security OS
 Package: anonsurf-cli
 Architecture: any
 Priority: optional
-Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf, nyx, sudo
+Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf (= ${binary:Version}), nyx, sudo
 Description: Command-line interface for AnonSurf
  AnonSurf's command-line interface written in Go.
