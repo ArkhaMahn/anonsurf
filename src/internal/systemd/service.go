@@ -93,6 +93,17 @@ func (c ServiceController) IsActive() (bool, error) {
 	})
 }
 
+func (c ServiceController) IsActiveOrActivating() (bool, error) {
+	return c.queryState("is-active", map[string]bool{
+		"active":       true,
+		"activating":   true,
+		"reloading":    true,
+		"inactive":     false,
+		"failed":       false,
+		"deactivating": false,
+	})
+}
+
 func (c ServiceController) queryState(action string, knownStates map[string]bool) (bool, error) {
 	output, err := (ExecRunner{}).Output(SystemctlPath, action, c.unit)
 	state := strings.TrimSpace(string(output))

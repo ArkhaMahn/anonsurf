@@ -14,7 +14,7 @@ const torDNSAddress = "127.0.0.1"
 
 func (c Controller) Start() error {
 	state := startTransition{}
-	active, err := systemd.NewTorController().IsActive()
+	active, err := systemd.NewTorController().IsActiveOrActivating()
 	if err != nil {
 		return fmt.Errorf("check Tor service: %w", err)
 	}
