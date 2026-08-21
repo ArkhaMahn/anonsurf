@@ -7,45 +7,62 @@ import (
 )
 
 func renderBridgeSettings(options TorrcOptions) (string, error) {
-	address := strings.TrimSpace(options.BridgeAddress)
-	if options.AutoBridge && address == "" {
-		return "", fmt.Errorf("auto bridge requires a selected bridge address")
+	addresses := options.BridgeAddresses
+	if len(addresses) == 0 && strings.TrimSpace(options.BridgeAddress) != "" {
+		addresses = []string{options.BridgeAddress}
 	}
-	if address == "" {
+	if options.AutoBridge && len(addresses) == 0 {
+		return "", fmt.Errorf("auto bridge requires selected bridge addresses")
+	}
+	if len(addresses) == 0 {
 		return "# Bridge setting: No bridge", nil
 	}
-	if err := validateTorrcSingleLine("bridge address", address); err != nil {
-		return "", err
-	}
 
-	transport, err := bridgeTransport(address)
-	if err != nil {
-		return "", err
+	var transports []string
+	seenTransports := make(map[string]bool)
+	for index, address := range addresses {
+		addresses[index] = strings.TrimSpace(address)
+		if err := validateTorrcSingleLine("bridge address", addresses[index]); err != nil {
+			return "", err
+		}
+		transport, err := bridgeTransport(addresses[index])
+		if err != nil {
+			return "", err
+		}
+		if transport == "meek" {
+			return "", fmt.Errorf("meek bridges are not supported")
+		}
+		if transport != "" && !seenTransports[transport] {
+			seenTransports[transport] = true
+			transports = append(transports, transport)
+		}
 	}
 
 	var builder strings.Builder
 	builder.WriteString("# Enable bridge mode\nUseBridges 1\n")
-	switch transport {
-	case "obfs4":
-		if strings.TrimSpace(options.Obfs4ProxyPath) == "" {
-			return "", fmt.Errorf("obfs4 bridge requires obfs4proxy path")
+	for _, transport := range transports {
+		switch transport {
+		case "obfs4":
+			if strings.TrimSpace(options.Obfs4ProxyPath) == "" {
+				return "", fmt.Errorf("obfs4 bridge requires obfs4proxy path")
+			}
+			builder.WriteString("ClientTransportPlugin obfs4 exec ")
+			builder.WriteString(strings.TrimSpace(options.Obfs4ProxyPath))
+			builder.WriteString(" managed\n")
+		case "snowflake":
+			if strings.TrimSpace(options.SnowflakeClientPath) == "" {
+				return "", fmt.Errorf("snowflake bridge requires snowflake-client path")
+			}
+			builder.WriteString("ClientTransportPlugin snowflake exec ")
+			builder.WriteString(strings.TrimSpace(options.SnowflakeClientPath))
+			builder.WriteString("\n")
 		}
-		builder.WriteString("ClientTransportPlugin obfs4 exec ")
-		builder.WriteString(strings.TrimSpace(options.Obfs4ProxyPath))
-		builder.WriteString(" managed\n")
-	case "snowflake":
-		if strings.TrimSpace(options.SnowflakeClientPath) == "" {
-			return "", fmt.Errorf("snowflake bridge requires snowflake-client path")
-		}
-		builder.WriteString("ClientTransportPlugin snowflake exec ")
-		builder.WriteString(strings.TrimSpace(options.SnowflakeClientPath))
-		builder.WriteString("\n")
-	case "meek":
-		return "", fmt.Errorf("meek bridges are not supported")
 	}
 
-	builder.WriteString("\nBridge ")
-	builder.WriteString(address)
+	for _, address := range addresses {
+		builder.WriteString("\nBridge ")
+		builder.WriteString(address)
+	}
 	return builder.String(), nil
 }
 

@@ -71,8 +71,8 @@ func dnsLabel(state status.DNSState) string {
 	switch state {
 	case status.DNSTor:
 		return "using Tor DNS"
-	case status.DNSLeak:
-		return "possible leak: non-Tor DNS while AnonSurf is active"
+	case status.DNSTorRedirect:
+		return "using Tor DNS redirection"
 	case status.DNSClearnet:
 		return "clearnet DNS"
 	case status.DNSLocalhostOnly:

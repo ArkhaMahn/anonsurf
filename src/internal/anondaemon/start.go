@@ -45,6 +45,11 @@ func (c Controller) Start() error {
 	if err := systemd.NewTorController().Start(); err != nil {
 		return c.failStart(fmt.Errorf("start Tor service: %w", err), state)
 	}
+	if !routing.PreserveSystemDNS {
+		if err := c.configureDNS(&state); err != nil {
+			return c.failStart(err, state)
+		}
+	}
 	if err := c.markActive(); err != nil {
 		return c.failStart(fmt.Errorf("mark daemon active: %w", err), state)
 	}
@@ -54,17 +59,6 @@ func (c Controller) Start() error {
 func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition) error {
 	if err := systemd.NewTorController().Stop(); err != nil {
 		return fmt.Errorf("stop Tor service before routing: %w", err)
-	}
-
-	if err := (dns.Manager{}).MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
-		return fmt.Errorf("backup DNS settings: %w", err)
-	}
-	if err := c.markDNSChanged(); err != nil {
-		return fmt.Errorf("mark DNS state: %w", err)
-	}
-	state.dnsTouched = true
-	if err := (dns.Manager{}).CreateAddrs([]string{torDNSAddress}); err != nil {
-		return fmt.Errorf("set Tor DNS: %w", err)
 	}
 
 	if err := c.captureIPv6State(); err != nil {
@@ -80,6 +74,20 @@ func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition)
 	}
 	state.firewallTouched = true
 	return c.applyIPTablesRules(routing)
+}
+
+func (c Controller) configureDNS(state *startTransition) error {
+	if err := (dns.Manager{}).MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
+		return fmt.Errorf("backup DNS settings: %w", err)
+	}
+	if err := c.markDNSChanged(); err != nil {
+		return fmt.Errorf("mark DNS state: %w", err)
+	}
+	state.dnsTouched = true
+	if err := (dns.Manager{}).CreateAddrs([]string{torDNSAddress}); err != nil {
+		return fmt.Errorf("set Tor DNS: %w", err)
+	}
+	return nil
 }
 
 func (c Controller) readTorRoutingConfig() (tor.RoutingConfig, error) {

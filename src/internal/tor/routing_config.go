@@ -16,6 +16,12 @@ func ParseRoutingConfig(reader io.Reader) (RoutingConfig, error) {
 			continue
 		}
 		switch fields[0] {
+		case "ClientTransportPlugin":
+			for _, transport := range strings.Split(fields[1], ",") {
+				if transport == "snowflake" {
+					config.PreserveSystemDNS = true
+				}
+			}
 		case "VirtualAddrNetwork":
 			if config.VirtualAddrNetwork == "" {
 				config.VirtualAddrNetwork = fields[1]

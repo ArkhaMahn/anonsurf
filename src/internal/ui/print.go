@@ -19,6 +19,10 @@ func PrintUnderTorDNS() {
 	fmt.Println(" " + Green + "Using Tor's DNS" + Reset)
 }
 
+func PrintUnderTorDNSRedirect() {
+	fmt.Println(" " + Green + "Using Tor DNS redirection with transport DNS preserved" + Reset)
+}
+
 func PrintErrorResolvNotFound(resolvConfPath string) {
 	fmt.Println("[" + Red + "DNS error" + Reset + "] " + Blue + resolvConfPath + Reset + " not found")
 }
@@ -29,10 +33,6 @@ func PrintErrorResolvEmpty(resolvConfPath string) {
 
 func PrintErrorLocalHost() {
 	fmt.Println(" " + Red + "LocalHost only. This may cause no internet access" + Reset)
-}
-
-func PrintErrorDNSLeak() {
-	fmt.Println(Red + "\nDetected Non-Tor address[es]. This may cause information leaks." + Reset)
 }
 
 func PrintInfoAddresses() {

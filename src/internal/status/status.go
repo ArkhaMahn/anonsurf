@@ -15,7 +15,7 @@ const (
 	DNSMissing       DNSState = "missing"
 	DNSEmpty         DNSState = "empty"
 	DNSTor           DNSState = "tor"
-	DNSLeak          DNSState = "leak"
+	DNSTorRedirect   DNSState = "tor-redirect"
 	DNSClearnet      DNSState = "clearnet"
 	DNSLocalhostOnly DNSState = "localhost-only"
 )
@@ -62,7 +62,7 @@ func classifyDNS(anonsurfActive bool, addresses []string, readErr error) DNSStat
 		if dns.HasOnlyLocalhost(addresses) {
 			return DNSTor
 		}
-		return DNSLeak
+		return DNSTorRedirect
 	}
 	if dns.HasOnlyLocalhost(addresses) {
 		return DNSLocalhostOnly

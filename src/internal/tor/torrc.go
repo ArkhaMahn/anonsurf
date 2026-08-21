@@ -18,6 +18,7 @@ type TorrcOptions struct {
 	PlaintextPorts      string
 	AutoBridge          bool
 	BridgeAddress       string
+	BridgeAddresses     []string
 	Obfs4ProxyPath      string
 	SnowflakeClientPath string
 	HTTPProxyAddress    string
@@ -29,6 +30,7 @@ type RoutingConfig struct {
 	TransPort          string
 	DNSPort            string
 	VirtualAddrNetwork string
+	PreserveSystemDNS  bool
 }
 
 func TorrcOptionsFromConfig(cfg config.Config) TorrcOptions {

@@ -50,16 +50,26 @@ func loadBridgeEntries(path string) ([]string, error) {
 	return parseBridgeEntries(file)
 }
 
-func selectRandomBridge(entries []string) (string, error) {
+func selectRandomBridges(entries []string, count int) ([]string, error) {
 	if len(entries) == 0 {
-		return "", ErrNoBridgeEntries
+		return nil, ErrNoBridgeEntries
+	}
+	if count > len(entries) {
+		count = len(entries)
 	}
 
-	index, err := rand.Int(rand.Reader, big.NewInt(int64(len(entries))))
-	if err != nil {
-		return "", err
+	remaining := append([]string{}, entries...)
+	selected := make([]string, 0, count)
+	for len(selected) < count {
+		index, err := rand.Int(rand.Reader, big.NewInt(int64(len(remaining))))
+		if err != nil {
+			return nil, err
+		}
+		position := int(index.Int64())
+		selected = append(selected, remaining[position])
+		remaining = append(remaining[:position], remaining[position+1:]...)
 	}
-	return entries[index.Int64()], nil
+	return selected, nil
 }
 
 func (BridgeResolver) Resolve(options TorrcOptions) (TorrcOptions, error) {
@@ -72,33 +82,37 @@ func (BridgeResolver) Resolve(options TorrcOptions) (TorrcOptions, error) {
 		if err != nil {
 			return options, fmt.Errorf("load bridge entries: %w", err)
 		}
-		selected, err := selectRandomBridge(entries)
+		selected, err := selectRandomBridges(entries, 3)
 		if err != nil {
-			return options, fmt.Errorf("select bridge: %w", err)
+			return options, fmt.Errorf("select bridges: %w", err)
 		}
-		options.BridgeAddress = selected
+		options.BridgeAddresses = selected
+	} else {
+		options.BridgeAddresses = []string{options.BridgeAddress}
 	}
 
-	transport, err := bridgeTransport(options.BridgeAddress)
-	if err != nil {
-		return options, err
-	}
-	switch transport {
-	case "obfs4":
-		if strings.TrimSpace(options.Obfs4ProxyPath) == "" {
-			path, err := lookupExecutablePath("obfs4proxy")
-			if err != nil {
-				return options, fmt.Errorf("find obfs4proxy: %w", err)
-			}
-			options.Obfs4ProxyPath = path
+	for _, address := range options.BridgeAddresses {
+		transport, err := bridgeTransport(address)
+		if err != nil {
+			return options, err
 		}
-	case "snowflake":
-		if strings.TrimSpace(options.SnowflakeClientPath) == "" {
-			path, err := lookupExecutablePath("snowflake-client")
-			if err != nil {
-				return options, fmt.Errorf("find snowflake-client: %w", err)
+		switch transport {
+		case "obfs4":
+			if strings.TrimSpace(options.Obfs4ProxyPath) == "" {
+				path, err := lookupExecutablePath("obfs4proxy")
+				if err != nil {
+					return options, fmt.Errorf("find obfs4proxy: %w", err)
+				}
+				options.Obfs4ProxyPath = path
 			}
-			options.SnowflakeClientPath = path
+		case "snowflake":
+			if strings.TrimSpace(options.SnowflakeClientPath) == "" {
+				path, err := lookupExecutablePath("snowflake-client")
+				if err != nil {
+					return options, fmt.Errorf("find snowflake-client: %w", err)
+				}
+				options.SnowflakeClientPath = path
+			}
 		}
 	}
 

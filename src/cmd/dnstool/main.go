@@ -29,7 +29,7 @@ func dnstShowStatus(manager dns.Manager) error {
 		if dns.HasOnlyLocalhost(addresses) {
 			ui.PrintUnderTorDNS()
 		} else {
-			ui.PrintErrorDNSLeak()
+			ui.PrintUnderTorDNSRedirect()
 		}
 	} else {
 		if dns.HasOnlyLocalhost(addresses) {

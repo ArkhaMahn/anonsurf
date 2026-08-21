@@ -189,7 +189,8 @@ func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 	torUser := defaultTorUser
 	rules := [][]string{
 		{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "RETURN"},
-		{"-A", "OUTPUT", "-d", "127.0.0.1/32", "-p", "udp", "-m", "udp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
+		{"-A", "OUTPUT", "-p", "udp", "-m", "udp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
+		{"-A", "OUTPUT", "-p", "tcp", "-m", "tcp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
 		{"-A", "OUTPUT", "-p", "tcp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
 		{"-A", "OUTPUT", "-p", "udp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
 	}
