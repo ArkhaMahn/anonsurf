@@ -55,18 +55,22 @@ func writeFileAtomically(path string, data []byte, perm os.FileMode) error {
 		_ = tmp.Close()
 		return err
 	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
 	if err := tmp.Close(); err != nil {
 		return err
 	}
 	return os.Rename(tmpPath, path)
 }
 
-func copyFile(src, dst string) error {
+func copyFile(src, dst string, perm os.FileMode) error {
 	data, err := os.ReadFile(src)
 	if err != nil {
 		return err
 	}
-	return writeFileAtomically(dst, data, 0644)
+	return writeFileAtomically(dst, data, perm)
 }
 
 func (m Manager) CreateDHCPOnly() error {
@@ -165,10 +169,14 @@ func (m Manager) MakeBackup() error {
 		return ErrBackupSkippedSymlink
 	}
 
+	info, err := os.Stat(ResolvConfPath)
+	if err != nil {
+		return fmt.Errorf("stat resolv.conf: %w", err)
+	}
 	if err := os.MkdirAll(filepath.Dir(ResolvConfBackup), 0755); err != nil {
 		return fmt.Errorf("create backup directory: %w", err)
 	}
-	if err := copyFile(ResolvConfPath, ResolvConfBackup); err != nil {
+	if err := copyFile(ResolvConfPath, ResolvConfBackup, info.Mode().Perm()); err != nil {
 		return fmt.Errorf("create backup: %w", err)
 	}
 	return nil
