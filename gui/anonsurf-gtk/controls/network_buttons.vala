@@ -25,6 +25,9 @@ public class ButtonStart: Button {
     dialog_ask_kill.start_dialog();
 
     this.dialog_ask_kill.destroy.connect(() => {
+      if (!this.dialog_ask_kill.should_continue) {
+        return;
+      }
       try {
         if (this.get_label() == "Start") {
           this.pool.add(new ThreadStartAnonSurf(true));

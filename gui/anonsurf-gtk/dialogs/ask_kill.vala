@@ -2,7 +2,7 @@ using Gtk;
 
 
 class ButtonKillYes: Button {
-  Dialog parent_dialog;
+  DialogAskKill parent_dialog;
 
   public ButtonKillYes() {
     this.set_label("Kill");
@@ -14,6 +14,7 @@ class ButtonKillYes: Button {
       Subprocess action_start_anonsurf = new Subprocess.newv({"/usr/lib/anonsurf/safekill"}, NONE);
       action_start_anonsurf.wait();
       if (action_start_anonsurf.get_successful()) {
+        this.parent_dialog.continue_action();
         send_notification("Clear cache completed", "Killed processes and cleared cache", NotifyLevel.Ok);
       } else {
         string status = action_start_anonsurf.get_exit_status().to_string();
@@ -26,25 +27,26 @@ class ButtonKillYes: Button {
     this.parent_dialog.destroy();
   }
 
-  public void set_dialog_relationship(Dialog d) {
+  public void set_dialog_relationship(DialogAskKill d) {
     this.parent_dialog = d;
   }
 }
 
 
 class ButtonKillNo: Button {
-  Dialog parent_dialog;
+  DialogAskKill parent_dialog;
 
   public ButtonKillNo() {
-    this.set_label("Cancel");
+    this.set_label("Skip");
     this.clicked.connect(on_no_kill);
   }
 
   private void on_no_kill() {
+    this.parent_dialog.continue_action();
     this.parent_dialog.destroy();
   }
 
-  public void set_dialog_relationship(Dialog d) {
+  public void set_dialog_relationship(DialogAskKill d) {
     this.parent_dialog = d;
   }
 }
@@ -55,6 +57,7 @@ class DialogAskKill: Dialog {
   private Box content_area;
   private ButtonKillYes yes_button;
   private ButtonKillNo no_button;
+  public bool should_continue { private set; get; default = false; }
 
   public DialogAskKill() {
     this.set_title("Kill processes and remove cache");
@@ -62,6 +65,10 @@ class DialogAskKill: Dialog {
 
     this.make_dialog_contents();
     this.set_icon_name("accessories-system-cleaner");
+  }
+
+  public void continue_action() {
+    this.should_continue = true;
   }
 
   private void make_dialog_contents() {
