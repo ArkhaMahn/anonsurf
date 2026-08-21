@@ -60,6 +60,9 @@ inst-configs:
 	cp configs/anonsurf.cfg $(DESTDIR)/etc/anonsurf/.
 
 	cp sys-units/anonsurfd.service $(DESTDIR)/lib/systemd/system/anonsurfd.service
+	cp sys-units/anonsurf-recovery.service $(DESTDIR)/lib/systemd/system/anonsurf-recovery.service
+	cp sys-units/tor@default.service.d/anonsurf-recovery.conf $(DESTDIR)/lib/systemd/system/tor@default.service.d/anonsurf-recovery.conf
+	ln -sfn ../anonsurf-recovery.service $(DESTDIR)/lib/systemd/system/multi-user.target.wants/anonsurf-recovery.service
 
 inst-bins:
 	cp build/release/anonsurf $(DESTDIR)/usr/bin/anonsurf
@@ -76,6 +79,8 @@ mk-folders:
 	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
 	mkdir -p $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/lib/systemd/system/
+	mkdir -p $(DESTDIR)/lib/systemd/system/multi-user.target.wants/
+	mkdir -p $(DESTDIR)/lib/systemd/system/tor@default.service.d/
 
 install: mk-folders inst-bins inst-configs inst-perms
 
@@ -84,3 +89,6 @@ uninstall:
 	rm -rf /usr/lib/anonsurf/
 	rm /usr/bin/anonsurf
 	rm /lib/systemd/system/anonsurfd.service
+	rm /lib/systemd/system/anonsurf-recovery.service
+	rm /lib/systemd/system/multi-user.target.wants/anonsurf-recovery.service
+	rm /lib/systemd/system/tor@default.service.d/anonsurf-recovery.conf

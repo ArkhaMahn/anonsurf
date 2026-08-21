@@ -4,7 +4,8 @@
 	dh $@ --with bash-completion
 
 override_dh_installsystemd:
-	dh_installsystemd --no-enable
+	dh_installsystemd --no-enable --no-start anonsurfd.service
+	dh_installsystemd anonsurf-recovery.service
 override_dh_auto_build:
 	make build GO-BUILD-MODE=gopath
 

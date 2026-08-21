@@ -10,6 +10,8 @@
 - `src/`: Go command-line tools, SafeKill, and system backend.
 - `icons/`: AnonSurf and Nyx logos retained for the future interface.
 
+Interrupted sessions are recovered automatically at boot before Tor starts.
+
 - List of default bridges are at https://gitlab.torproject.org/tpo/anti-censorship/team/-/wikis/Default-Bridges
 # Thank to
 - Vivek Gite, who wrote tutorial of hook script for dhclient https://www.cyberciti.biz/faq/dhclient-etcresolvconf-hooks/

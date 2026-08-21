@@ -18,7 +18,7 @@ func main() {
 
 func run(args []string) error {
 	if len(args) != 1 {
-		return fmt.Errorf("expected one command: start, stop, restart, changeid, or monitor")
+		return fmt.Errorf("expected one command: start, stop, restart, recover, changeid, or monitor")
 	}
 
 	switch args[0] {
@@ -28,6 +28,8 @@ func run(args []string) error {
 		return (anondaemon.Controller{}).Stop()
 	case "restart":
 		return (anondaemon.Controller{}).Restart()
+	case "recover":
+		return (anondaemon.Controller{}).Recover()
 	case "changeid":
 		return (tor.IdentityChanger{}).Change()
 	case "monitor":

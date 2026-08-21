@@ -1,0 +1,12 @@
+[Unit]
+Description=Restore AnonSurf state from an interrupted session
+After=local-fs.target NetworkManager.service
+Before=anonsurfd.service tor@default.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/anonsurf/anondaemon recover
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

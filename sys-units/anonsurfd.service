@@ -1,12 +1,15 @@
 [Unit]
 Description=AnonSurf system-wide Tor routing
+Requires=anonsurf-recovery.service
 Wants=network-online.target
-After=network-online.target NetworkManager.service
+After=anonsurf-recovery.service network-online.target NetworkManager.service
 
 [Service]
 Type=oneshot
 StateDirectory=anonsurf
 StateDirectoryMode=0700
+RuntimeDirectory=anonsurf
+RuntimeDirectoryMode=0700
 ExecStart=/usr/lib/anonsurf/anondaemon start
 ExecReload=/usr/lib/anonsurf/anondaemon restart
 ExecStop=/usr/lib/anonsurf/anondaemon stop
