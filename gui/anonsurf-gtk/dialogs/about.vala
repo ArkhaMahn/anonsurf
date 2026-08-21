@@ -1,7 +1,3 @@
-/*
-  Show AboutDialog on Title bar
- */
-
 using Gtk;
 
 

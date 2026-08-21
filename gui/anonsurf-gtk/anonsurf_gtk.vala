@@ -15,9 +15,6 @@ public bool systemd_unit_matches(string action, string unit) {
   }
 }
 
-// FIXME title bar changes the size of app
-// TODO Use Gnome-keyring or something to stop asking authorization everytime
-
 public class BoxMainLayout: Box {
   public BoxBootStatus box_boot_status;
   public BoxButtonControl box_button_control;
@@ -72,33 +69,17 @@ public class AnonSurfApp: GLib.Application {
   private AnonSurfSystrayIcon sys_tray;
 
   public AnonSurfApp() {
-    /*
-      Create a new Application
-      Startup signal will create an unique application, which fixed:
-        1. multiple windows are created
-        2. multiple system tray icons are created
-    */
     this.set_application_id("org.parrot.anonsurf.gui");
     this.startup.connect(create_window);
-    // this.activate.connect(restore_window);
   }
 
   private void create_window() {
-    /*
-      Create a new window when Application is created
-    */
     this.window = new AnonSurfWindow();
     this.window.show_all();
     this.create_system_tray();
     this.refresh_gui();
 
     this.activate.connect(restore_window);
-
-    /*
-      There's a small delay if show_all is called after refresh gui.
-      Use show_all first will avoid that delay
-      ImproveMe: delay time should be better
-    */
     Timeout.add_seconds(2, refresh_gui);
     Gtk.main();
   }
@@ -111,15 +92,6 @@ public class AnonSurfApp: GLib.Application {
   }
 
   public void restore_window() {
-    /*
-      GTK application gets "activate" signal when
-        1. User do left click on system tray icon
-        2. When window is closed, and user runs anonsurf-gtk
-      This function restores the main window
-      Create a new AnonSurfWindow object fixes:
-        - Starts anonsurf-gtk when window was closed causes a crash, or show empty dialog
-        - Create an other window when user left click on system tray icon
-    */
     if (!this.window.get_visible()) {
       this.window = new AnonSurfWindow();
       this.window.show_all();
@@ -141,16 +113,11 @@ public class AnonSurfApp: GLib.Application {
 
   private void set_tor_failed_to_run() {
     this.window.title_bar.set_tor_service_not_running();
-    // When surf is running, but Tor doesn't run, button Stop needs to be there anyway.
-    // Fix problem GUI basically in a hang mode
     this.window.main_layout.box_button_control.box_top_buttons.button_start.set_surf_activated();
     this.window.main_layout.box_button_control.box_top_buttons.button_start.set_sensitive(true);
   }
 
   private void set_surf_activated() {
-    /*
-    When AnonSurf is activated, it's necessary to check Tor's status as well.
-    */
     if (!this.check_tor_running()) {
       this.set_tor_failed_to_run();
     } else {
@@ -165,11 +132,6 @@ public class AnonSurfApp: GLib.Application {
   }
 
   private bool refresh_gui() {
-    /*
-    Update system tray
-    If visible:
-    - Update title bar and main layout
-    */
     bool is_surf_running = check_surf_running();
     if (is_surf_running) {
       this.sys_tray.set_surf_activated();

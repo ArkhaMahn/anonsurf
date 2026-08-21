@@ -1,7 +1,7 @@
-VALA-FLAGS = --pkg gtk+-3.0 # GTK3
-VALA-FLAGS += --pkg libnotify # Use libnotify to send notifications, build-time requires libnotify-dev
-VALA-FLAGS += --vapidir /usr/share/vala/vapi/ --pkg vte-2.91 # Use libvte to create a terminal. build-time requires libvte-2.91-dev. Libvte binding is at /usr/share/vala/vapi/vte-2.91.vapi
-VALA-FLAGS += -X -Wno-incompatible-pointer-types # Suppress Vala's warning. Check https://stackoverflow.com/a/66559047
+VALA-FLAGS = --pkg gtk+-3.0
+VALA-FLAGS += --pkg libnotify
+VALA-FLAGS += --vapidir /usr/share/vala/vapi/ --pkg vte-2.91
+VALA-FLAGS += -X -Wno-incompatible-pointer-types
 
 VALA-SRC-DIR = gui/anonsurf-gtk
 VALA-SRC-CONTROLS = $(VALA-SRC-DIR)/controls
@@ -76,7 +76,6 @@ check: $(GO-BUILD-DEPS)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build $(GO-PKG-PREFIX)/cmd/...
 
 inst-launchers:
-	# Copy launchers
 	if [ "$(os_name)" = "parrot" ]; then \
 		cp launchers/parrot/*.desktop $(DESTDIR)/usr/share/applications/; \
 	else \
@@ -84,16 +83,13 @@ inst-launchers:
 	fi
 
 inst-configs:
-	# Copy configs
 	cp configs/bridges.txt $(DESTDIR)/etc/anonsurf/.
 	cp configs/onion.pac $(DESTDIR)/etc/anonsurf/.
 	cp configs/anonsurf.cfg $(DESTDIR)/etc/anonsurf/.
 
-	# Copy daemon service
 	cp sys-units/anonsurfd.service $(DESTDIR)/lib/systemd/system/anonsurfd.service
 
 inst-bins:
-	# Copy binaries to system
 	cp build/release/anonsurf $(DESTDIR)/usr/bin/anonsurf
 	cp build/release/anonsurf-gtk $(DESTDIR)/usr/bin/anonsurf-gtk
 	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
@@ -108,7 +104,6 @@ inst-icons:
 	cp icons/*.png $(DESTDIR)/usr/share/icons/.
 
 mk-folders:
-	# Create all folders
 	mkdir -p $(DESTDIR)/etc/anonsurf/
 	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
 	mkdir -p $(DESTDIR)/usr/bin/
@@ -119,14 +114,9 @@ mk-folders:
 install: mk-folders inst-bins inst-configs inst-launchers inst-icons inst-perms
 
 uninstall:
-	# Remove config files
 	rm -rf /etc/anonsurf/
-	# Remove daemon scripts and some other binaries
 	rm -rf /usr/lib/anonsurf/
-	# Remove binaries
 	rm /usr/bin/anonsurf
 	rm /usr/bin/anonsurf-gtk
-	# Remove systemd unit
 	rm /lib/systemd/system/anonsurfd.service
-	# Remove launchers
 	rm /usr/share/applications/anonsurf*.desktop

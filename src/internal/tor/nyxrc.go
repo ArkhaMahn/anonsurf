@@ -12,7 +12,6 @@ import (
 //go:embed assets/nyxrc
 var defaultNyxrc string
 
-// NyxrcPath follows the Parrot/Debian AnonSurf package layout.
 const NyxrcPath = "/etc/anonsurf/nyxrc"
 
 var ErrEmptyNyxrc = errors.New("nyxrc content is empty")

@@ -1,9 +1,3 @@
-/*
-Create a menu when user right click on system tray's icon
-The items in the menu will be updated (hide or show)
-depend on AnonSurf's status
-*/
-
 using Gtk;
 
 
@@ -112,7 +106,6 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
   public AnonSurfSystrayMenu() {
     this.create_menu_items();
     this.show_menu_items();
-    // Refresher will be called by main Application so no need to call it here
   }
 
   private void create_menu_items() {
@@ -130,9 +123,6 @@ public class AnonSurfSystrayMenu: Gtk.Menu {
   }
 
   private void show_menu_items() {
-    /*
-    There are some items should be shown without checking AnonSurf's status
-    */
     this.menu_item_start.show();
     this.menu_item_check_ip.show();
     this.menu_item_quit.show();

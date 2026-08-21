@@ -1,16 +1,8 @@
-/*
-Create a Terminal with VTE module to call the app Nyx which can control
-Tor service
-*/
-
 using Vte;
 using Gtk;
 
 
 public class NyxTerminal: Terminal {
-  /*
-  Create a terminal that spawns nyx to show Tor's status
-   */
   private Dialog parent_dialog;
 
   public NyxTerminal(Dialog parent_dialog) {
@@ -22,14 +14,14 @@ public class NyxTerminal: Terminal {
 
   public void start_nyx_terminal() {
     this.spawn_async(
-      DEFAULT, // https://valadoc.org/vte-2.91/Vte.PtyFlags.html
+      DEFAULT,
       null,
       {"/usr/bin/pkexec", "/usr/lib/anonsurf/anondaemon", "monitor"},
       {},
-      SEARCH_PATH, // https://valadoc.org/glib-2.0/GLib.SpawnFlags.html. Fix runtime VTE flag warn https://lists.debian.org/debian-boot/2021/05/msg00107.html
+      SEARCH_PATH,
       null,
       -1,
-      null, // callback?
+      null,
       null
     );
     this.child_exited.connect(on_nyx_exit);
@@ -60,7 +52,6 @@ public class DialogTorController: Dialog {
     content_area = get_content_area() as Box;
     content_area.pack_start(this.vte_tor_controller, false, true, 3);
     this.vte_tor_controller.start_nyx_terminal();
-    // Only show things when click on dialog. Fix problem dialog prompts when program start
     this.show_all();
   }
 }

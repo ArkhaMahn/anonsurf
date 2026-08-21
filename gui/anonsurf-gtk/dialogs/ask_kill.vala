@@ -86,7 +86,6 @@ class DialogAskKill: Dialog {
     this.selection_box.pack_start(this.no_button);
 
     this.content_area.pack_start(descriptions, true, true, 3);
-    // This pack_start (or pack_end) of selection_box left a huge space bellow it. No solution to remove that
     this.content_area.pack_start(selection_box, false, false, 3);
   }
 

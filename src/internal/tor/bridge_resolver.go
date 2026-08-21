@@ -12,7 +12,6 @@ import (
 	"strings"
 )
 
-// BridgesPath follows the Parrot/Debian AnonSurf package layout.
 const BridgesPath = "/etc/anonsurf/bridges.txt"
 
 var ErrNoBridgeEntries = errors.New("no bridge entries found")

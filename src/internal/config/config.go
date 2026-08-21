@@ -11,7 +11,6 @@ import (
 )
 
 const (
-	// SystemPath follows the Parrot/Debian package layout used by AnonSurf.
 	SystemPath  = "/etc/anonsurf/anonsurf.cfg"
 	sectionName = "AnonSurfConfig"
 )
@@ -19,7 +18,6 @@ const (
 // ErrSectionNotFound keeps missing config explicit instead of silently running with defaults.
 var ErrSectionNotFound = errors.New("AnonSurfConfig section not found")
 
-// Config represents the settings that affect Tor generation and system routing behavior.
 type Config struct {
 	UseSandbox          bool
 	BridgeAddress       string
@@ -47,7 +45,6 @@ func Default() Config {
 	}
 }
 
-// Load reads an AnonSurf config file and returns defaults alongside the read error on failure.
 func Load(path string) (Config, error) {
 	file, err := os.Open(path)
 	if err != nil {
@@ -58,7 +55,6 @@ func Load(path string) (Config, error) {
 	return Parse(file)
 }
 
-// Parse accepts only the AnonSurfConfig section while leaving unrelated sections untouched.
 func Parse(reader io.Reader) (Config, error) {
 	cfg := Default()
 	scanner := bufio.NewScanner(reader)

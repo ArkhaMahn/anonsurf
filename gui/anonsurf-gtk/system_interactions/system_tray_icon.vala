@@ -1,8 +1,3 @@
-/*
-Create a system tray icon in the notification area
-This sytem tray icon will update icon with AnonSurf's status
-*/
-
 using Gtk;
 
 

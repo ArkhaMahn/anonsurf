@@ -1,7 +1,3 @@
-/*
-Create area that shows current status if AnonSurf is enabled with system (via label)
-And a button to enable, disable it at boot
-*/
 using Gtk;
 
 
@@ -55,8 +51,6 @@ public class ButtonEnableBoot: Switch {
 
   public void update_label(bool is_enabled_boot) {
     if (this.pool.get_num_threads() > 0) {
-      // Do not update status when a thread is running
-      // Otherwise subprocess will be called multiple times
       return;
     }
 
