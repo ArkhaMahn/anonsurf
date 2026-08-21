@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	TorCheckURL     = "https://check.torproject.org/api/ip"
+	torCheckURL     = "https://check.torproject.org/api/ip"
 	maxResponseSize = 64 << 10
 )
 
@@ -29,13 +29,22 @@ type apiResponse struct {
 }
 
 func (Checker) Check(ctx context.Context) (Result, error) {
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, TorCheckURL, nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, torCheckURL, nil)
 	if err != nil {
 		return Result{}, err
 	}
 	request.Header.Set("Accept", "application/json")
 
-	response, err := (&http.Client{Timeout: 20 * time.Second}).Do(request)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.Proxy = nil
+	client := &http.Client{
+		Transport: transport,
+		Timeout:   20 * time.Second,
+		CheckRedirect: func(request *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+	response, err := client.Do(request)
 	if err != nil {
 		return Result{}, err
 	}
