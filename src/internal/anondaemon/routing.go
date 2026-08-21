@@ -80,7 +80,6 @@ func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 	return append(rules,
 		[]string{"-A", "OUTPUT", "-p", "tcp", "--syn", "-j", "REDIRECT", "--to-ports", routing.TransPort},
 		[]string{"-A", "OUTPUT", "-p", "udp", "-j", "REDIRECT", "--to-ports", routing.TransPort},
-		[]string{"-A", "OUTPUT", "-p", "icmp", "-j", "REDIRECT", "--to-ports", routing.TransPort},
 	)
 }
 
