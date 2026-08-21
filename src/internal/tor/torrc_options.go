@@ -1,7 +1,6 @@
 package tor
 
 import (
-	"encoding/hex"
 	"fmt"
 	"strconv"
 	"strings"
@@ -70,34 +69,6 @@ func renderBridgeSettings(options TorrcOptions) (string, error) {
 		builder.WriteString(address)
 	}
 	return builder.String(), nil
-}
-
-func validateSnowflakeBridge(address string) error {
-	fields := strings.Fields(address)
-	if len(fields) < 3 || len(fields[2]) != 40 {
-		return fmt.Errorf("snowflake bridge requires a 40-character fingerprint")
-	}
-	if _, err := hex.DecodeString(fields[2]); err != nil {
-		return fmt.Errorf("snowflake bridge fingerprint is invalid: %w", err)
-	}
-
-	options := make(map[string]string)
-	for _, field := range fields[3:] {
-		key, value, ok := strings.Cut(field, "=")
-		if ok {
-			options[key] = value
-		}
-	}
-	if !strings.EqualFold(options["fingerprint"], fields[2]) {
-		return fmt.Errorf("snowflake bridge requires a matching fingerprint option")
-	}
-	if !strings.HasPrefix(options["url"], "https://") {
-		return fmt.Errorf("snowflake bridge requires an HTTPS broker URL")
-	}
-	if options["ice"] == "" {
-		return fmt.Errorf("snowflake bridge requires ICE servers")
-	}
-	return nil
 }
 
 func bridgeTransport(address string) (string, error) {
