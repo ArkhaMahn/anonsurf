@@ -13,7 +13,7 @@ ExecStop=/usr/lib/anonsurf/anondaemon stop
 ExecStopPost=/usr/lib/anonsurf/anondaemon stop
 RemainAfterExit=yes
 TimeoutStartSec=360
-TimeoutStopSec=120
+TimeoutStopSec=360
 
 [Install]
 WantedBy=multi-user.target
