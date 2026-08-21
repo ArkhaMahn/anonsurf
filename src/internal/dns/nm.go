@@ -138,8 +138,18 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 			return state, err
 		}
 	default:
-		if err := m.createNetworkManagerHook(NMHookHandleResolvConf); err != nil {
-			return state, err
+		content, readErr := os.ReadFile(NMHookScript)
+		switch {
+		case readErr == nil && string(content) == NMHookDontManageResolvConf:
+			if err := m.createNetworkManagerHook(NMHookHandleResolvConf); err != nil {
+				return state, err
+			}
+		case readErr == nil || os.IsNotExist(readErr):
+			if err := reloadNetworkManager(); err != nil {
+				return state, err
+			}
+		default:
+			return state, readErr
 		}
 	}
 	return state, nil
