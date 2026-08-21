@@ -13,8 +13,8 @@ const (
 )
 
 var (
-	ErrBackupSkippedLocalhost = errors.New("skip backup because resolv.conf only points to localhost")
-	ErrBackupSkippedSymlink   = errors.New("skip backup because resolv.conf is a symlink")
+	ErrBackupExists         = errors.New("resolv.conf backup already exists")
+	ErrBackupSkippedSymlink = errors.New("skip backup because resolv.conf is a symlink")
 )
 
 type Manager struct{}
@@ -145,20 +145,20 @@ func (m Manager) RestoreBackupOrDHCP() error {
 }
 
 func (m Manager) MakeBackup() error {
+	backupExists, err := fileExists(ResolvConfBackup)
+	if err != nil {
+		return fmt.Errorf("check resolv.conf backup: %w", err)
+	}
+	if backupExists {
+		return ErrBackupExists
+	}
+
 	exists, err := fileExists(ResolvConfPath)
 	if err != nil {
 		return fmt.Errorf("check resolv.conf: %w", err)
 	}
 	if !exists {
 		return fmt.Errorf("missing %s", ResolvConfPath)
-	}
-
-	hasOnlyLocalhost, err := SystemHasOnlyLocalhost(ResolvConfPath)
-	if err != nil {
-		return fmt.Errorf("read resolv.conf: %w", err)
-	}
-	if hasOnlyLocalhost {
-		return ErrBackupSkippedLocalhost
 	}
 
 	isSymlink, err := SystemDNSFileIsSymlink(ResolvConfPath)

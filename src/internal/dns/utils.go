@@ -53,14 +53,6 @@ func ParseDNSAddresses(resolvConfPath string) ([]string, error) {
 	return result, nil
 }
 
-func SystemHasOnlyLocalhost(resolvConfPath string) (bool, error) {
-	addresses, err := ParseDNSAddresses(resolvConfPath)
-	if err != nil {
-		return false, err
-	}
-	return HasOnlyLocalhost(addresses), nil
-}
-
 func RenderResolvConf(listDNSAddr []string) (string, error) {
 	deduplicatedListAddr := GetListValidAddresses(listDNSAddr)
 	if len(deduplicatedListAddr) == 0 {

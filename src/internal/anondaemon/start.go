@@ -99,5 +99,5 @@ func (c Controller) readTorRoutingConfig() (tor.RoutingConfig, error) {
 }
 
 func isSkippableDNSBackupError(err error) bool {
-	return errors.Is(err, dns.ErrBackupSkippedLocalhost) || errors.Is(err, dns.ErrBackupSkippedSymlink)
+	return errors.Is(err, dns.ErrBackupExists) || errors.Is(err, dns.ErrBackupSkippedSymlink)
 }
