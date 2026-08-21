@@ -84,21 +84,7 @@ public class BoxBootStatus: Box {
     this.pack_start(button_enable_boot, true, false, 3);
   }
 
-  private bool check_multi_user_unit() {
-    File file = File.new_for_path("/etc/systemd/system/multi-user.target.wants/anonsurfd.service");
-    return file.query_exists();
-  }
-
-  private bool check_default_target_unit() {
-    File file = File.new_for_path("/etc/systemd/system/default.target.wants/anonsurfd.service");
-    return file.query_exists();
-  }
-
   public void update_boot_status() {
-    if (check_multi_user_unit() == false && check_default_target_unit() == false){
-      button_enable_boot.update_label(false);
-    } else {
-      button_enable_boot.update_label(true);
-    }
+    button_enable_boot.update_label(systemd_unit_matches("is-enabled", "anonsurfd.service"));
   }
 }

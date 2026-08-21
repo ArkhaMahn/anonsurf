@@ -1,5 +1,20 @@
 using Gtk;
 
+public bool systemd_unit_matches(string action, string unit) {
+  try {
+    Subprocess process = new Subprocess.newv({
+      "/usr/bin/systemctl",
+      "--quiet",
+      action,
+      unit
+    }, STDOUT_SILENCE | STDERR_SILENCE);
+    process.wait();
+    return process.get_successful();
+  } catch (GLib.Error error) {
+    return false;
+  }
+}
+
 // FIXME title bar changes the size of app
 // TODO Use Gnome-keyring or something to stop asking authorization everytime
 
@@ -84,7 +99,7 @@ public class AnonSurfApp: GLib.Application {
       Use show_all first will avoid that delay
       ImproveMe: delay time should be better
     */
-    Timeout.add(400, refresh_gui);
+    Timeout.add_seconds(2, refresh_gui);
     Gtk.main();
   }
 
@@ -117,13 +132,11 @@ public class AnonSurfApp: GLib.Application {
   }
 
   private bool check_surf_running() {
-    File file = File.new_for_path("/run/systemd/units/invocation:anonsurfd.service");
-    return file.query_exists();
+    return systemd_unit_matches("is-active", "anonsurfd.service");
   }
 
   private bool check_tor_running() {
-    File file = File.new_for_path("/run/systemd/units/invocation:tor.service");
-    return file.query_exists();
+    return systemd_unit_matches("is-active", "tor@default.service");
   }
 
   private void set_tor_failed_to_run() {
