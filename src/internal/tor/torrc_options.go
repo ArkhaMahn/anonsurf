@@ -14,6 +14,9 @@ func renderBridgeSettings(options TorrcOptions) (string, error) {
 	if address == "" {
 		return "# Bridge setting: No bridge", nil
 	}
+	if err := validateTorrcSingleLine("bridge address", address); err != nil {
+		return "", err
+	}
 
 	transport, err := bridgeTransport(address)
 	if err != nil {
