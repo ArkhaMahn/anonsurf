@@ -45,6 +45,11 @@ func NewTorController() ServiceController {
 	return ServiceController{unit: TorUnit}
 }
 
+func IsSystemStopping() bool {
+	output, _ := (ExecRunner{}).Output(SystemctlPath, "is-system-running")
+	return strings.TrimSpace(string(output)) == "stopping"
+}
+
 func (c ServiceController) Start() error {
 	return c.run("start")
 }

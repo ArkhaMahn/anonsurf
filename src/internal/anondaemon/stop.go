@@ -28,7 +28,7 @@ func (c Controller) Stop() error {
 	if err := failures.err(); err != nil {
 		return err
 	}
-	if restartTor {
+	if restartTor && !systemd.IsSystemStopping() {
 		if err := systemd.NewTorController().Start(); err != nil {
 			return fmt.Errorf("restart original Tor service: %w", err)
 		}
