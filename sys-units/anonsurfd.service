@@ -12,7 +12,7 @@ ExecReload=/usr/lib/anonsurf/anondaemon restart
 ExecStop=/usr/lib/anonsurf/anondaemon stop
 ExecStopPost=/usr/lib/anonsurf/anondaemon stop
 RemainAfterExit=yes
-TimeoutStartSec=120
+TimeoutStartSec=360
 TimeoutStopSec=120
 
 [Install]
