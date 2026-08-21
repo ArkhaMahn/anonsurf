@@ -5,7 +5,6 @@ Source: https://gitlab.com/parrotsec/packages/anonsurf/
 
 Files:
   debian/*
-  launchers/*
 Copyright:
   2013 - 2020, Lorenzo "Palinuro" Faletra <palinuro@parrotsec.org>
   2020, Lisetta "Sheireen" Ferrero <sheireen@parrotsec.org>
@@ -14,7 +13,6 @@ License: GPL-3.0+
 
 Files:
   build/*
-  gui/*
   sys-units/*
   src/*
   configs/*

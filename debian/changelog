@@ -2,7 +2,7 @@ anonsurf (6.0.0+parrot0) echo; urgency=medium
 
   * New version 6.0 with the Go command-line and daemon migration.
   * Build command-line tools and the system daemon from Go sources.
-  * Keep the graphical interface in Vala.
+  * Remove the legacy Vala interface ahead of its replacement.
   * Update routing, Tor configuration generation, DNS tooling and AnonSurf CLI UX.
   * Restore DNS, firewall, IPv6 and Tor configuration transactionally.
   * Keep Tor control authentication and daemon state private.

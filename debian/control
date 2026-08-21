@@ -8,18 +8,14 @@ Build-Depends:
  debhelper-compat (= 13),
  golang-go,
  golang-github-spf13-cobra-dev,
- gcc (>= 10),
- bash-completion,
- valac,
- libnotify-dev,
- libvte-2.91-dev,
-Build-Depends-Indep: pkg-config
+ bash-completion
 Homepage: https://www.parrotsec.org/
 
 Package: anonsurf
 Architecture: any
 Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}, iptables, network-manager, tor, systemd | systemctl, sudo
+Breaks: anonsurf-gtk (<< 6.0.0~)
 Recommends: bleachbit, tor-geoipdb, parrot-menu
 Suggests: gnunet-gtk, gnunet, vidalia, resolvconf, onionshare, connect-proxy, snowflake-client, obfs4proxy
 Description: Anonymization toolkit for Parrot Security OS
@@ -30,14 +26,6 @@ Description: Anonymization toolkit for Parrot Security OS
  to forward all traffic through the Tor network.
  It also disables IPv6 and clears application caches
  to prevent data leaks.
-
-Package: anonsurf-gtk
-Architecture: any
-Priority: optional
-Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf-cli, nyx, pkexec
-Recommends: parrot-menu
-Description: Graphical interface for AnonSurf
- AnonSurf's graphical interface and desktop launcher written in Vala.
 
 Package: anonsurf-cli
 Architecture: any
