@@ -14,6 +14,10 @@ func (c Controller) Stop() error {
 	if !managed {
 		return nil
 	}
+	restartTor, err := torWasActive()
+	if err != nil {
+		return err
+	}
 
 	var failures errorCollector
 	failures.add("stop Tor service", systemd.NewTorController().Stop())
@@ -24,7 +28,18 @@ func (c Controller) Stop() error {
 	if err := failures.err(); err != nil {
 		return err
 	}
-	return c.clearActive()
+	if restartTor {
+		if err := systemd.NewTorController().Start(); err != nil {
+			return fmt.Errorf("restart original Tor service: %w", err)
+		}
+	}
+	if err := c.clearActive(); err != nil {
+		return err
+	}
+	if restartTor {
+		return clearTorState()
+	}
+	return nil
 }
 
 func (c Controller) restoreTorrc() error {

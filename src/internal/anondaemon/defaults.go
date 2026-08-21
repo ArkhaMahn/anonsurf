@@ -14,6 +14,7 @@ const (
 	ActiveStatePath     = "/var/lib/anonsurf/active"
 	DNSStatePath        = "/var/lib/anonsurf/dns.changed"
 	IPv6StatePath       = "/var/lib/anonsurf/ipv6.state"
+	TorStatePath        = "/var/lib/anonsurf/tor.was-active"
 	IPv6ConfPath        = "/proc/sys/net/ipv6/conf"
 	TorrcPath           = tor.TorrcPath
 	TorrcBackupPath     = tor.TorrcBackupPath

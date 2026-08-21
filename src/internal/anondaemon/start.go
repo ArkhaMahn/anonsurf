@@ -18,12 +18,15 @@ func (c Controller) Start() error {
 	if err != nil {
 		return fmt.Errorf("check Tor service: %w", err)
 	}
-	state.torWasActive = active
-
-	if err := c.generateTorrc(); err != nil {
-		return fmt.Errorf("generate torrc: %w", err)
+	state.torWasActive, err = captureTorState(active)
+	if err != nil {
+		return err
 	}
+
 	state.torrcGenerated = true
+	if err := c.generateTorrc(); err != nil {
+		return c.failStart(fmt.Errorf("generate torrc: %w", err), state)
+	}
 
 	if exists, err := fileExists(TorrcPath); err != nil {
 		return c.failStart(fmt.Errorf("check torrc: %w", err), state)

@@ -23,6 +23,38 @@ func (c Controller) markDNSChanged() error {
 	return writeFile(DNSStatePath, []byte(stateMarkerContent), 0600)
 }
 
+func captureTorState(active bool) (bool, error) {
+	exists, err := fileExists(TorStatePath)
+	if err != nil {
+		return false, fmt.Errorf("check Tor state: %w", err)
+	}
+	if exists {
+		return true, nil
+	}
+	if !active {
+		return false, nil
+	}
+	if err := writeFile(TorStatePath, []byte(stateMarkerContent), 0600); err != nil {
+		return false, fmt.Errorf("save Tor state: %w", err)
+	}
+	return true, nil
+}
+
+func clearTorState() error {
+	if err := removeFile(TorStatePath); err != nil {
+		return fmt.Errorf("remove Tor state: %w", err)
+	}
+	return nil
+}
+
+func torWasActive() (bool, error) {
+	exists, err := fileExists(TorStatePath)
+	if err != nil {
+		return false, fmt.Errorf("check Tor state: %w", err)
+	}
+	return exists, nil
+}
+
 func (c Controller) restoreDNS() error {
 	path := DNSStatePath
 	exists, err := fileExists(path)
@@ -47,6 +79,7 @@ func (c Controller) hasManagedState() (bool, error) {
 		IPTablesRulesPath,
 		DNSStatePath,
 		IPv6StatePath,
+		TorStatePath,
 		TorrcBackupPath,
 		TorrcMissingPath,
 	}
