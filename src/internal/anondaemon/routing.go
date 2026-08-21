@@ -189,6 +189,7 @@ func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 	torUser := defaultTorUser
 	rules := [][]string{
 		{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "RETURN"},
+		{"-A", "OUTPUT", "-p", "udp", "-m", "udp", "--sport", "68", "--dport", "67", "-j", "RETURN"},
 		{"-A", "OUTPUT", "-p", "udp", "-m", "udp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
 		{"-A", "OUTPUT", "-p", "tcp", "-m", "tcp", "--dport", "53", "-j", "REDIRECT", "--to-ports", routing.DNSPort},
 		{"-A", "OUTPUT", "-p", "tcp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
@@ -206,7 +207,10 @@ func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 
 func (c Controller) filterIPTablesRules(routing tor.RoutingConfig) [][]string {
 	torUser := defaultTorUser
-	var rules [][]string
+	rules := [][]string{
+		{"-A", "OUTPUT", "-p", "udp", "-m", "udp", "--sport", "68", "--dport", "67", "-j", "ACCEPT"},
+		{"-A", "INPUT", "-p", "udp", "-m", "udp", "--sport", "67", "--dport", "68", "-j", "ACCEPT"},
+	}
 	for _, network := range torExcludedNetworks {
 		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "ACCEPT"})
 	}
