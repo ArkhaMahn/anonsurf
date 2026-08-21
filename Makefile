@@ -73,6 +73,7 @@ inst-bins:
 
 inst-perms:
 	chmod +x $(DESTDIR)/usr/lib/anonsurf/anondaemon $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf
+	chmod 600 $(DESTDIR)/etc/anonsurf/anonsurf.cfg
 
 mk-folders:
 	mkdir -p $(DESTDIR)/etc/anonsurf/
