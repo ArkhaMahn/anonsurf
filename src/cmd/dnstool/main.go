@@ -83,15 +83,21 @@ func main() {
 	manager := dns.Manager{}
 
 	var rootCmd = &cobra.Command{
-		Use:           "dnstool",
+		Use:   "dnstool",
+		Short: "Manage system DNS settings",
+		Long: "dnstool manages the system DNS settings used by AnonSurf.\n" +
+			"Commands that write " + dns.ResolvConfPath + " require root privileges.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		Args:          cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			showHelp()
+			if err := cmd.Help(); err != nil {
+				return err
+			}
 			return dnstShowStatus(manager)
 		},
 	}
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	statusCmd := &cobra.Command{
 		Use:   "status",
