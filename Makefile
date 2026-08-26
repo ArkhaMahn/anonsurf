@@ -53,6 +53,8 @@ safekill: $(BUILD-DEST) $(GO-BUILD-DEPS)
 build: anonsurf-cli dnstool make-torrc anondaemon safekill
 
 check: $(GO-BUILD-DEPS)
+	cd $(GO-SRC-DIR) && files=$$(gofmt -l .) && \
+		if [ -n "$$files" ]; then echo "not gofmt-clean: $$files"; exit 1; fi
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build $(GO-PKG-PREFIX)/cmd/...
 
