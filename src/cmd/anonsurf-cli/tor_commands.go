@@ -10,11 +10,10 @@ import (
 
 func changeIDCommand(changer anondaemon.IdentityClient) *cobra.Command {
 	return &cobra.Command{
-		Use:     "changeid",
-		Aliases: []string{"newnym"},
-		Short:   "Request a new Tor identity",
-		Long:    "Request a new Tor identity through Tor's control port.",
-		Args:    cobra.NoArgs,
+		Use:   "changeid",
+		Short: "Request a new Tor identity",
+		Long:  "Request a new Tor identity through Tor's control port.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := changer.Change(); err != nil {
 				return fmt.Errorf("changeid: %w", err)
@@ -25,17 +24,16 @@ func changeIDCommand(changer anondaemon.IdentityClient) *cobra.Command {
 	}
 }
 
-func myIPCommand(checker netcheck.Checker) *cobra.Command {
+func ipCommand(checker netcheck.Checker) *cobra.Command {
 	return &cobra.Command{
-		Use:     "myip",
-		Aliases: []string{"ip"},
-		Short:   "Check the current public Tor status",
-		Long:    "Check the current public IP address and whether it is seen as Tor traffic.",
-		Args:    cobra.NoArgs,
+		Use:   "ip",
+		Short: "Verify the public IP and Tor",
+		Long:  "Check the current public IP address and whether it is seen as Tor traffic.",
+		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			result, err := checker.Check(cmd.Context())
 			if err != nil {
-				return fmt.Errorf("myip: %w", err)
+				return fmt.Errorf("ip: %w", err)
 			}
 			fmt.Fprintf(cmd.OutOrStdout(), "Public IP: %s\n", result.IP)
 			if result.IsTor {

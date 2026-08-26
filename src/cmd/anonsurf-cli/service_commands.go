@@ -43,19 +43,36 @@ func serviceCommandWithSafeKill(use, short string, run func() error, success str
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&useSafeKill, "safe-kill", false, "Run safekill before changing AnonSurf service state")
+	cmd.Flags().BoolVarP(&useSafeKill, "safe-kill", "k", false, "Run safekill before changing AnonSurf service state")
+	return cmd
+}
+
+func bootCommand(service systemd.ServiceController) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "boot",
+		Short: "Manage startup integration",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
+	cmd.AddCommand(
+		serviceCommand("enable", "Enable AnonSurf at system startup", service.Enable, "AnonSurf enabled at startup."),
+		serviceCommand("disable", "Disable AnonSurf at system startup", service.Disable, "AnonSurf disabled at startup."),
+		statusBootCommand(service),
+	)
 	return cmd
 }
 
 func statusBootCommand(service systemd.ServiceController) *cobra.Command {
 	return &cobra.Command{
-		Use:   "status-boot",
+		Use:   "status",
 		Short: "Show whether AnonSurf starts at boot",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			enabled, err := service.IsEnabled()
 			if err != nil {
-				return fmt.Errorf("status-boot: %w", err)
+				return fmt.Errorf("boot status: %w", err)
 			}
 			if enabled {
 				fmt.Fprintln(cmd.OutOrStdout(), "AnonSurf is enabled at startup.")

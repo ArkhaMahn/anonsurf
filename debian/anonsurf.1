@@ -1,4 +1,4 @@
-.TH ANONSURF 1 "July 2026" "AnonSurf 6.0.0" "User Commands"
+.TH ANONSURF 1 "August 26, 2026" "AnonSurf 6.0.0" "User Commands"
 .SH NAME
 anonsurf \- anonymization toolkit for Parrot Security OS
 .SH SYNOPSIS
@@ -19,21 +19,21 @@ or
 .B anonsurf status --nyx.
 .SH COMMANDS
 .TP
-.B start [--safe-kill]
+.B start [-k | --safe-kill]
 Start system-wide Tor transparent routing. When
 .B --safe-kill
 is supplied, AnonSurf runs
 .B /usr/lib/anonsurf/safekill
 before changing service state.
 .TP
-.B stop [--safe-kill]
+.B stop [-k | --safe-kill]
 Stop AnonSurf and return to clearnet. When
 .B --safe-kill
 is supplied, AnonSurf runs
 .B /usr/lib/anonsurf/safekill
 before changing service state.
 .TP
-.B restart [--safe-kill]
+.B restart [-k | --safe-kill]
 Restart AnonSurf routing. When
 .B --safe-kill
 is supplied, AnonSurf runs
@@ -44,7 +44,7 @@ before changing service state.
 Print a read-only snapshot of AnonSurf service state, Tor service state,
 DNS classification, and configured DNS servers.
 .TP
-.B status --nyx
+.B status [-n | --nyx]
 Open Nyx using the AnonSurf configuration instead of printing the
 scriptable status snapshot.
 .TP
@@ -55,24 +55,16 @@ Open Nyx using
 .B changeid
 Request a new Tor identity through Tor's control port.
 .TP
-.B newnym
-Alias for
-.B changeid.
-.TP
-.B myip
+.B ip
 Check the current public IP address and whether it is seen as Tor traffic.
 .TP
-.B ip
-Alias for
-.B myip.
-.TP
-.B enable-boot
+.B boot enable
 Enable AnonSurf at system startup.
 .TP
-.B disable-boot
+.B boot disable
 Disable AnonSurf at system startup.
 .TP
-.B status-boot
+.B boot status
 Show whether AnonSurf is enabled at startup.
 .SH RELATED TOOLS
 .TP

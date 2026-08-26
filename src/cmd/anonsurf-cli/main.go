@@ -30,17 +30,18 @@ func execute(args []string, stdout, stderr io.Writer) error {
 }
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
+	cobra.EnableCommandSorting = false
 	rootCmd := &cobra.Command{
 		Use:           "anonsurf",
 		Short:         "Manage AnonSurf system-wide Tor routing",
-		Long:          "AnonSurf manages Parrot OS system-wide Tor routing, DNS safety checks, identity rotation, and startup integration.",
+		Long:          "AnonSurf is a system-wide Tor routing tool for Parrot OS.",
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Example: `  anonsurf status
-  anonsurf start
+		Example: `  anonsurf start
+  anonsurf status
   anonsurf changeid
-  anonsurf enable-boot`,
+  anonsurf boot enable`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
@@ -56,17 +57,16 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	monitor := anondaemon.MonitorClient{}
 	safeKill := safekill.Runner{}
 	rootCmd.AddCommand(
-		serviceCommandWithSafeKill("start", "Start system-wide Tor transparent routing", service.Start, "AnonSurf started.", safeKill),
-		serviceCommandWithSafeKill("stop", "Stop AnonSurf and return to clearnet", service.Stop, "AnonSurf stopped.", safeKill),
-		serviceCommandWithSafeKill("restart", "Restart AnonSurf routing", service.Restart, "AnonSurf restarted.", safeKill),
+		serviceCommandWithSafeKill("start", "Route traffic through Tor", service.Start, "AnonSurf started.", safeKill),
+		serviceCommandWithSafeKill("stop", "Restore the original network", service.Stop, "AnonSurf stopped.", safeKill),
+		serviceCommandWithSafeKill("restart", "Rebuild protected routing", service.Restart, "AnonSurf restarted.", safeKill),
 		statusCommand(status.Reader{}, monitor),
-		monitorCommand(monitor),
 		changeIDCommand(anondaemon.IdentityClient{}),
-		myIPCommand(netcheck.Checker{}),
-		serviceCommand("enable-boot", "Enable AnonSurf at system startup", service.Enable, "AnonSurf enabled at startup."),
-		serviceCommand("disable-boot", "Disable AnonSurf at system startup", service.Disable, "AnonSurf disabled at startup."),
-		statusBootCommand(service),
+		ipCommand(netcheck.Checker{}),
+		monitorCommand(monitor),
+		bootCommand(service),
 	)
+	configureRootHelp(rootCmd)
 
 	return rootCmd
 }
@@ -77,11 +77,11 @@ const helpTemplate = `AnonSurf
 
 Usage:
   {{.UseLine}}
-
+{{if .HasAvailableSubCommands}}
 Commands:
 {{range .Commands}}{{if or .IsAvailableCommand (eq .Name "help")}}  {{rpad .Name .NamePadding }} {{.Short}}
-{{end}}{{end}}{{if .HasAvailableFlags}}
-Flags:
+{{end}}{{end}}{{end}}
+{{if .HasAvailableFlags}}Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
 {{end}}{{if .Example}}
 Examples:

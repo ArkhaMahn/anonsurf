@@ -14,7 +14,7 @@ func statusCommand(reader status.Reader, monitor anondaemon.MonitorClient) *cobr
 	var useNyx bool
 	cmd := &cobra.Command{
 		Use:   "status",
-		Short: "Show AnonSurf, Tor, and DNS status",
+		Short: "Show Tor and DNS health",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if useNyx {
@@ -31,14 +31,14 @@ func statusCommand(reader status.Reader, monitor anondaemon.MonitorClient) *cobr
 			return nil
 		},
 	}
-	cmd.Flags().BoolVar(&useNyx, "nyx", false, "Open Nyx with the AnonSurf configuration instead of printing a snapshot")
+	cmd.Flags().BoolVarP(&useNyx, "nyx", "n", false, "Open Nyx with the AnonSurf configuration instead of printing a snapshot")
 	return cmd
 }
 
 func monitorCommand(monitor anondaemon.MonitorClient) *cobra.Command {
 	return &cobra.Command{
 		Use:   "monitor",
-		Short: "Open Nyx Tor monitor",
+		Short: "Open the Nyx Tor monitor",
 		Long:  "Open Nyx using the AnonSurf configuration.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
