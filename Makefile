@@ -8,6 +8,8 @@ GO-GOPATH ?= $(CURDIR)/build/gopath:/usr/share/gocode
 GO-GOPATH-SRC = $(CURDIR)/build/gopath/src/$(GO-MODULE)
 BUILD-DEST = build/release
 
+VERSION ?= $(shell sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)
+
 ifeq ($(GO-BUILD-MODE),gopath)
 GO-BUILD-DEPS = prepare-go-gopath
 GO-BUILD-ENV = GO111MODULE=off GOPATH=$(GO-GOPATH)
@@ -34,7 +36,7 @@ prepare-go-gopath: $(BUILD-DEST)
 	cp -a $(CURDIR)/$(GO-SRC-DIR) $(GO-GOPATH-SRC)
 
 anonsurf-cli: $(BUILD-DEST) $(GO-BUILD-DEPS)
-	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anonsurf $(GO-PKG-PREFIX)/cmd/anonsurf-cli
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS) -X main.version=$(VERSION)" -o ../$(BUILD-DEST)/anonsurf $(GO-PKG-PREFIX)/cmd/anonsurf-cli
 
 dnstool: $(BUILD-DEST) $(GO-BUILD-DEPS)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/dnstool $(GO-PKG-PREFIX)/cmd/dnstool

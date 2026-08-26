@@ -13,7 +13,8 @@ import (
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
-const version = "6.0.0"
+// version is overridden at release time via -ldflags "-X main.version=..." (see Makefile).
+var version = "6.0.0"
 
 func main() {
 	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {

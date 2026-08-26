@@ -27,7 +27,7 @@ func printDesc(keyword, descr string) {
 func showBanner() {
 	fmt.Println("DNS Tool: A CLI tool to change DNS settings quickly")
 	fmt.Println("Gitlab: https://gitlab.com/parrotsec/packages/anonsurf/")
-	fmt.Println("License: GPL3")
+	fmt.Println("License: GPL-3.0")
 }
 
 func showHelp() {
