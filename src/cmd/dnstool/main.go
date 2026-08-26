@@ -10,32 +10,31 @@ import (
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/sys"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/ui"
 )
 
 func dnstShowStatus(manager dns.Manager) error {
 	addresses, err := dns.ParseDNSAddresses(dns.ResolvConfPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			ui.PrintErrorResolvNotFound(dns.ResolvConfPath)
+			printErrorResolvNotFound(dns.ResolvConfPath)
 			return nil
 		}
 		return err
 	}
 
 	if len(addresses) == 0 {
-		ui.PrintErrorResolvEmpty(dns.ResolvConfPath)
+		printErrorResolvEmpty(dns.ResolvConfPath)
 	} else if tor.IsAnonsurfRunning() {
 		if dns.HasOnlyLocalhost(addresses) {
-			ui.PrintUnderTorDNS()
+			printUnderTorDNS()
 		} else {
-			ui.PrintUnderTorDNSRedirect()
+			printUnderTorDNSRedirect()
 		}
 	} else {
 		if dns.HasOnlyLocalhost(addresses) {
-			ui.PrintErrorLocalHost()
+			printErrorLocalHost()
 		} else {
-			ui.PrintDNSAddresses(addresses)
+			printDNSAddresses(addresses)
 		}
 	}
 	return nil
@@ -89,7 +88,7 @@ func main() {
 		SilenceErrors: true,
 		Args:          cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			ui.ShowHelp()
+			showHelp()
 			return dnstShowStatus(manager)
 		},
 	}
@@ -146,7 +145,7 @@ func main() {
 	rootCmd.AddCommand(statusCmd, createBackupCmd, restoreBackupCmd, addressCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		ui.PrintError(err.Error())
+		printError(err.Error())
 		os.Exit(1)
 	}
 }

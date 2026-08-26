@@ -1,4 +1,4 @@
-package ui
+package main
 
 import (
 	"fmt"
@@ -30,7 +30,7 @@ func showBanner() {
 	fmt.Println("License: GPL3")
 }
 
-func ShowHelp() {
+func showHelp() {
 	programName := "dnstool"
 	programNameWithSudo := "sudo dnstool"
 	showBanner()
