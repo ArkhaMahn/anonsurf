@@ -43,7 +43,7 @@ func (c ServiceController) Stop() error {
 }
 
 func (c ServiceController) Restart() error {
-	return c.run("restart")
+	return c.run("reload-or-restart")
 }
 
 func (c ServiceController) Enable() error {
