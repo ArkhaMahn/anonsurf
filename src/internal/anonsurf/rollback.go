@@ -1,8 +1,10 @@
-package anondaemon
+package anonsurf
 
 import (
 	"fmt"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/firewall"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/ipv6"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
@@ -29,10 +31,10 @@ func (c Controller) rollbackStart(state startTransition) error {
 		failures.add("stop Tor service", systemd.NewTorController().Stop())
 	}
 	if state.firewallTouched {
-		failures.add("restore firewall", c.restoreFirewall())
+		failures.add("restore firewall", (firewall.Manager{}).Restore())
 	}
 	if state.ipv6Touched {
-		failures.add("restore IPv6 state", c.restoreIPv6State())
+		failures.add("restore IPv6 state", (ipv6.Manager{}).Restore())
 	}
 	if state.dnsTouched {
 		failures.add("restore DNS settings", c.restoreDNS())

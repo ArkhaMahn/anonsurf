@@ -1,4 +1,4 @@
-package anondaemon
+package firewall
 
 import (
 	"fmt"
@@ -105,10 +105,10 @@ func iptablesChainDefinitions(backup []byte, table string) []string {
 	return definitions
 }
 
-func (c Controller) renderIPTablesRules(routing tor.RoutingConfig, backup []byte) string {
+func (m Manager) renderRules(routing tor.RoutingConfig, backup []byte) string {
 	var builder strings.Builder
-	writeIPTablesTable(&builder, "filter", iptablesChainDefinitions(backup, "filter"), c.filterIPTablesRules(routing))
-	writeIPTablesTable(&builder, "nat", iptablesChainDefinitions(backup, "nat"), c.natIPTablesRules(routing))
+	writeIPTablesTable(&builder, "filter", iptablesChainDefinitions(backup, "filter"), m.filterRules(routing))
+	writeIPTablesTable(&builder, "nat", iptablesChainDefinitions(backup, "nat"), m.natRules(routing))
 	return builder.String()
 }
 

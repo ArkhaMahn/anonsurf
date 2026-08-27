@@ -1,4 +1,4 @@
-package anondaemon
+package anonsurf
 
 import (
 	"fmt"

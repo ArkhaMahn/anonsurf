@@ -4,11 +4,11 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 )
 
-func changeIDCommand(changer anondaemon.IdentityClient) *cobra.Command {
+func changeIDCommand(changer anonsurf.IdentityClient) *cobra.Command {
 	return &cobra.Command{
 		Use:   "changeid",
 		Short: "Request a new Tor identity",

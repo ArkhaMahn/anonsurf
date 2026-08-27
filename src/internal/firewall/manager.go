@@ -1,70 +1,86 @@
-package anondaemon
+package firewall
 
 import (
 	"fmt"
+	"os"
 
-	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
-func (c Controller) saveIPTablesRules() error {
-	path := IPTablesRulesPath
-	if exists, err := fileExists(path); err != nil {
+const (
+	SavePath       = "/usr/sbin/iptables-save"
+	RestorePath    = "/usr/sbin/iptables-restore"
+	StatePath      = "/run/anonsurf/iptables.rules"
+	defaultTorUser = "debian-tor"
+)
+
+var excludedNetworks = [...]string{
+	"192.168.0.0/16",
+	"172.16.0.0/12",
+	"10.0.0.0/8",
+	"127.0.0.0/8",
+}
+
+type Manager struct{}
+
+func (Manager) Backup() error {
+	if exists, err := fileops.Exists(StatePath); err != nil {
 		return fmt.Errorf("check iptables backup: %w", err)
 	} else if exists {
 		return nil
 	}
 
-	rules, err := (systemd.ExecRunner{}).Output(IPTablesSavePath)
+	rules, err := (command.Runner{}).Output(SavePath)
 	if err != nil {
 		return fmt.Errorf("save iptables rules: %w", err)
 	}
-	if err := writeFile(path, rules, 0600); err != nil {
+	if err := fileops.WriteAtomicWithDir(StatePath, rules, 0600, 0700); err != nil {
 		return fmt.Errorf("write iptables backup: %w", err)
 	}
 	return nil
 }
 
-func (c Controller) applyIPTablesRules(routing tor.RoutingConfig) error {
-	backup, err := readFile(IPTablesRulesPath)
+func (m Manager) Apply(routing tor.RoutingConfig) error {
+	backup, err := os.ReadFile(StatePath)
 	if err != nil {
 		return fmt.Errorf("read iptables backup for apply: %w", err)
 	}
-	rules := c.renderIPTablesRules(routing, backup)
-	if err := runWithInput(IPTablesRestorePath, []byte(rules)); err != nil {
+	rules := m.renderRules(routing, backup)
+	if err := (command.Runner{}).RunWithInput(RestorePath, []byte(rules)); err != nil {
 		return fmt.Errorf("apply iptables rules: %w", err)
 	}
 	return nil
 }
 
-func (c Controller) restoreFirewall() error {
-	exists, err := fileExists(IPTablesRulesPath)
+func (m Manager) Restore() error {
+	exists, err := fileops.Exists(StatePath)
 	if err != nil {
 		return fmt.Errorf("check iptables backup: %w", err)
 	}
 	if !exists {
 		return nil
 	}
-	return c.restoreIPTablesRules()
+	return m.restoreRules()
 }
 
-func (c Controller) restoreIPTablesRules() error {
-	path := IPTablesRulesPath
-	rules, err := readFile(path)
+func (Manager) restoreRules() error {
+	rules, err := os.ReadFile(StatePath)
 	if err != nil {
 		return fmt.Errorf("read iptables backup: %w", err)
 	}
 	rules = ensureManagedIPTablesTables(rules)
-	if err := runWithInput(IPTablesRestorePath, rules); err != nil {
+	if err := (command.Runner{}).RunWithInput(RestorePath, rules); err != nil {
 		return fmt.Errorf("restore iptables rules: %w", err)
 	}
-	if err := removeFile(path); err != nil {
+	if err := fileops.RemoveIfExists(StatePath); err != nil {
 		return fmt.Errorf("remove iptables backup: %w", err)
 	}
 	return nil
 }
 
-func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
+func (Manager) natRules(routing tor.RoutingConfig) [][]string {
 	torUser := defaultTorUser
 	rules := [][]string{
 		{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "RETURN"},
@@ -74,7 +90,7 @@ func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 		{"-A", "OUTPUT", "-p", "tcp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
 		{"-A", "OUTPUT", "-p", "udp", "-d", routing.VirtualAddrNetwork, "-j", "REDIRECT", "--to-ports", routing.TransPort},
 	}
-	for _, network := range torExcludedNetworks {
+	for _, network := range excludedNetworks {
 		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "RETURN"})
 	}
 	return append(rules,
@@ -83,13 +99,13 @@ func (c Controller) natIPTablesRules(routing tor.RoutingConfig) [][]string {
 	)
 }
 
-func (c Controller) filterIPTablesRules(routing tor.RoutingConfig) [][]string {
+func (Manager) filterRules(routing tor.RoutingConfig) [][]string {
 	torUser := defaultTorUser
 	rules := [][]string{
 		{"-A", "OUTPUT", "-p", "udp", "-m", "udp", "--sport", "68", "--dport", "67", "-j", "ACCEPT"},
 		{"-A", "INPUT", "-p", "udp", "-m", "udp", "--sport", "67", "--dport", "68", "-j", "ACCEPT"},
 	}
-	for _, network := range torExcludedNetworks {
+	for _, network := range excludedNetworks {
 		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "ACCEPT"})
 	}
 	return append(rules,

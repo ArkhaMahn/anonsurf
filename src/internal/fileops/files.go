@@ -1,17 +1,11 @@
-package anondaemon
+package fileops
 
 import (
-	"bytes"
 	"os"
-	"os/exec"
 	"path/filepath"
 )
 
-func readFile(path string) ([]byte, error) {
-	return os.ReadFile(path)
-}
-
-func fileExists(path string) (bool, error) {
+func Exists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
 		return true, nil
@@ -22,11 +16,8 @@ func fileExists(path string) (bool, error) {
 	return false, err
 }
 
-func writeFile(path string, data []byte, perm os.FileMode) error {
+func WriteAtomic(path string, data []byte, perm os.FileMode) error {
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0700); err != nil {
-		return err
-	}
 	tempFile, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp-*")
 	if err != nil {
 		return err
@@ -52,18 +43,25 @@ func writeFile(path string, data []byte, perm os.FileMode) error {
 	return os.Rename(tempPath, path)
 }
 
-func removeFile(path string) error {
+func WriteAtomicWithDir(path string, data []byte, perm, dirPerm os.FileMode) error {
+	if err := os.MkdirAll(filepath.Dir(path), dirPerm); err != nil {
+		return err
+	}
+	return WriteAtomic(path, data, perm)
+}
+
+func CopyAtomic(source, destination string, perm os.FileMode) error {
+	data, err := os.ReadFile(source)
+	if err != nil {
+		return err
+	}
+	return WriteAtomic(destination, data, perm)
+}
+
+func RemoveIfExists(path string) error {
 	err := os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 	return nil
-}
-
-func runWithInput(command string, input []byte, args ...string) error {
-	cmd := exec.Command(command, args...)
-	cmd.Stdin = bytes.NewReader(input)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
 }

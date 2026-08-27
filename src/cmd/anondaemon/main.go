@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/monitor"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
 func main() {
@@ -23,15 +22,15 @@ func run(args []string) error {
 
 	switch args[0] {
 	case "start":
-		return (anondaemon.Controller{}).Start()
+		return (anonsurf.Controller{}).Start()
 	case "stop":
-		return (anondaemon.Controller{}).Stop()
+		return (anonsurf.Controller{}).Stop()
 	case "restart":
-		return (anondaemon.Controller{}).Restart()
+		return (anonsurf.Controller{}).Restart()
 	case "recover":
-		return (anondaemon.Controller{}).Recover()
+		return (anonsurf.Controller{}).Recover()
 	case "changeid":
-		return (tor.IdentityChanger{}).Change()
+		return (anonsurf.Controller{}).ChangeIdentity()
 	case "monitor":
 		return monitor.NewNyxMonitor(os.Stdin, os.Stdout, os.Stderr).Run()
 	default:

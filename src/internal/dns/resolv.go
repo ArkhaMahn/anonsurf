@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
 const (
@@ -19,65 +21,11 @@ var (
 
 type Manager struct{}
 
-func removeFileIfExists(path string) error {
-	err := os.Remove(path)
-	if err != nil && !os.IsNotExist(err) {
-		return err
-	}
-	return nil
-}
-
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
-func writeFileAtomically(path string, data []byte, perm os.FileMode) error {
-	dir := filepath.Dir(path)
-	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp-*")
-	if err != nil {
-		return err
-	}
-	tmpPath := tmp.Name()
-	defer os.Remove(tmpPath)
-
-	if _, err := tmp.Write(data); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if err := tmp.Chmod(perm); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if err := tmp.Sync(); err != nil {
-		_ = tmp.Close()
-		return err
-	}
-	if err := tmp.Close(); err != nil {
-		return err
-	}
-	return os.Rename(tmpPath, path)
-}
-
-func copyFile(src, dst string, perm os.FileMode) error {
-	data, err := os.ReadFile(src)
-	if err != nil {
-		return err
-	}
-	return writeFileAtomically(dst, data, perm)
-}
-
 func (m Manager) CreateDHCPOnly() error {
 	if err := m.backupNetworkManagerHook(); err != nil {
 		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
 	}
-	if err := removeFileIfExists(ResolvConfPath); err != nil {
+	if err := fileops.RemoveIfExists(ResolvConfPath); err != nil {
 		return fmt.Errorf("remove current DNS settings: %w", err)
 	}
 	return m.createNetworkManagerHook(NMHookHandleResolvConf)
@@ -97,7 +45,7 @@ func (m Manager) CreateAddrs(listAddr []string) error {
 }
 
 func (m Manager) restoreResolverBackup() (bool, error) {
-	exists, err := fileExists(ResolvConfBackup)
+	exists, err := fileops.Exists(ResolvConfBackup)
 	if err != nil {
 		return false, fmt.Errorf("check backup: %w", err)
 	}
@@ -112,7 +60,7 @@ func (m Manager) restoreResolverBackup() (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("read backup: %w", err)
 	}
-	if err := writeFileAtomically(ResolvConfPath, content, info.Mode().Perm()); err != nil {
+	if err := fileops.WriteAtomic(ResolvConfPath, content, info.Mode().Perm()); err != nil {
 		return false, fmt.Errorf("restore backup: %w", err)
 	}
 	return true, nil
@@ -134,7 +82,7 @@ func (m Manager) RestoreBackupOrDHCP() error {
 		return fmt.Errorf("restore NetworkManager DNS ownership: %w", err)
 	}
 	if restoredBackup {
-		if err := removeFileIfExists(ResolvConfBackup); err != nil {
+		if err := fileops.RemoveIfExists(ResolvConfBackup); err != nil {
 			return fmt.Errorf("remove restored backup: %w", err)
 		}
 	}
@@ -145,7 +93,7 @@ func (m Manager) RestoreBackupOrDHCP() error {
 }
 
 func (m Manager) MakeBackup() error {
-	backupExists, err := fileExists(ResolvConfBackup)
+	backupExists, err := fileops.Exists(ResolvConfBackup)
 	if err != nil {
 		return fmt.Errorf("check resolv.conf backup: %w", err)
 	}
@@ -153,7 +101,7 @@ func (m Manager) MakeBackup() error {
 		return ErrBackupExists
 	}
 
-	exists, err := fileExists(ResolvConfPath)
+	exists, err := fileops.Exists(ResolvConfPath)
 	if err != nil {
 		return fmt.Errorf("check resolv.conf: %w", err)
 	}
@@ -176,7 +124,7 @@ func (m Manager) MakeBackup() error {
 	if err := os.MkdirAll(filepath.Dir(ResolvConfBackup), 0755); err != nil {
 		return fmt.Errorf("create backup directory: %w", err)
 	}
-	if err := copyFile(ResolvConfPath, ResolvConfBackup, info.Mode().Perm()); err != nil {
+	if err := fileops.CopyAtomic(ResolvConfPath, ResolvConfBackup, info.Mode().Perm()); err != nil {
 		return fmt.Errorf("create backup: %w", err)
 	}
 	return nil

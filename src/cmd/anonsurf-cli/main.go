@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
@@ -55,14 +55,14 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 
 	service := systemd.NewAnonsurfdController()
-	monitor := anondaemon.MonitorClient{}
+	monitor := anonsurf.MonitorClient{}
 	safeKill := safekill.Runner{}
 	rootCmd.AddCommand(
 		serviceCommandWithSafeKill("start", "Route traffic through Tor", service.Start, "AnonSurf started.", safeKill),
 		serviceCommandWithSafeKill("stop", "Restore the original network", service.Stop, "AnonSurf stopped.", safeKill),
 		serviceCommandWithSafeKill("restart", "Rebuild protected routing", service.Restart, "AnonSurf restarted.", safeKill),
 		statusCommand(status.Reader{}, monitor),
-		changeIDCommand(anondaemon.IdentityClient{}),
+		changeIDCommand(anonsurf.IdentityClient{}),
 		ipCommand(netcheck.Checker{}),
 		monitorCommand(monitor),
 		bootCommand(service),

@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
 const (
@@ -43,7 +45,7 @@ func (m Manager) writeNetworkManagerHook(content string, perm os.FileMode) error
 	if err := os.MkdirAll(filepath.Dir(NMHookScript), 0755); err != nil {
 		return err
 	}
-	if err := writeFileAtomically(NMHookScript, []byte(content), perm); err != nil {
+	if err := fileops.WriteAtomic(NMHookScript, []byte(content), perm); err != nil {
 		return err
 	}
 	return reloadNetworkManager()
@@ -68,7 +70,7 @@ func (m Manager) backupNetworkManagerHook() error {
 			if err := os.MkdirAll(filepath.Dir(NMHookMissingMarker), 0700); err != nil {
 				return err
 			}
-			return writeFileAtomically(NMHookMissingMarker, []byte("missing\n"), 0600)
+			return fileops.WriteAtomic(NMHookMissingMarker, []byte("missing\n"), 0600)
 		}
 		return err
 	}
@@ -79,7 +81,7 @@ func (m Manager) backupNetworkManagerHook() error {
 	if err := os.MkdirAll(filepath.Dir(NMHookBackup), 0700); err != nil {
 		return err
 	}
-	return writeFileAtomically(NMHookBackup, content, info.Mode().Perm())
+	return fileops.WriteAtomic(NMHookBackup, content, info.Mode().Perm())
 }
 
 type networkManagerHookState int
@@ -91,11 +93,11 @@ const (
 )
 
 func (m Manager) networkManagerHookState() (networkManagerHookState, error) {
-	backupExists, err := fileExists(NMHookBackup)
+	backupExists, err := fileops.Exists(NMHookBackup)
 	if err != nil {
 		return networkManagerHookUnmanaged, err
 	}
-	markerExists, err := fileExists(NMHookMissingMarker)
+	markerExists, err := fileops.Exists(NMHookMissingMarker)
 	if err != nil {
 		return networkManagerHookUnmanaged, err
 	}
@@ -131,7 +133,7 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 			return state, err
 		}
 	case networkManagerHookMissing:
-		if err := removeFileIfExists(NMHookScript); err != nil {
+		if err := fileops.RemoveIfExists(NMHookScript); err != nil {
 			return state, err
 		}
 		if err := reloadNetworkManager(); err != nil {
@@ -158,9 +160,9 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 func (m Manager) clearNetworkManagerHookState(state networkManagerHookState) error {
 	switch state {
 	case networkManagerHookBackedUp:
-		return removeFileIfExists(NMHookBackup)
+		return fileops.RemoveIfExists(NMHookBackup)
 	case networkManagerHookMissing:
-		return removeFileIfExists(NMHookMissingMarker)
+		return fileops.RemoveIfExists(NMHookMissingMarker)
 	default:
 		return nil
 	}

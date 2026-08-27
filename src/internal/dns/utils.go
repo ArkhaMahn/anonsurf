@@ -6,6 +6,8 @@ import (
 	"net"
 	"os"
 	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
 var ErrNoValidDNSAddress = errors.New("no valid DNS address found")
@@ -88,7 +90,7 @@ func WriteDNSToSystem(listDNSAddr []string, resolvConfPath string) error {
 	if err != nil {
 		return err
 	}
-	return writeFileAtomically(resolvConfPath, []byte(content), 0644)
+	return fileops.WriteAtomic(resolvConfPath, []byte(content), 0644)
 }
 
 func GetListValidAddresses(listAddr []string) []string {

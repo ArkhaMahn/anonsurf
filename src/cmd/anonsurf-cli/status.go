@@ -6,11 +6,11 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/anondaemon"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 )
 
-func statusCommand(reader status.Reader, monitor anondaemon.MonitorClient) *cobra.Command {
+func statusCommand(reader status.Reader, monitor anonsurf.MonitorClient) *cobra.Command {
 	var useNyx bool
 	cmd := &cobra.Command{
 		Use:   "status",
@@ -35,7 +35,7 @@ func statusCommand(reader status.Reader, monitor anondaemon.MonitorClient) *cobr
 	return cmd
 }
 
-func monitorCommand(monitor anondaemon.MonitorClient) *cobra.Command {
+func monitorCommand(monitor anonsurf.MonitorClient) *cobra.Command {
 	return &cobra.Command{
 		Use:   "monitor",
 		Short: "Open the Nyx Tor monitor",

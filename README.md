@@ -7,7 +7,10 @@
 3. `make check`
 
 # Source layout
-- `src/`: Go command-line tools, SafeKill, and system backend.
+- `src/cmd/`: Go command-line entry points.
+- `src/internal/anonsurf/`: lifecycle orchestration and transactional recovery.
+- `src/internal/dns/`, `firewall/`, `ipv6/`, `tor/`: network domains.
+- `src/internal/command/`, `fileops/`, `systemd/`: operating-system adapters.
 - `icons/`: AnonSurf and Nyx logos retained for the future interface.
 
 Interrupted sessions are recovered automatically at boot before Tor starts.

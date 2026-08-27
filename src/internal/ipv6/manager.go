@@ -1,4 +1,4 @@
-package anondaemon
+package ipv6
 
 import (
 	"encoding/json"
@@ -7,11 +7,16 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
 const (
 	ipv6AllKey     = "net.ipv6.conf.all.disable_ipv6"
 	ipv6DefaultKey = "net.ipv6.conf.default.disable_ipv6"
+	ConfPath       = "/proc/sys/net/ipv6/conf"
+	StatePath      = "/run/anonsurf/ipv6.state"
+	sysctlPath     = "/sbin/sysctl"
 )
 
 type ipv6Setting struct {
@@ -23,9 +28,10 @@ type ipv6State struct {
 	Settings []ipv6Setting `json:"settings"`
 }
 
-func (c Controller) captureIPv6State() error {
-	path := IPv6StatePath
-	exists, err := fileExists(path)
+type Manager struct{}
+
+func (Manager) Capture() error {
+	exists, err := fileops.Exists(StatePath)
 	if err != nil {
 		return err
 	}
@@ -33,7 +39,7 @@ func (c Controller) captureIPv6State() error {
 		return nil
 	}
 
-	state, err := c.currentIPv6State()
+	state, err := currentState()
 	if err != nil {
 		return err
 	}
@@ -41,11 +47,11 @@ func (c Controller) captureIPv6State() error {
 	if err != nil {
 		return err
 	}
-	return writeFile(path, append(content, '\n'), 0600)
+	return fileops.WriteAtomicWithDir(StatePath, append(content, '\n'), 0600, 0700)
 }
 
-func (c Controller) currentIPv6State() (ipv6State, error) {
-	entries, err := os.ReadDir(IPv6ConfPath)
+func currentState() (ipv6State, error) {
+	entries, err := os.ReadDir(ConfPath)
 	if err != nil {
 		return ipv6State{}, fmt.Errorf("read IPv6 interfaces: %w", err)
 	}
@@ -62,8 +68,8 @@ func (c Controller) currentIPv6State() (ipv6State, error) {
 
 	state := ipv6State{Settings: make([]ipv6Setting, 0, len(interfaces))}
 	for _, name := range interfaces {
-		path := filepath.Join(IPv6ConfPath, name, "disable_ipv6")
-		data, err := readFile(path)
+		path := filepath.Join(ConfPath, name, "disable_ipv6")
+		data, err := os.ReadFile(path)
 		if err != nil {
 			return ipv6State{}, fmt.Errorf("read IPv6 state for %s: %w", name, err)
 		}
@@ -93,16 +99,15 @@ func ipv6InterfaceOrder(name string) string {
 	}
 }
 
-func (c Controller) disableIPv6() error {
-	return c.setIPv6State(ipv6State{Settings: []ipv6Setting{
+func (m Manager) Disable() error {
+	return m.setState(ipv6State{Settings: []ipv6Setting{
 		{Key: ipv6AllKey, Value: "1"},
 		{Key: ipv6DefaultKey, Value: "1"},
 	}})
 }
 
-func (c Controller) restoreIPv6State() error {
-	path := IPv6StatePath
-	data, err := readFile(path)
+func (m Manager) Restore() error {
+	data, err := os.ReadFile(StatePath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil
@@ -113,10 +118,10 @@ func (c Controller) restoreIPv6State() error {
 	if err != nil {
 		return err
 	}
-	if err := c.restoreExistingIPv6State(state); err != nil {
+	if err := m.restoreExistingState(state); err != nil {
 		return err
 	}
-	if err := removeFile(path); err != nil {
+	if err := fileops.RemoveIfExists(StatePath); err != nil {
 		return fmt.Errorf("remove IPv6 state: %w", err)
 	}
 	return nil

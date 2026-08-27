@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"gitlab.com/parrotsec/packages/anonsurf/internal/config"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
@@ -38,32 +37,5 @@ func run(args []string) error {
 }
 
 func generateTorrc() error {
-	cfg, err := config.Load(config.SystemPath)
-	if err != nil {
-		return fmt.Errorf("load config: %w", err)
-	}
-
-	options := tor.TorrcOptionsFromConfig(cfg)
-	options, err = (tor.BridgeResolver{}).Resolve(options)
-	if err != nil {
-		return fmt.Errorf("resolve bridges: %w", err)
-	}
-
-	rendered, err := tor.RenderTorrc(options)
-	if err != nil {
-		return fmt.Errorf("render torrc: %w", err)
-	}
-
-	if err := (tor.NyxrcManager{}).Ensure(); err != nil {
-		return fmt.Errorf("ensure nyxrc: %w", err)
-	}
-	manager := tor.TorrcManager{}
-	if err := manager.Backup(); err != nil && !errors.Is(err, tor.ErrTorrcBackupExists) {
-		return fmt.Errorf("backup torrc: %w", err)
-	}
-	if err := manager.Write(rendered); err != nil {
-		return fmt.Errorf("write torrc: %w", err)
-	}
-
-	return nil
+	return (tor.Configurator{}).Generate()
 }

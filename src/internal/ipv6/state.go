@@ -1,11 +1,15 @@
-package anondaemon
+package ipv6
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
 func parseIPv6State(content string) (ipv6State, error) {
@@ -65,28 +69,28 @@ func validateIPv6State(state ipv6State) error {
 	return nil
 }
 
-func (c Controller) restoreExistingIPv6State(state ipv6State) error {
-	var failures errorCollector
+func (m Manager) restoreExistingState(state ipv6State) error {
+	var failures []error
 	settings := append([]ipv6Setting{}, state.Settings...)
 	sort.SliceStable(settings, func(i, j int) bool {
 		return ipv6SettingOrder(settings[i].Key) < ipv6SettingOrder(settings[j].Key)
 	})
 	for _, setting := range settings {
 		if setting.Key != ipv6AllKey && setting.Key != ipv6DefaultKey {
-			exists, err := c.ipv6SettingExists(setting.Key)
+			exists, err := settingExists(setting.Key)
 			if err != nil {
-				failures.add(setting.Key, err)
+				failures = append(failures, fmt.Errorf("%s: %w", setting.Key, err))
 				continue
 			}
 			if !exists {
 				continue
 			}
 		}
-		if err := c.run(SysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
-			failures.add(setting.Key, err)
+		if err := (command.Runner{}).Run(sysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
+			failures = append(failures, fmt.Errorf("%s: %w", setting.Key, err))
 		}
 	}
-	return failures.err()
+	return errors.Join(failures...)
 }
 
 func ipv6SettingOrder(key string) string {
@@ -100,12 +104,12 @@ func ipv6SettingOrder(key string) string {
 	}
 }
 
-func (c Controller) ipv6SettingExists(key string) (bool, error) {
+func settingExists(key string) (bool, error) {
 	name, ok := ipv6InterfaceName(key)
 	if !ok {
 		return false, fmt.Errorf("invalid IPv6 state key %q", key)
 	}
-	return fileExists(filepath.Join(IPv6ConfPath, name, "disable_ipv6"))
+	return fileops.Exists(filepath.Join(ConfPath, name, "disable_ipv6"))
 }
 
 func ipv6InterfaceName(key string) (string, bool) {
@@ -121,12 +125,12 @@ func ipv6InterfaceName(key string) (string, bool) {
 	return name, true
 }
 
-func (c Controller) setIPv6State(state ipv6State) error {
-	var failures errorCollector
+func (Manager) setState(state ipv6State) error {
+	var failures []error
 	for _, setting := range state.Settings {
-		if err := c.run(SysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
-			failures.add(setting.Key, err)
+		if err := (command.Runner{}).Run(sysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
+			failures = append(failures, fmt.Errorf("%s: %w", setting.Key, err))
 		}
 	}
-	return failures.err()
+	return errors.Join(failures...)
 }

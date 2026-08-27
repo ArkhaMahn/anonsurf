@@ -1,9 +1,13 @@
-package anondaemon
+package anonsurf
 
 import (
+	"errors"
 	"fmt"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/firewall"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/ipv6"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
 func (c Controller) Stop() error {
@@ -21,10 +25,10 @@ func (c Controller) Stop() error {
 
 	var failures errorCollector
 	failures.add("stop Tor service", systemd.NewTorController().Stop())
-	failures.add("restore firewall", c.restoreFirewall())
+	failures.add("restore firewall", (firewall.Manager{}).Restore())
 	failures.add("restore DNS settings", c.restoreDNS())
 	failures.add("restore torrc", c.restoreTorrc())
-	failures.add("restore IPv6 state", c.restoreIPv6State())
+	failures.add("restore IPv6 state", (ipv6.Manager{}).Restore())
 	if err := failures.err(); err != nil {
 		return err
 	}
@@ -43,8 +47,8 @@ func (c Controller) Stop() error {
 }
 
 func (c Controller) restoreTorrc() error {
-	if err := c.run(MakeTorrcPath, "restore"); err != nil {
-		return fmt.Errorf("run torrc restore: %w", err)
+	if err := (tor.TorrcManager{}).Restore(); err != nil && !errors.Is(err, tor.ErrTorrcBackupNotFound) {
+		return fmt.Errorf("restore torrc: %w", err)
 	}
 	return nil
 }

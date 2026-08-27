@@ -1,12 +1,20 @@
-package anondaemon
+package anonsurf
 
 import (
 	"fmt"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/firewall"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/ipv6"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
-const stateMarkerContent = "anonsurf\n"
+const (
+	ActiveStatePath    = "/run/anonsurf/active"
+	DNSStatePath       = "/var/lib/anonsurf/dns.changed"
+	TorStatePath       = "/run/anonsurf/tor.was-active"
+	stateMarkerContent = "anonsurf\n"
+)
 
 func (c Controller) markActive() error {
 	return writeFile(ActiveStatePath, []byte(stateMarkerContent), 0600)
@@ -76,12 +84,12 @@ func (c Controller) restoreDNS() error {
 func (c Controller) hasManagedState() (bool, error) {
 	paths := []string{
 		ActiveStatePath,
-		IPTablesRulesPath,
+		firewall.StatePath,
 		DNSStatePath,
-		IPv6StatePath,
+		ipv6.StatePath,
 		TorStatePath,
-		TorrcBackupPath,
-		TorrcMissingPath,
+		tor.TorrcBackupPath,
+		tor.TorrcMissingMarkerPath,
 	}
 	for _, path := range paths {
 		exists, err := fileExists(path)
@@ -113,10 +121,10 @@ func (c Controller) Recover() error {
 	}
 
 	var failures errorCollector
-	failures.add("restore firewall", c.restoreFirewall())
+	failures.add("restore firewall", (firewall.Manager{}).Restore())
 	failures.add("restore DNS settings", c.restoreDNS())
 	failures.add("restore torrc", c.restoreTorrc())
-	failures.add("restore IPv6 state", c.restoreIPv6State())
+	failures.add("restore IPv6 state", (ipv6.Manager{}).Restore())
 	if err := failures.err(); err != nil {
 		return err
 	}

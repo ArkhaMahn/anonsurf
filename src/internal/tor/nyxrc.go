@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
 //go:embed assets/nyxrc
@@ -35,7 +37,7 @@ func (NyxrcManager) Ensure() error {
 	if err := os.MkdirAll(filepath.Dir(NyxrcPath), 0755); err != nil {
 		return fmt.Errorf("create nyxrc directory: %w", err)
 	}
-	if err := writeFileAtomically(NyxrcPath, []byte(expected+"\n"), 0644); err != nil {
+	if err := fileops.WriteAtomic(NyxrcPath, []byte(expected+"\n"), 0644); err != nil {
 		return fmt.Errorf("write nyxrc: %w", err)
 	}
 	return nil

@@ -1,16 +1,14 @@
-package anondaemon
+package anonsurf
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
-	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/firewall"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/ipv6"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
-
-const torDNSAddress = "127.0.0.1"
 
 func (c Controller) Start() error {
 	state := startTransition{}
@@ -28,7 +26,7 @@ func (c Controller) Start() error {
 		return c.failStart(fmt.Errorf("generate torrc: %w", err), state)
 	}
 
-	if exists, err := fileExists(TorrcPath); err != nil {
+	if exists, err := fileExists(tor.TorrcPath); err != nil {
 		return c.failStart(fmt.Errorf("check torrc: %w", err), state)
 	} else if !exists {
 		return c.failStart(ErrTorrcNotFound, state)
@@ -61,43 +59,27 @@ func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition)
 		return fmt.Errorf("stop Tor service before routing: %w", err)
 	}
 
-	if err := c.captureIPv6State(); err != nil {
+	ipv6Manager := ipv6.Manager{}
+	if err := ipv6Manager.Capture(); err != nil {
 		return fmt.Errorf("capture IPv6 state: %w", err)
 	}
 	state.ipv6Touched = true
-	if err := c.disableIPv6(); err != nil {
+	if err := ipv6Manager.Disable(); err != nil {
 		return err
 	}
 
-	if err := c.saveIPTablesRules(); err != nil {
+	manager := firewall.Manager{}
+	if err := manager.Backup(); err != nil {
 		return err
 	}
 	state.firewallTouched = true
-	return c.applyIPTablesRules(routing)
-}
-
-func (c Controller) configureDNS(state *startTransition) error {
-	if err := (dns.Manager{}).MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
-		return fmt.Errorf("backup DNS settings: %w", err)
-	}
-	if err := c.markDNSChanged(); err != nil {
-		return fmt.Errorf("mark DNS state: %w", err)
-	}
-	state.dnsTouched = true
-	if err := (dns.Manager{}).CreateAddrs([]string{torDNSAddress}); err != nil {
-		return fmt.Errorf("set Tor DNS: %w", err)
-	}
-	return nil
+	return manager.Apply(routing)
 }
 
 func (c Controller) readTorRoutingConfig() (tor.RoutingConfig, error) {
-	data, err := readFile(TorrcPath)
+	data, err := readFile(tor.TorrcPath)
 	if err != nil {
 		return tor.RoutingConfig{}, fmt.Errorf("read torrc: %w", err)
 	}
 	return tor.ParseRoutingConfig(strings.NewReader(string(data)))
-}
-
-func isSkippableDNSBackupError(err error) bool {
-	return errors.Is(err, dns.ErrBackupExists) || errors.Is(err, dns.ErrBackupSkippedSymlink)
 }

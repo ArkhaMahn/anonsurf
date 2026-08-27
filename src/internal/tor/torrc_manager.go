@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
 const (
@@ -24,11 +26,11 @@ var (
 type TorrcManager struct{}
 
 func (TorrcManager) Backup() error {
-	backupExists, err := fileExists(TorrcBackupPath)
+	backupExists, err := fileops.Exists(TorrcBackupPath)
 	if err != nil {
 		return fmt.Errorf("check torrc backup: %w", err)
 	}
-	markerExists, err := fileExists(TorrcMissingMarkerPath)
+	markerExists, err := fileops.Exists(TorrcMissingMarkerPath)
 	if err != nil {
 		return fmt.Errorf("check missing torrc marker: %w", err)
 	}
@@ -45,7 +47,7 @@ func (TorrcManager) Backup() error {
 			if err := os.MkdirAll(filepath.Dir(TorrcMissingMarkerPath), 0700); err != nil {
 				return fmt.Errorf("create torrc state directory: %w", err)
 			}
-			if err := writeFileAtomically(TorrcMissingMarkerPath, []byte("missing\n"), 0600); err != nil {
+			if err := fileops.WriteAtomic(TorrcMissingMarkerPath, []byte("missing\n"), 0600); err != nil {
 				return fmt.Errorf("write missing torrc marker: %w", err)
 			}
 			return nil
@@ -59,18 +61,18 @@ func (TorrcManager) Backup() error {
 	if err := os.MkdirAll(filepath.Dir(TorrcBackupPath), 0700); err != nil {
 		return fmt.Errorf("create torrc backup directory: %w", err)
 	}
-	if err := writeFileAtomically(TorrcBackupPath, content, info.Mode().Perm()); err != nil {
+	if err := fileops.WriteAtomic(TorrcBackupPath, content, info.Mode().Perm()); err != nil {
 		return fmt.Errorf("write torrc backup: %w", err)
 	}
 	return nil
 }
 
 func (TorrcManager) Restore() error {
-	backupExists, err := fileExists(TorrcBackupPath)
+	backupExists, err := fileops.Exists(TorrcBackupPath)
 	if err != nil {
 		return fmt.Errorf("check torrc backup: %w", err)
 	}
-	markerExists, err := fileExists(TorrcMissingMarkerPath)
+	markerExists, err := fileops.Exists(TorrcMissingMarkerPath)
 	if err != nil {
 		return fmt.Errorf("check missing torrc marker: %w", err)
 	}
@@ -87,7 +89,7 @@ func (TorrcManager) Restore() error {
 		if err != nil {
 			return fmt.Errorf("read torrc backup: %w", err)
 		}
-		if err := writeFileAtomically(TorrcPath, content, info.Mode().Perm()); err != nil {
+		if err := fileops.WriteAtomic(TorrcPath, content, info.Mode().Perm()); err != nil {
 			return fmt.Errorf("restore torrc backup: %w", err)
 		}
 		if err := os.Remove(TorrcBackupPath); err != nil {
@@ -114,47 +116,8 @@ func (TorrcManager) Write(content string) error {
 	if err := os.MkdirAll(filepath.Dir(TorrcPath), 0755); err != nil {
 		return fmt.Errorf("create torrc directory: %w", err)
 	}
-	if err := writeFileAtomically(TorrcPath, []byte(content), 0600); err != nil {
+	if err := fileops.WriteAtomic(TorrcPath, []byte(content), 0600); err != nil {
 		return fmt.Errorf("write torrc: %w", err)
 	}
 	return nil
-}
-
-func fileExists(path string) (bool, error) {
-	_, err := os.Stat(path)
-	if err == nil {
-		return true, nil
-	}
-	if os.IsNotExist(err) {
-		return false, nil
-	}
-	return false, err
-}
-
-func writeFileAtomically(path string, content []byte, perm os.FileMode) error {
-	dir := filepath.Dir(path)
-	tempFile, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp-*")
-	if err != nil {
-		return err
-	}
-	tempPath := tempFile.Name()
-	defer os.Remove(tempPath)
-
-	if _, err := tempFile.Write(content); err != nil {
-		_ = tempFile.Close()
-		return err
-	}
-	if err := tempFile.Chmod(perm); err != nil {
-		_ = tempFile.Close()
-		return err
-	}
-	if err := tempFile.Sync(); err != nil {
-		_ = tempFile.Close()
-		return err
-	}
-	if err := tempFile.Close(); err != nil {
-		return err
-	}
-
-	return os.Rename(tempPath, path)
 }

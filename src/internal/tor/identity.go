@@ -16,7 +16,6 @@ const DefaultCookieAuthFile = "/var/run/tor/control.authcookie"
 const DefaultControlTimeout = 10 * time.Second
 
 var (
-	ErrAnonSurfNotRunning  = errors.New("AnonSurf is not running")
 	ErrControlPortNotFound = errors.New("Tor ControlPort not found")
 )
 
@@ -53,10 +52,6 @@ func parseControlConfig(reader io.Reader) (ControlConfig, error) {
 }
 
 func (IdentityChanger) Change() error {
-	if !IsAnonsurfRunning() {
-		return ErrAnonSurfNotRunning
-	}
-
 	torrcData, err := os.ReadFile(TorrcPath)
 	if err != nil {
 		return fmt.Errorf("read torrc: %w", err)

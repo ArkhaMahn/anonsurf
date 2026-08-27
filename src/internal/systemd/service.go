@@ -2,11 +2,9 @@ package systemd
 
 import (
 	"fmt"
-	"os"
-	"os/exec"
 	"strings"
 
-	"gitlab.com/parrotsec/packages/anonsurf/internal/sys"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
 )
 
 const (
@@ -14,20 +12,6 @@ const (
 	AnonsurfdUnit = "anonsurfd.service"
 	TorUnit       = "tor@default.service"
 )
-
-type ExecRunner struct{}
-
-func (ExecRunner) Run(command string, args ...string) error {
-	cmd := exec.Command(command, args...)
-	cmd.Stdin = os.Stdin
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
-
-func (ExecRunner) Output(command string, args ...string) ([]byte, error) {
-	return exec.Command(command, args...).CombinedOutput()
-}
 
 type ServiceController struct {
 	unit       string
@@ -46,7 +30,7 @@ func NewTorController() ServiceController {
 }
 
 func IsSystemStopping() bool {
-	output, _ := (ExecRunner{}).Output(SystemctlPath, "is-system-running")
+	output, _ := (command.Runner{}).Output(SystemctlPath, "is-system-running")
 	return strings.TrimSpace(string(output)) == "stopping"
 }
 
@@ -105,7 +89,7 @@ func (c ServiceController) IsActiveOrActivating() (bool, error) {
 }
 
 func (c ServiceController) queryState(action string, knownStates map[string]bool) (bool, error) {
-	output, err := (ExecRunner{}).Output(SystemctlPath, action, c.unit)
+	output, err := (command.Runner{}).Output(SystemctlPath, action, c.unit)
 	state := strings.TrimSpace(string(output))
 	if value, ok := knownStates[state]; ok {
 		return value, nil
@@ -117,12 +101,12 @@ func (c ServiceController) queryState(action string, knownStates map[string]bool
 }
 
 func (c ServiceController) run(action string) error {
-	command := SystemctlPath
+	executable := SystemctlPath
 	args := []string{action, c.unit}
 	if c.privileged {
-		command, args = sys.PrivilegedCommand(command, args...)
+		executable, args = command.PrivilegedCommand(executable, args...)
 	}
-	if err := (ExecRunner{}).Run(command, args...); err != nil {
+	if err := (command.Runner{}).Run(executable, args...); err != nil {
 		return fmt.Errorf("systemctl %s %s: %w", action, c.unit, err)
 	}
 	return nil

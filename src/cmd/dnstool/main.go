@@ -7,12 +7,12 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/sys"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
-func dnstShowStatus(manager dns.Manager) error {
+func dnstShowStatus() error {
 	addresses, err := dns.ParseDNSAddresses(dns.ResolvConfPath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -24,7 +24,13 @@ func dnstShowStatus(manager dns.Manager) error {
 
 	if len(addresses) == 0 {
 		printErrorResolvEmpty(dns.ResolvConfPath)
-	} else if tor.IsAnonsurfRunning() {
+		return nil
+	}
+	active, err := systemd.NewAnonsurfdController().IsActive()
+	if err != nil {
+		return fmt.Errorf("read AnonSurf status: %w", err)
+	}
+	if active {
 		if dns.HasOnlyLocalhost(addresses) {
 			printUnderTorDNS()
 		} else {
@@ -44,7 +50,7 @@ func dnstRestoreBackup(manager dns.Manager) error {
 	if err := manager.RestoreBackupOrDHCP(); err != nil {
 		return err
 	}
-	return dnstShowStatus(manager)
+	return dnstShowStatus()
 }
 
 func dnstWriteAddresses(manager dns.Manager, hasDHCP bool, listAddr []string) error {
@@ -69,11 +75,11 @@ func dnstWriteAddresses(manager dns.Manager, hasDHCP bool, listAddr []string) er
 	}
 
 	fmt.Println("[*] Applied DNS settings")
-	return dnstShowStatus(manager)
+	return dnstShowStatus()
 }
 
 func requireAdmin() error {
-	if !sys.IsAdmin() {
+	if !command.IsAdmin() {
 		return errors.New("require admin's privilege")
 	}
 	return nil
@@ -94,7 +100,7 @@ func main() {
 			if err := cmd.Help(); err != nil {
 				return err
 			}
-			return dnstShowStatus(manager)
+			return dnstShowStatus()
 		},
 	}
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
@@ -104,7 +110,7 @@ func main() {
 		Short: "Show current DNS status",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return dnstShowStatus(manager)
+			return dnstShowStatus()
 		},
 	}
 
