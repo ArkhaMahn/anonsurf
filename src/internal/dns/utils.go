@@ -31,6 +31,20 @@ func SystemDNSFileIsSymlink(resolvConfPath string) (bool, error) {
 	return fileInfo.Mode()&os.ModeSymlink != 0, nil
 }
 
+func removeManagedResolver(path string) error {
+	isSymlink, err := SystemDNSFileIsSymlink(path)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if isSymlink {
+		return nil
+	}
+	return os.Remove(path)
+}
+
 func ParseDNSAddresses(resolvConfPath string) ([]string, error) {
 	var result []string
 	file, err := os.Open(resolvConfPath)

@@ -124,7 +124,7 @@ func (m Manager) RestoreBackupOrDHCP() error {
 		return err
 	}
 	if !restoredBackup {
-		if err := removeFileIfExists(ResolvConfPath); err != nil {
+		if err := removeManagedResolver(ResolvConfPath); err != nil {
 			return fmt.Errorf("remove current DNS settings: %w", err)
 		}
 	}
