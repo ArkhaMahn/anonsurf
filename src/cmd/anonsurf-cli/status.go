@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 )
 
@@ -27,7 +27,7 @@ func statusCommand(reader status.Reader, monitor anonsurf.MonitorClient) *cobra.
 			if err != nil {
 				return fmt.Errorf("status: %w", err)
 			}
-			printStatus(cmd.OutOrStdout(), snapshot)
+			printStatus(console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()), snapshot)
 			return nil
 		},
 	}
@@ -50,13 +50,13 @@ func monitorCommand(monitor anonsurf.MonitorClient) *cobra.Command {
 	}
 }
 
-func printStatus(output io.Writer, snapshot status.Snapshot) {
-	fmt.Fprintln(output, "AnonSurf status")
-	fmt.Fprintf(output, "  AnonSurf: %s\n", activeLabel(snapshot.AnonSurfActive))
-	fmt.Fprintf(output, "  Tor:      %s\n", activeLabel(snapshot.TorActive))
-	fmt.Fprintf(output, "  DNS:      %s\n", dnsLabel(snapshot.DNSState))
+func printStatus(printer console.Printer, snapshot status.Snapshot) {
+	printer.Result("AnonSurf status")
+	printer.Resultf("  AnonSurf: %s\n", activeLabel(snapshot.AnonSurfActive))
+	printer.Resultf("  Tor:      %s\n", activeLabel(snapshot.TorActive))
+	printer.Resultf("  DNS:      %s\n", dnsLabel(snapshot.DNSState))
 	if len(snapshot.DNSAddresses) > 0 {
-		fmt.Fprintf(output, "  Servers:  %s\n", strings.Join(snapshot.DNSAddresses, ", "))
+		printer.Resultf("  Servers:  %s\n", strings.Join(snapshot.DNSAddresses, ", "))
 	}
 }
 

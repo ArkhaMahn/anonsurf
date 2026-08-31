@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 )
 
@@ -18,7 +19,7 @@ func changeIDCommand(changer anonsurf.IdentityClient) *cobra.Command {
 			if err := changer.Change(); err != nil {
 				return fmt.Errorf("changeid: %w", err)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), "Tor identity change requested.")
+			console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Success("Tor identity change requested.")
 			return nil
 		},
 	}
@@ -35,11 +36,12 @@ func ipCommand(checker netcheck.Checker) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("ip: %w", err)
 			}
-			fmt.Fprintf(cmd.OutOrStdout(), "Public IP: %s\n", result.IP)
+			printer := console.New(cmd.OutOrStdout(), cmd.ErrOrStderr())
+			printer.Resultf("Public IP: %s\n", result.IP)
 			if result.IsTor {
-				fmt.Fprintln(cmd.OutOrStdout(), "Tor:       yes")
+				printer.Result("Tor:       yes")
 			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "Tor:       no")
+				printer.Result("Tor:       no")
 			}
 			return nil
 		},

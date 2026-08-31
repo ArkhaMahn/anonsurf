@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
@@ -17,7 +18,7 @@ func serviceCommand(use, short string, run func() error, success string) *cobra.
 			if err := run(); err != nil {
 				return fmt.Errorf("%s: %w", use, err)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), success)
+			console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Success(success)
 			return nil
 		},
 	}
@@ -34,12 +35,12 @@ func serviceCommandWithSafeKill(use, short string, run func() error, success str
 				if err := safeKill.Run(); err != nil {
 					return fmt.Errorf("%s safe-kill: %w", use, err)
 				}
-				fmt.Fprintln(cmd.OutOrStdout(), "SafeKill completed.")
+				console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Success("SafeKill completed.")
 			}
 			if err := run(); err != nil {
 				return fmt.Errorf("%s: %w", use, err)
 			}
-			fmt.Fprintln(cmd.OutOrStdout(), success)
+			console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Success(success)
 			return nil
 		},
 	}
@@ -75,9 +76,9 @@ func statusBootCommand(service systemd.ServiceController) *cobra.Command {
 				return fmt.Errorf("boot status: %w", err)
 			}
 			if enabled {
-				fmt.Fprintln(cmd.OutOrStdout(), "AnonSurf is enabled at startup.")
+				console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Success("AnonSurf is enabled at startup.")
 			} else {
-				fmt.Fprintln(cmd.OutOrStdout(), "AnonSurf is disabled at startup.")
+				console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Warning("AnonSurf is disabled at startup.")
 			}
 			return nil
 		},

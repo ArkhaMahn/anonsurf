@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
@@ -18,8 +19,9 @@ var version = "6.0.0"
 
 func main() {
 	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {
-		fmt.Fprintln(os.Stderr, "anonsurf:", err)
-		fmt.Fprintln(os.Stderr, "Run 'anonsurf --help' for usage.")
+		printer := console.New(os.Stdout, os.Stderr)
+		printer.Error(fmt.Sprintf("anonsurf: %v", err))
+		printer.Info("Run 'anonsurf --help' for usage.")
 		os.Exit(1)
 	}
 }

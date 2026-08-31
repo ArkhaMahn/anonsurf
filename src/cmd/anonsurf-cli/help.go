@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 )
 
 const (
@@ -75,7 +75,7 @@ func configureRootHelp(root *cobra.Command) {
 }
 
 func writeRootHelp(output io.Writer, root *cobra.Command) {
-	color := supportsColor(output)
+	color := console.SupportsColor(output)
 	blue, muted, bold, reset := "", "", "", ""
 	if color {
 		blue, muted, bold, reset = blueText, mutedText, boldText, resetText
@@ -169,16 +169,4 @@ func background(pixel byte) string {
 	default:
 		return "\x1b[48;2;0;124;166m"
 	}
-}
-
-func supportsColor(output io.Writer) bool {
-	if _, disabled := os.LookupEnv("NO_COLOR"); disabled || os.Getenv("TERM") == "dumb" {
-		return false
-	}
-	file, ok := output.(*os.File)
-	if !ok {
-		return false
-	}
-	info, err := file.Stat()
-	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
