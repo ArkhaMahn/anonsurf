@@ -14,18 +14,16 @@ const (
 )
 
 type Printer struct {
-	stdout      io.Writer
-	stderr      io.Writer
-	stdoutColor bool
-	stderrColor bool
+	stdout io.Writer
+	stderr io.Writer
+	color  bool
 }
 
 func New(stdout, stderr io.Writer) Printer {
 	return Printer{
-		stdout:      stdout,
-		stderr:      stderr,
-		stdoutColor: SupportsColor(stdout),
-		stderrColor: SupportsColor(stderr),
+		stdout: stdout,
+		stderr: stderr,
+		color:  SupportsColor(stderr),
 	}
 }
 
@@ -38,29 +36,29 @@ func (p Printer) Resultf(format string, args ...any) {
 }
 
 func (p Printer) Running(message string) {
-	p.writeStatus(p.stdout, p.stdoutColor, "....", blueText, message)
+	p.writeStatus("....", blueText, message)
 }
 
 func (p Printer) Success(message string) {
-	p.writeStatus(p.stdout, p.stdoutColor, " OK ", greenText, message)
+	p.writeStatus(" OK ", greenText, message)
 }
 
 func (p Printer) Warning(message string) {
-	p.writeStatus(p.stdout, p.stdoutColor, "WARN", yellowText, message)
+	p.writeStatus("WARN", yellowText, message)
 }
 
 func (p Printer) Error(message string) {
-	p.writeStatus(p.stderr, p.stderrColor, "FAIL", redText, message)
+	p.writeStatus("FAIL", redText, message)
 }
 
 func (p Printer) Info(message string) {
-	p.writeStatus(p.stderr, p.stderrColor, "INFO", blueText, message)
+	p.writeStatus("INFO", blueText, message)
 }
 
-func (p Printer) writeStatus(output io.Writer, useColor bool, label, color, message string) {
-	if useColor {
-		fmt.Fprintf(output, "[%s%s%s] %s\n", color, label, resetText, message)
+func (p Printer) writeStatus(label, color, message string) {
+	if p.color {
+		fmt.Fprintf(p.stderr, "[%s%s%s] %s\n", color, label, resetText, message)
 		return
 	}
-	fmt.Fprintf(output, "[%s] %s\n", label, message)
+	fmt.Fprintf(p.stderr, "[%s] %s\n", label, message)
 }

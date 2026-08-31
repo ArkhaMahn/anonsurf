@@ -75,10 +75,11 @@ func statusBootCommand(service systemd.ServiceController) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("boot status: %w", err)
 			}
+			printer := console.New(cmd.OutOrStdout(), cmd.ErrOrStderr())
 			if enabled {
-				console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Success("AnonSurf is enabled at startup.")
+				printer.Result("AnonSurf is enabled at startup.")
 			} else {
-				console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()).Warning("AnonSurf is disabled at startup.")
+				printer.Result("AnonSurf is disabled at startup.")
 			}
 			return nil
 		},
