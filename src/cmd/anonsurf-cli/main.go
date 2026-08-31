@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
@@ -34,6 +35,7 @@ func execute(args []string, stdout, stderr io.Writer) error {
 
 func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	cobra.EnableCommandSorting = false
+	var verbose bool
 	rootCmd := &cobra.Command{
 		Use:           "anonsurf",
 		Short:         "Manage AnonSurf system-wide Tor routing",
@@ -48,6 +50,13 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			if verbose {
+				command.SetVerboseOutput(stderr)
+				return
+			}
+			command.SetVerboseOutput(nil)
+		},
 	}
 
 	rootCmd.SetOut(stdout)
@@ -55,6 +64,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	rootCmd.SetHelpTemplate(helpTemplate)
 	rootCmd.SetVersionTemplate("AnonSurf {{.Version}}\n")
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Show commands and their output")
 
 	service := systemd.NewAnonsurfdController()
 	monitor := anonsurf.MonitorClient{}
@@ -95,6 +105,9 @@ Commands:
 {{end}}{{end}}{{end}}
 {{if .HasAvailableFlags}}Flags:
 {{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}
+{{end}}{{if .HasAvailableInheritedFlags}}
+Global Flags:
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}
 {{end}}{{if .Example}}
 Examples:
 {{.Example}}

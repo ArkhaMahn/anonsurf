@@ -22,7 +22,7 @@ func (IdentityClient) Change() error {
 
 func (MonitorClient) Run() error {
 	executable, args := command.PrivilegedCommand(BinaryPath, "monitor")
-	if err := (command.Runner{}).Run(executable, args...); err != nil {
+	if err := (command.Runner{}).RunInteractive(executable, args...); err != nil {
 		return fmt.Errorf("open privileged Tor monitor: %w", err)
 	}
 	return nil

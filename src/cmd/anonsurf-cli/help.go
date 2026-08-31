@@ -103,6 +103,7 @@ func writeRootHelp(output io.Writer, root *cobra.Command) {
 	fmt.Fprintf(output, "\n  %sActions%s   boot enable | disable | status\n", muted, reset)
 	fmt.Fprintf(output, "  %sFlags%s     -k, --safe-kill   -n, --nyx\n", muted, reset)
 	fmt.Fprintln(output, "            -h, --help        -v, --version")
+	fmt.Fprintln(output, "            --verbose")
 }
 
 func writeLogo(output io.Writer) {

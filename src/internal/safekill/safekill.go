@@ -4,11 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
 )
 
 const (
@@ -133,7 +134,7 @@ func (Runner) Run() error {
 	}
 
 	cleanArgs := append([]string{"-c"}, cacheTargets...)
-	if err := exec.Command(BleachBitPath, cleanArgs...).Run(); err != nil {
+	if err := (command.Runner{}).Run(BleachBitPath, cleanArgs...); err != nil {
 		return fmt.Errorf("clear application caches: %w", err)
 	}
 	return nil

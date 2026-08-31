@@ -3,10 +3,10 @@ package dns
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
 )
 
@@ -19,12 +19,11 @@ const (
 )
 
 func reloadNetworkManager() error {
-	cmd := exec.Command("/usr/bin/nmcli", "general", "reload")
-	return cmd.Run()
+	return (command.Runner{}).Run("/usr/bin/nmcli", "general", "reload")
 }
 
 func NMGetDNSServers() ([]string, error) {
-	out, err := exec.Command("/usr/bin/nmcli", "-g", "IP4.DNS,IP6.DNS", "dev", "show").Output()
+	out, err := (command.Runner{}).Output("/usr/bin/nmcli", "-g", "IP4.DNS,IP6.DNS", "dev", "show")
 	if err != nil {
 		return nil, err
 	}
