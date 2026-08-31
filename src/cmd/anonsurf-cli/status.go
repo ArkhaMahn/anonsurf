@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/cli"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/status"
 )
@@ -16,7 +17,16 @@ func statusCommand(reader status.Reader, monitor anonsurf.MonitorClient) *cobra.
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show Tor and DNS health",
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if useNyx && useJSON {
+				return cli.NewError(
+					"options --nyx and --json cannot be used together",
+					"Run 'anonsurf status --nyx' for the interactive monitor or 'anonsurf status --json' for machine-readable output.",
+				)
+			}
+			return nil
+		},
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if useNyx {
 				if err := monitor.Run(); err != nil {
@@ -49,7 +59,7 @@ func monitorCommand(monitor anonsurf.MonitorClient) *cobra.Command {
 		Use:   "monitor",
 		Short: "Open the Nyx Tor monitor",
 		Long:  "Open Nyx using the AnonSurf configuration.",
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := monitor.Run(); err != nil {
 				return fmt.Errorf("monitor: %w", err)

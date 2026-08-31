@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/cli"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 )
 
@@ -18,6 +19,9 @@ func main() {
 	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		printer := console.New(os.Stdout, os.Stderr)
 		printer.Error(fmt.Sprintf("dnstool: %v", err))
+		if hint := cli.Hint(err); hint != "" {
+			printer.Info(hint)
+		}
 		if errors.Is(err, errAdminRequired) {
 			printer.Info("Run this command with sudo.")
 		}

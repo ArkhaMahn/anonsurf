@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/cli"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/netcheck"
@@ -22,6 +23,9 @@ func main() {
 	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		printer := console.New(os.Stdout, os.Stderr)
 		printer.Error(fmt.Sprintf("anonsurf: %v", err))
+		if hint := cli.Hint(err); hint != "" {
+			printer.Info(hint)
+		}
 		os.Exit(1)
 	}
 }
@@ -42,6 +46,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 		Version:       version,
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		Args:          cli.Subcommands("command"),
 		Example: `  anonsurf start
   anonsurf status
   anonsurf changeid
@@ -62,6 +67,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	rootCmd.SetErr(stderr)
 	rootCmd.SetHelpTemplate(helpTemplate)
 	rootCmd.SetVersionTemplate("AnonSurf {{.Version}}\n")
+	rootCmd.SetFlagErrorFunc(cli.FlagError)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Show commands and their output")
 

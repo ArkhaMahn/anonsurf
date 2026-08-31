@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/cli"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
@@ -21,7 +22,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 			"Commands that write " + dns.ResolvConfPath + " require root privileges.",
 		SilenceUsage:  true,
 		SilenceErrors: true,
-		Args:          cobra.NoArgs,
+		Args:          cli.Subcommands("command"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmd.Help(); err != nil {
 				return err
@@ -38,6 +39,7 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	}
 	rootCmd.SetOut(stdout)
 	rootCmd.SetErr(stderr)
+	rootCmd.SetFlagErrorFunc(cli.FlagError)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.PersistentFlags().BoolVar(&verbose, "verbose", false, "Show commands and their output")
 	rootCmd.AddCommand(
@@ -53,7 +55,7 @@ func statusCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
 		Short: "Show current DNS status",
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return showDNSStatus(console.New(cmd.OutOrStdout(), cmd.ErrOrStderr()))
 		},
@@ -64,7 +66,7 @@ func createBackupCommand(manager dns.Manager) *cobra.Command {
 	return &cobra.Command{
 		Use:   "create-backup",
 		Short: "Create a backup of resolv.conf",
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := requireAdmin(); err != nil {
 				return err
@@ -84,7 +86,7 @@ func restoreBackupCommand(manager dns.Manager) *cobra.Command {
 	return &cobra.Command{
 		Use:   "restore-backup",
 		Short: "Restore resolv.conf from backup",
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := requireAdmin(); err != nil {
 				return err

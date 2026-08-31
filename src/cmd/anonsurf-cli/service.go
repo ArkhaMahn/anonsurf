@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/cli"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/safekill"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
@@ -14,7 +15,7 @@ func serviceCommand(use, short, activity string, run func() error, success strin
 	return &cobra.Command{
 		Use:   use,
 		Short: short,
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printer := console.New(cmd.OutOrStdout(), cmd.ErrOrStderr())
 			printer.Running(activity)
@@ -38,7 +39,7 @@ func serviceCommandWithSafeKill(
 	cmd := &cobra.Command{
 		Use:   use,
 		Short: short,
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printer := console.New(cmd.OutOrStdout(), cmd.ErrOrStderr())
 			if useSafeKill {
@@ -114,7 +115,7 @@ func bootCommand(service systemd.ServiceController) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "boot",
 		Short: "Manage startup integration",
-		Args:  cobra.NoArgs,
+		Args:  cli.Subcommands("action"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
@@ -137,7 +138,7 @@ func statusBootCommand(service systemd.ServiceController) *cobra.Command {
 	return &cobra.Command{
 		Use:   "status",
 		Short: "Show whether AnonSurf starts at boot",
-		Args:  cobra.NoArgs,
+		Args:  cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			enabled, err := service.IsEnabled()
 			if err != nil {
