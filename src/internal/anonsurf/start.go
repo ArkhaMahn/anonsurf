@@ -12,6 +12,7 @@ import (
 
 func (c Controller) Start() error {
 	state := startTransition{}
+	c.reportStatus("Checking Tor service state")
 	active, err := systemd.NewTorController().IsActiveOrActivating()
 	if err != nil {
 		return fmt.Errorf("check Tor service: %w", err)
@@ -22,6 +23,7 @@ func (c Controller) Start() error {
 	}
 
 	state.torrcGenerated = true
+	c.reportStatus("Generating Tor configuration")
 	if err := c.generateTorrc(); err != nil {
 		return c.failStart(fmt.Errorf("generate torrc: %w", err), state)
 	}
@@ -40,10 +42,12 @@ func (c Controller) Start() error {
 	}
 
 	state.torStartAttempted = true
+	c.reportStatus("Starting Tor")
 	if err := systemd.NewTorController().Start(); err != nil {
 		return c.failStart(fmt.Errorf("start Tor service: %w", err), state)
 	}
 	if !routing.PreserveSystemDNS {
+		c.reportStatus("Configuring Tor DNS")
 		if err := c.configureDNS(&state); err != nil {
 			return c.failStart(err, state)
 		}
@@ -51,15 +55,18 @@ func (c Controller) Start() error {
 	if err := c.markActive(); err != nil {
 		return c.failStart(fmt.Errorf("mark daemon active: %w", err), state)
 	}
+	c.reportStatus("Traffic is routed through Tor")
 	return nil
 }
 
 func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition) error {
+	c.reportStatus("Stopping Tor before changing routes")
 	if err := systemd.NewTorController().Stop(); err != nil {
 		return fmt.Errorf("stop Tor service before routing: %w", err)
 	}
 
 	ipv6Manager := ipv6.Manager{}
+	c.reportStatus("Disabling IPv6")
 	if err := ipv6Manager.Capture(); err != nil {
 		return fmt.Errorf("capture IPv6 state: %w", err)
 	}
@@ -69,6 +76,7 @@ func (c Controller) startSurf(routing tor.RoutingConfig, state *startTransition)
 	}
 
 	manager := firewall.Manager{}
+	c.reportStatus("Applying firewall rules")
 	if err := manager.Backup(); err != nil {
 		return err
 	}

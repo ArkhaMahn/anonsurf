@@ -18,10 +18,13 @@ type startTransition struct {
 }
 
 func (c Controller) failStart(operation error, state startTransition) error {
+	c.reportStatus("Restoring the previous network state")
 	rollback := c.rollbackStart(state)
 	if rollback == nil {
+		c.reportStatus("Previous network state restored")
 		return operation
 	}
+	c.reportStatus("Network rollback failed")
 	return transitionError{operation: operation, rollback: rollback}
 }
 

@@ -5,6 +5,7 @@ Before=anonsurfd.service tor@default.service
 
 [Service]
 Type=oneshot
+NotifyAccess=all
 ExecStart=/usr/lib/anonsurf/anondaemon recover
 RemainAfterExit=yes
 

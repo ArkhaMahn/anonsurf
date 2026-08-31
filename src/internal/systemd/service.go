@@ -88,6 +88,20 @@ func (c ServiceController) IsActiveOrActivating() (bool, error) {
 	})
 }
 
+func (c ServiceController) StatusText() (string, error) {
+	output, err := (command.Runner{}).QuietOutput(
+		SystemctlPath,
+		"show",
+		"--property=StatusText",
+		"--value",
+		c.unit,
+	)
+	if err != nil {
+		return "", fmt.Errorf("read systemd status for %s: %w", c.unit, err)
+	}
+	return strings.TrimSpace(string(output)), nil
+}
+
 func (c ServiceController) queryState(action string, knownStates map[string]bool) (bool, error) {
 	output, err := (command.Runner{}).Output(SystemctlPath, action, c.unit)
 	state := strings.TrimSpace(string(output))

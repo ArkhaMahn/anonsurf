@@ -104,11 +104,13 @@ func (c Controller) hasManagedState() (bool, error) {
 }
 
 func (c Controller) Recover() error {
+	c.reportStatus("Checking interrupted network state")
 	active, err := fileExists(ActiveStatePath)
 	if err != nil {
 		return fmt.Errorf("check active state: %w", err)
 	}
 	if active {
+		c.reportStatus("AnonSurf state is active")
 		return nil
 	}
 
@@ -117,19 +119,29 @@ func (c Controller) Recover() error {
 		return err
 	}
 	if !managed {
+		c.reportStatus("No interrupted network state found")
 		return nil
 	}
 
 	var failures errorCollector
+	c.reportStatus("Restoring firewall rules")
 	failures.add("restore firewall", (firewall.Manager{}).Restore())
+	c.reportStatus("Restoring DNS settings")
 	failures.add("restore DNS settings", c.restoreDNS())
+	c.reportStatus("Restoring Tor configuration")
 	failures.add("restore torrc", c.restoreTorrc())
+	c.reportStatus("Restoring IPv6")
 	failures.add("restore IPv6 state", (ipv6.Manager{}).Restore())
 	if err := failures.err(); err != nil {
+		c.reportStatus("Interrupted state recovery failed")
 		return err
 	}
 	if err := c.clearActive(); err != nil {
 		return err
 	}
-	return clearTorState()
+	if err := clearTorState(); err != nil {
+		return err
+	}
+	c.reportStatus("Interrupted network state restored")
+	return nil
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
@@ -29,6 +30,7 @@ func serviceCommand(use, short, activity string, run func() error, success strin
 func serviceCommandWithSafeKill(
 	use, short, activity string,
 	run func() error,
+	readStatus func() (string, error),
 	success string,
 	safeKill safekill.Runner,
 ) *cobra.Command {
@@ -47,7 +49,7 @@ func serviceCommandWithSafeKill(
 				printer.Success("SafeKill completed.")
 			}
 			printer.Running(activity)
-			if err := run(); err != nil {
+			if err := runWithServiceProgress(printer, run, readStatus); err != nil {
 				return fmt.Errorf("%s: %w", use, err)
 			}
 			printer.Success(success)
@@ -56,6 +58,47 @@ func serviceCommandWithSafeKill(
 	}
 	cmd.Flags().BoolVarP(&useSafeKill, "safe-kill", "k", false, "Run safekill before changing AnonSurf service state")
 	return cmd
+}
+
+func runWithServiceProgress(
+	printer console.Printer,
+	run func() error,
+	readStatus func() (string, error),
+) error {
+	lastStatus, err := readStatus()
+	if err != nil {
+		printer.Warning(fmt.Sprintf("Live service progress is unavailable: %v", err))
+		return run()
+	}
+
+	result := make(chan error, 1)
+	go func() {
+		result <- run()
+	}()
+
+	ticker := time.NewTicker(time.Second)
+	defer ticker.Stop()
+	progressAvailable := true
+	for {
+		select {
+		case err := <-result:
+			return err
+		case <-ticker.C:
+			if !progressAvailable {
+				continue
+			}
+			statusText, err := readStatus()
+			if err != nil {
+				printer.Warning(fmt.Sprintf("Live service progress stopped: %v", err))
+				progressAvailable = false
+				continue
+			}
+			if statusText != "" && statusText != lastStatus {
+				printer.Running(statusText)
+				lastStatus = statusText
+			}
+		}
+	}
 }
 
 func bootCommand(service systemd.ServiceController) *cobra.Command {

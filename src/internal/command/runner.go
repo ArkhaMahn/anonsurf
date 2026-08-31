@@ -11,18 +11,22 @@ type Runner struct{}
 func (Runner) Run(command string, args ...string) error {
 	cmd := exec.Command(command, args...)
 	cmd.Stdin = os.Stdin
-	_, err := runCaptured(cmd, command, args)
+	_, err := runCaptured(cmd, command, args, true)
 	return err
 }
 
 func (Runner) Output(command string, args ...string) ([]byte, error) {
-	return runCaptured(exec.Command(command, args...), command, args)
+	return runCaptured(exec.Command(command, args...), command, args, true)
+}
+
+func (Runner) QuietOutput(command string, args ...string) ([]byte, error) {
+	return runCaptured(exec.Command(command, args...), command, args, false)
 }
 
 func (Runner) RunWithInput(command string, input []byte, args ...string) error {
 	cmd := exec.Command(command, args...)
 	cmd.Stdin = bytes.NewReader(input)
-	_, err := runCaptured(cmd, command, args)
+	_, err := runCaptured(cmd, command, args, true)
 	return err
 }
 
@@ -35,14 +39,16 @@ func (Runner) RunInteractive(command string, args ...string) error {
 	return cmd.Run()
 }
 
-func runCaptured(cmd *exec.Cmd, command string, args []string) ([]byte, error) {
+func runCaptured(cmd *exec.Cmd, command string, args []string, verbose bool) ([]byte, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 
 	err := cmd.Run()
-	writeVerboseInvocation(command, args, stdout.Bytes(), stderr.Bytes())
+	if verbose {
+		writeVerboseInvocation(command, args, stdout.Bytes(), stderr.Bytes())
+	}
 	if err != nil {
 		return stdout.Bytes(), commandError{
 			err:        err,

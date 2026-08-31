@@ -16,6 +16,7 @@ type restartSnapshot struct {
 }
 
 func (c Controller) Restart() error {
+	c.reportStatus("Checking AnonSurf state")
 	active, err := fileExists(ActiveStatePath)
 	if err != nil {
 		return fmt.Errorf("check active state: %w", err)
@@ -24,15 +25,18 @@ func (c Controller) Restart() error {
 		return ErrNotRunning
 	}
 
+	c.reportStatus("Saving current routing state")
 	snapshot, err := c.captureRestartSnapshot()
 	if err != nil {
 		return err
 	}
 
 	torService := systemd.NewTorController()
+	c.reportStatus("Stopping Tor")
 	if err := torService.Stop(); err != nil {
 		return c.failRestart(fmt.Errorf("stop Tor service: %w", err), snapshot)
 	}
+	c.reportStatus("Generating Tor configuration")
 	if err := c.generateTorrc(); err != nil {
 		return c.failRestart(fmt.Errorf("generate torrc: %w", err), snapshot)
 	}
@@ -40,12 +44,14 @@ func (c Controller) Restart() error {
 	if err != nil {
 		return c.failRestart(err, snapshot)
 	}
+	c.reportStatus("Applying firewall rules")
 	if err := (firewall.Manager{}).Apply(routing); err != nil {
 		return c.failRestart(err, snapshot)
 	}
 	if err := c.startTorWithDNSMode(!routing.PreserveSystemDNS); err != nil {
 		return c.failRestart(err, snapshot)
 	}
+	c.reportStatus("Tor routing restarted")
 	return nil
 }
 
@@ -70,13 +76,16 @@ func (c Controller) captureRestartSnapshot() (restartSnapshot, error) {
 }
 
 func (c Controller) startTorWithDNSMode(managed bool) error {
+	c.reportStatus("Preparing system DNS")
 	if err := c.setDNSManaged(false); err != nil {
 		return fmt.Errorf("prepare system DNS for Tor: %w", err)
 	}
+	c.reportStatus("Starting Tor")
 	if err := systemd.NewTorController().Start(); err != nil {
 		return fmt.Errorf("start Tor service: %w", err)
 	}
 	if managed {
+		c.reportStatus("Configuring Tor DNS")
 		if err := c.setDNSManaged(true); err != nil {
 			return fmt.Errorf("restore Tor DNS mode: %w", err)
 		}
@@ -85,10 +94,13 @@ func (c Controller) startTorWithDNSMode(managed bool) error {
 }
 
 func (c Controller) failRestart(operation error, snapshot restartSnapshot) error {
+	c.reportStatus("Restoring the previous routing state")
 	rollback := c.rollbackRestart(snapshot)
 	if rollback == nil {
+		c.reportStatus("Previous routing state restored")
 		return operation
 	}
+	c.reportStatus("Routing rollback failed")
 	return transitionError{operation: operation, rollback: rollback}
 }
 

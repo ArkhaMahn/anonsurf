@@ -6,6 +6,7 @@ import (
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/anonsurf"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/monitor"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 )
 
 func main() {
@@ -20,20 +21,34 @@ func run(args []string) error {
 		return fmt.Errorf("expected one command: start, stop, restart, recover, changeid, or monitor")
 	}
 
+	controller := anonsurf.NewController(newStatusReporter())
 	switch args[0] {
 	case "start":
-		return (anonsurf.Controller{}).Start()
+		return controller.Start()
 	case "stop":
-		return (anonsurf.Controller{}).Stop()
+		return controller.Stop()
 	case "restart":
-		return (anonsurf.Controller{}).Restart()
+		return controller.Restart()
 	case "recover":
-		return (anonsurf.Controller{}).Recover()
+		return controller.Recover()
 	case "changeid":
-		return (anonsurf.Controller{}).ChangeIdentity()
+		return controller.ChangeIdentity()
 	case "monitor":
 		return monitor.NewNyxMonitor(os.Stdin, os.Stdout, os.Stderr).Run()
 	default:
 		return fmt.Errorf("unknown command %q", args[0])
+	}
+}
+
+func newStatusReporter() anonsurf.StatusReporter {
+	available := true
+	return func(status string) {
+		if !available {
+			return
+		}
+		if err := systemd.NotifyStatus(status); err != nil {
+			fmt.Fprintln(os.Stderr, "anondaemon: report service progress:", err)
+			available = false
+		}
 	}
 }

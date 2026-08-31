@@ -71,15 +71,15 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	rootCmd.AddCommand(
 		serviceCommandWithSafeKill(
 			"start", "Route traffic through Tor", "Starting AnonSurf...",
-			service.Start, "AnonSurf started.", safeKill,
+			service.Start, service.StatusText, "AnonSurf started.", safeKill,
 		),
 		serviceCommandWithSafeKill(
 			"stop", "Restore the original network", "Restoring the original network...",
-			service.Stop, "AnonSurf stopped.", safeKill,
+			service.Stop, service.StatusText, "AnonSurf stopped.", safeKill,
 		),
 		serviceCommandWithSafeKill(
 			"restart", "Rebuild protected routing", "Restarting AnonSurf...",
-			service.Restart, "AnonSurf restarted.", safeKill,
+			service.Restart, service.StatusText, "AnonSurf restarted.", safeKill,
 		),
 		statusCommand(status.Reader{}, monitor),
 		changeIDCommand(anonsurf.IdentityClient{}),

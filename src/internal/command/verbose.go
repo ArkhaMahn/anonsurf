@@ -1,6 +1,7 @@
 package command
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"strconv"
@@ -25,13 +26,15 @@ func writeVerboseInvocation(command string, args []string, stdout, stderr []byte
 		return
 	}
 
-	fmt.Fprintf(verboseOutput.writer, "[CMD ] %s", command)
+	var output bytes.Buffer
+	fmt.Fprintf(&output, "[CMD ] %s", command)
 	for _, arg := range args {
-		fmt.Fprintf(verboseOutput.writer, " %s", strconv.Quote(arg))
+		fmt.Fprintf(&output, " %s", strconv.Quote(arg))
 	}
-	fmt.Fprintln(verboseOutput.writer)
-	writeVerboseBlock(verboseOutput.writer, "stdout", stdout)
-	writeVerboseBlock(verboseOutput.writer, "stderr", stderr)
+	fmt.Fprintln(&output)
+	writeVerboseBlock(&output, "stdout", stdout)
+	writeVerboseBlock(&output, "stderr", stderr)
+	_, _ = verboseOutput.writer.Write(output.Bytes())
 }
 
 func writeVerboseBlock(writer io.Writer, name string, data []byte) {

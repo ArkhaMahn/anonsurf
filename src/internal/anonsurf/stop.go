@@ -11,11 +11,13 @@ import (
 )
 
 func (c Controller) Stop() error {
+	c.reportStatus("Checking managed network state")
 	managed, err := c.hasManagedState()
 	if err != nil {
 		return err
 	}
 	if !managed {
+		c.reportStatus("AnonSurf routing is inactive")
 		return nil
 	}
 	restartTor, err := torWasActive()
@@ -24,15 +26,22 @@ func (c Controller) Stop() error {
 	}
 
 	var failures errorCollector
+	c.reportStatus("Stopping Tor")
 	failures.add("stop Tor service", systemd.NewTorController().Stop())
+	c.reportStatus("Restoring firewall rules")
 	failures.add("restore firewall", (firewall.Manager{}).Restore())
+	c.reportStatus("Restoring DNS settings")
 	failures.add("restore DNS settings", c.restoreDNS())
+	c.reportStatus("Restoring Tor configuration")
 	failures.add("restore torrc", c.restoreTorrc())
+	c.reportStatus("Restoring IPv6")
 	failures.add("restore IPv6 state", (ipv6.Manager{}).Restore())
 	if err := failures.err(); err != nil {
+		c.reportStatus("Network restoration failed")
 		return err
 	}
 	if restartTor && !systemd.IsSystemStopping() {
+		c.reportStatus("Restarting the original Tor service")
 		if err := systemd.NewTorController().Start(); err != nil {
 			return fmt.Errorf("restart original Tor service: %w", err)
 		}
@@ -41,8 +50,11 @@ func (c Controller) Stop() error {
 		return err
 	}
 	if restartTor {
-		return clearTorState()
+		if err := clearTorState(); err != nil {
+			return err
+		}
 	}
+	c.reportStatus("AnonSurf routing is inactive")
 	return nil
 }
 
