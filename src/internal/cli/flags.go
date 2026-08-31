@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/pflag"
 )
 
 func FlagError(cmd *cobra.Command, err error) error {
@@ -14,67 +14,110 @@ func FlagError(cmd *cobra.Command, err error) error {
 		cmd.CommandPath(),
 	)
 
-	var unknown *pflag.NotExistError
-	if errors.As(err, &unknown) {
-		return NewError(
-			fmt.Sprintf(
-				"unknown option %q for %q",
-				specifiedOption(unknown.GetSpecifiedName(), unknown.GetSpecifiedShortnames()),
-				cmd.CommandPath(),
-			),
-			hint,
-		)
+	// Parrot's packaged pflag predates structured flag errors. Its error
+	// messages are stable across both versions, so keep one presentation path.
+	if actionable := parseFlagError(cmd, err.Error(), hint); actionable != nil {
+		return actionable
 	}
-
-	var missing *pflag.ValueRequiredError
-	if errors.As(err, &missing) {
-		return NewError(
-			fmt.Sprintf(
-				"option %q requires a value",
-				specifiedOption(missing.GetSpecifiedName(), missing.GetSpecifiedShortnames()),
-			),
-			hint,
-		)
-	}
-
-	var invalid *pflag.InvalidValueError
-	if errors.As(err, &invalid) {
-		option := "--" + invalid.GetFlag().Name
-		if invalid.GetFlag().Value.Type() == "bool" {
-			return NewError(
-				fmt.Sprintf("invalid value %q for option %q", invalid.GetValue(), option),
-				fmt.Sprintf(
-					"Use %s without a value to enable it, or %s=false to disable it.",
-					option,
-					option,
-				),
-			)
-		}
-		return NewError(
-			fmt.Sprintf(
-				"invalid value %q for option %q: %v",
-				invalid.GetValue(),
-				option,
-				errors.Unwrap(invalid),
-			),
-			hint,
-		)
-	}
-
-	var syntax *pflag.InvalidSyntaxError
-	if errors.As(err, &syntax) {
-		return NewError(
-			fmt.Sprintf("invalid option syntax %q", syntax.GetSpecifiedFlag()),
-			hint,
-		)
-	}
-
 	return NewError(err.Error(), hint)
 }
 
-func specifiedOption(name, shorthands string) string {
-	if shorthands != "" {
-		return "-" + name
+func parseFlagError(cmd *cobra.Command, message, hint string) error {
+	const (
+		unknownLongPrefix  = "unknown flag: --"
+		unknownShortPrefix = "unknown shorthand flag: "
+		missingLongPrefix  = "flag needs an argument: --"
+		missingShortPrefix = "flag needs an argument: "
+		invalidPrefix      = "invalid argument "
+		syntaxPrefix       = "bad flag syntax: "
+	)
+
+	switch {
+	case strings.HasPrefix(message, unknownLongPrefix):
+		option := "--" + strings.TrimPrefix(message, unknownLongPrefix)
+		return NewError(fmt.Sprintf("unknown option %q for %q", option, cmd.CommandPath()), hint)
+	case strings.HasPrefix(message, unknownShortPrefix):
+		option, ok := parseShortOption(strings.TrimPrefix(message, unknownShortPrefix))
+		if ok {
+			return NewError(fmt.Sprintf("unknown option %q for %q", option, cmd.CommandPath()), hint)
+		}
+	case strings.HasPrefix(message, missingLongPrefix):
+		option := "--" + strings.TrimPrefix(message, missingLongPrefix)
+		return NewError(fmt.Sprintf("option %q requires a value", option), hint)
+	case strings.HasPrefix(message, missingShortPrefix):
+		option, ok := parseShortOption(strings.TrimPrefix(message, missingShortPrefix))
+		if ok {
+			return NewError(fmt.Sprintf("option %q requires a value", option), hint)
+		}
+	case strings.HasPrefix(message, invalidPrefix):
+		return parseInvalidValue(cmd, strings.TrimPrefix(message, invalidPrefix), hint)
+	case strings.HasPrefix(message, syntaxPrefix):
+		return NewError(
+			fmt.Sprintf("invalid option syntax %q", strings.TrimPrefix(message, syntaxPrefix)),
+			hint,
+		)
 	}
-	return "--" + name
+
+	return nil
+}
+
+func parseInvalidValue(cmd *cobra.Command, message, hint string) error {
+	const separator = " flag: "
+
+	valueEnd := strings.Index(message, " for ")
+	if valueEnd < 0 {
+		return nil
+	}
+	value, err := strconv.Unquote(message[:valueEnd])
+	if err != nil {
+		return nil
+	}
+
+	message = message[valueEnd+len(" for "):]
+	flagEnd := strings.Index(message, separator)
+	if flagEnd < 0 {
+		return nil
+	}
+	flagName, err := strconv.Unquote(message[:flagEnd])
+	if err != nil {
+		return nil
+	}
+
+	option := preferredOption(flagName)
+	flag := cmd.Flag(strings.TrimPrefix(option, "--"))
+	if flag != nil && flag.Value.Type() == "bool" {
+		return NewError(
+			fmt.Sprintf("invalid value %q for option %q", value, option),
+			fmt.Sprintf(
+				"Use %s without a value to enable it, or %s=false to disable it.",
+				option,
+				option,
+			),
+		)
+	}
+
+	cause := message[flagEnd+len(separator):]
+	return NewError(
+		fmt.Sprintf("invalid value %q for option %q: %s", value, option, cause),
+		hint,
+	)
+}
+
+func parseShortOption(message string) (string, bool) {
+	quoted, _, ok := strings.Cut(message, " in -")
+	if !ok {
+		return "", false
+	}
+	name, err := strconv.Unquote(quoted)
+	if err != nil || name == "" {
+		return "", false
+	}
+	return "-" + name, true
+}
+
+func preferredOption(flagName string) string {
+	if index := strings.LastIndex(flagName, "--"); index >= 0 {
+		return strings.TrimSpace(flagName[index:])
+	}
+	return strings.TrimSpace(strings.SplitN(flagName, ",", 2)[0])
 }
