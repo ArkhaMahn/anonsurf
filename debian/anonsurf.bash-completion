@@ -9,13 +9,14 @@ _anonsurf() {
     fi
 
     case "${COMP_WORDS[1]}" in
-        start|stop|restart) words='-k --safe-kill -h --help' ;;
-        status) words='-n --nyx -h --help' ;;
-        boot) words='enable disable status -h --help' ;;
-        *) words='start stop restart status changeid ip monitor boot -h --help -v --version' ;;
+        start|stop|restart) words='-k --safe-kill --verbose -h --help' ;;
+        status) words='-n --nyx --json --verbose -h --help' ;;
+        ip) words='--json --verbose -h --help' ;;
+        boot) words='enable disable status --verbose -h --help' ;;
+        *) words='start stop restart status changeid ip monitor boot --verbose -h --help -v --version' ;;
     esac
     COMPREPLY=($(compgen -W "$words" -- "$current"))
 }
 
 complete -F _anonsurf anonsurf
-complete -W 'help address status create-backup restore-backup' dnstool
+complete -W 'help address status create-backup restore-backup --verbose' dnstool

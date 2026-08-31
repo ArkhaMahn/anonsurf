@@ -28,7 +28,8 @@ func changeIDCommand(changer anonsurf.IdentityClient) *cobra.Command {
 }
 
 func ipCommand(checker netcheck.Checker) *cobra.Command {
-	return &cobra.Command{
+	var useJSON bool
+	cmd := &cobra.Command{
 		Use:   "ip",
 		Short: "Verify the public IP and Tor",
 		Long:  "Check the current public IP address and whether it is seen as Tor traffic.",
@@ -40,6 +41,12 @@ func ipCommand(checker netcheck.Checker) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("ip: %w", err)
 			}
+			if useJSON {
+				if err := writeJSON(cmd.OutOrStdout(), newIPOutput(result)); err != nil {
+					return fmt.Errorf("write IP JSON: %w", err)
+				}
+				return nil
+			}
 			printer.Resultf("Public IP: %s\n", result.IP)
 			if result.IsTor {
 				printer.Result("Tor:       yes")
@@ -49,4 +56,15 @@ func ipCommand(checker netcheck.Checker) *cobra.Command {
 			return nil
 		},
 	}
+	cmd.Flags().BoolVar(&useJSON, "json", false, "Print the Tor check result as JSON")
+	return cmd
+}
+
+type ipOutput struct {
+	IP    string `json:"ip"`
+	IsTor bool   `json:"is_tor"`
+}
+
+func newIPOutput(result netcheck.Result) ipOutput {
+	return ipOutput{IP: result.IP, IsTor: result.IsTor}
 }

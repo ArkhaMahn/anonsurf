@@ -54,6 +54,17 @@ DNS classification, and configured DNS servers.
 Open Nyx using the AnonSurf configuration instead of printing the
 scriptable status snapshot.
 .TP
+.B status [--json]
+Print the status snapshot as JSON. The object contains
+.B anonsurf_active
+and
+.B tor_active
+booleans,
+.B dns_state,
+and the
+.B dns_addresses
+array.
+.TP
 .B monitor
 Open Nyx using
 .B /etc/anonsurf/nyxrc.
@@ -61,8 +72,15 @@ Open Nyx using
 .B changeid
 Request a new Tor identity through Tor's control port.
 .TP
-.B ip
+.B ip [--json]
 Check the current public IP address and whether it is seen as Tor traffic.
+With
+.B --json,
+print the
+.B ip
+and
+.B is_tor
+fields as JSON.
 .TP
 .B boot enable
 Enable AnonSurf at system startup.
