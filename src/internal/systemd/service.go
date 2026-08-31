@@ -105,6 +105,11 @@ func (c ServiceController) StatusText() (string, error) {
 func (c ServiceController) queryState(action string, knownStates map[string]bool) (bool, error) {
 	output, err := (command.Runner{}).Output(SystemctlPath, action, c.unit)
 	state := strings.TrimSpace(string(output))
+	// systemctl state queries use this result model:
+	//   "active"   + exit 0 -> valid state, true
+	//   "inactive" + exit 3 -> valid state, false
+	//   "disabled" + exit 1 -> valid state, false
+	//   unknown    + error  -> command or systemd failure
 	if value, ok := knownStates[state]; ok {
 		return value, nil
 	}

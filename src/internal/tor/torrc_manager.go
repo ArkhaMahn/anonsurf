@@ -44,6 +44,12 @@ func (TorrcManager) Backup() error {
 	info, err := os.Stat(TorrcPath)
 	if err != nil {
 		if os.IsNotExist(err) {
+			// Original state      Backup artifact   Restore action
+			// torrc exists        torrc.backup      write the saved bytes back
+			// torrc is absent     torrc.missing     remove the generated torrc
+			// No artifact means no backup transaction exists; both artifacts at
+			// once mean corrupted state. The explicit marker is therefore what
+			// makes "restore the original absence" possible without guessing.
 			if err := os.MkdirAll(filepath.Dir(TorrcMissingMarkerPath), 0700); err != nil {
 				return fmt.Errorf("create torrc state directory: %w", err)
 			}

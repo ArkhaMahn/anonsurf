@@ -65,6 +65,15 @@ func runWithServiceProgress(
 	run func() error,
 	readStatus func() (string, error),
 ) error {
+	// Live progress is coordinated as follows:
+	//
+	//   1. Read persisted StatusText as the baseline.
+	//   2. Run blocking systemctl in a worker goroutine.
+	//   3. Poll StatusText here and print only changed values.
+	//   4. Return the worker result when the transition finishes.
+	//
+	// The baseline matters because RemainAfterExit keeps the previous final
+	// StatusText: without it, stale text would look like progress from this run.
 	lastStatus, err := readStatus()
 	if err != nil {
 		printer.Warning(fmt.Sprintf("Live service progress is unavailable: %v", err))

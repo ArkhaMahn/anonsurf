@@ -41,6 +41,11 @@ func run(args []string) error {
 }
 
 func newStatusReporter() anonsurf.StatusReporter {
+	// Notification failure path:
+	//   publish phase -> socket error -> log once -> disable later reports
+	// Reporting is observability only. Firewall, DNS and Tor transitions keep
+	// running because failing them would turn a UI problem into a network or
+	// recovery failure.
 	available := true
 	return func(status string) {
 		if !available {

@@ -114,7 +114,14 @@ func (m Manager) MakeBackup() error {
 		return fmt.Errorf("check resolv.conf symlink: %w", err)
 	}
 	if isSymlink {
+		// Copying a symlink would lose its ownership model:
+		//   /etc/resolv.conf -> NetworkManager file -> ReadFile -> bytes only
+		// Restoring those bytes atomically would create a regular resolv.conf, not
+		// the original link.
 		return ErrBackupSkippedSymlink
+		// The symlink path therefore uses no file backup:
+		//   save NM hook -> install AnonSurf resolver -> restore NM hook
+		//   -> reload NetworkManager -> **NetworkManager recreates its resolver**
 	}
 
 	info, err := os.Stat(ResolvConfPath)

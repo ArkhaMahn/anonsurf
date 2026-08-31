@@ -36,6 +36,13 @@ func (Checker) Check(ctx context.Context) (Result, error) {
 	request.Header.Set("Accept", "application/json")
 
 	transport := http.DefaultTransport.(*http.Transport).Clone()
+	// DefaultTransport could take this path:
+	//   request -> HTTP_PROXY -> proxy -> Tor Project
+	// The check must instead exercise:
+	//   request -> normal socket -> AnonSurf iptables -> Tor -> Tor Project
+	// Otherwise a Tor-enabled proxy could return IsTor=true while AnonSurf's
+	// transparent routing is broken. Clone keeps the transport defaults; clearing
+	// Proxy forces the connection through the system route being verified.
 	transport.Proxy = nil
 	client := &http.Client{
 		Transport: transport,

@@ -22,6 +22,11 @@ func (c Controller) Start() error {
 		return err
 	}
 
+	// This flag means "rollback is armed", not "generation succeeded",
+	// so it is set before the call.
+	//
+	// failStart() can then restore the old file or remove the generated one;
+	// if generation failed before touching disk, Restore safely does nothing.
 	state.torrcGenerated = true
 	c.reportStatus("Generating Tor configuration")
 	if err := c.generateTorrc(); err != nil {

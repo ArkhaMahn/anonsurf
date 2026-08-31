@@ -25,6 +25,12 @@ func parseIPv6State(content string) (ipv6State, error) {
 		return state, nil
 	}
 
+	// State formats:
+	//
+	// legacy:  "0 1" -> all=0, default=1
+	// Recovery can encounter the legacy file after an interrupted upgrade. The
+	// fallback accepts exactly two boolean values and restores only what that
+	// format recorded instead of inventing per-interface state.
 	values := strings.Fields(content)
 	if len(values) != 2 {
 		return ipv6State{}, fmt.Errorf("invalid IPv6 state")
