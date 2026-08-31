@@ -104,7 +104,10 @@ func addressCommand(manager dns.Manager) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			result := dns.ParseAddrFromParams(args)
 			if len(result.Invalid) > 0 {
-				return fmt.Errorf("invalid DNS address: %s", strings.Join(result.Invalid, ", "))
+				return cli.NewError(
+					fmt.Sprintf("invalid DNS address: %s", strings.Join(result.Invalid, ", ")),
+					"Use an IPv4 or IPv6 address, such as 9.9.9.9 or 2620:fe::fe, or run 'sudo dnstool address dhcp'.",
+				)
 			}
 			if err := requireAdmin(); err != nil {
 				return err
