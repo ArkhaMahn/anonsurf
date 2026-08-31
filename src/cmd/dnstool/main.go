@@ -3,161 +3,33 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
-	"strings"
 
-	"github.com/spf13/cobra"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
-	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/console"
 )
 
-func dnstShowStatus() error {
-	addresses, err := dns.ParseDNSAddresses(dns.ResolvConfPath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			printErrorResolvNotFound(dns.ResolvConfPath)
-			return nil
-		}
-		return err
-	}
-
-	if len(addresses) == 0 {
-		printErrorResolvEmpty(dns.ResolvConfPath)
-		return nil
-	}
-	active, err := systemd.NewAnonsurfdController().IsActive()
-	if err != nil {
-		return fmt.Errorf("read AnonSurf status: %w", err)
-	}
-	if active {
-		if dns.HasOnlyLocalhost(addresses) {
-			printUnderTorDNS()
-		} else {
-			printUnderTorDNSRedirect()
-		}
-	} else {
-		if dns.HasOnlyLocalhost(addresses) {
-			printErrorLocalHost()
-		} else {
-			printDNSAddresses(addresses)
-		}
-	}
-	return nil
-}
-
-func dnstRestoreBackup(manager dns.Manager) error {
-	if err := manager.RestoreBackupOrDHCP(); err != nil {
-		return err
-	}
-	return dnstShowStatus()
-}
-
-func dnstWriteAddresses(manager dns.Manager, hasDHCP bool, listAddr []string) error {
-	if hasDHCP {
-		if len(listAddr) == 0 {
-			if err := manager.CreateDHCPOnly(); err != nil {
-				return err
-			}
-		} else {
-			addrFromDHCP, err := manager.DHCPAddresses()
-			if err != nil {
-				return fmt.Errorf("read DHCP DNS addresses: %w", err)
-			}
-			if err := manager.CreateAddrs(append(listAddr, addrFromDHCP...)); err != nil {
-				return err
-			}
-		}
-	} else {
-		if err := manager.CreateAddrs(listAddr); err != nil {
-			return err
-		}
-	}
-
-	fmt.Println("[*] Applied DNS settings")
-	return dnstShowStatus()
-}
-
-func requireAdmin() error {
-	if !command.IsAdmin() {
-		return errors.New("require admin's privilege")
-	}
-	return nil
-}
+var (
+	errAdminRequired = errors.New("root privileges are required")
+	errDNSUnusable   = errors.New("DNS configuration is unusable")
+)
 
 func main() {
-	manager := dns.Manager{}
-
-	var rootCmd = &cobra.Command{
-		Use:   "dnstool",
-		Short: "Manage system DNS settings",
-		Long: "dnstool manages the system DNS settings used by AnonSurf.\n" +
-			"Commands that write " + dns.ResolvConfPath + " require root privileges.",
-		SilenceUsage:  true,
-		SilenceErrors: true,
-		Args:          cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmd.Help(); err != nil {
-				return err
-			}
-			return dnstShowStatus()
-		},
-	}
-	rootCmd.CompletionOptions.DisableDefaultCmd = true
-
-	statusCmd := &cobra.Command{
-		Use:   "status",
-		Short: "Show current DNS status",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return dnstShowStatus()
-		},
-	}
-
-	createBackupCmd := &cobra.Command{
-		Use:   "create-backup",
-		Short: "Create a backup of resolv.conf",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requireAdmin(); err != nil {
-				return err
-			}
-			return manager.MakeBackup()
-		},
-	}
-
-	restoreBackupCmd := &cobra.Command{
-		Use:   "restore-backup",
-		Short: "Restore resolv.conf from backup",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requireAdmin(); err != nil {
-				return err
-			}
-			return dnstRestoreBackup(manager)
-		},
-	}
-
-	addressCmd := &cobra.Command{
-		Use:     "address [dhcp] [addr...]",
-		Aliases: []string{"addr"},
-		Short:   "Write custom DNS addresses or use DHCP",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requireAdmin(); err != nil {
-				return err
-			}
-			addrResult := dns.ParseAddrFromParams(args)
-			if len(addrResult.Invalid) > 0 {
-				return fmt.Errorf("invalid DNS address: %s", strings.Join(addrResult.Invalid, ", "))
-			}
-			return dnstWriteAddresses(manager, addrResult.HasDHCPFlag, addrResult.ListAddr)
-		},
-	}
-
-	rootCmd.AddCommand(statusCmd, createBackupCmd, restoreBackupCmd, addressCmd)
-
-	if err := rootCmd.Execute(); err != nil {
-		printError(err.Error())
+	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {
+		printer := console.New(os.Stdout, os.Stderr)
+		printer.Error(fmt.Sprintf("dnstool: %v", err))
+		if errors.Is(err, errAdminRequired) {
+			printer.Info("Run this command with sudo.")
+		}
+		if errors.Is(err, errDNSUnusable) {
+			printer.Info("Run 'sudo dnstool restore-backup' to restore system DNS.")
+		}
 		os.Exit(1)
 	}
+}
+
+func execute(args []string, stdout, stderr io.Writer) error {
+	rootCmd := newRootCommand(stdout, stderr)
+	rootCmd.SetArgs(args)
+	return rootCmd.Execute()
 }

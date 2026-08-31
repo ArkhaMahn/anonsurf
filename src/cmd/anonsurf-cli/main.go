@@ -22,7 +22,6 @@ func main() {
 	if err := execute(os.Args[1:], os.Stdout, os.Stderr); err != nil {
 		printer := console.New(os.Stdout, os.Stderr)
 		printer.Error(fmt.Sprintf("anonsurf: %v", err))
-		printer.Info("Run 'anonsurf --help' for usage.")
 		os.Exit(1)
 	}
 }
