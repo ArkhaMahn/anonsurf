@@ -60,9 +60,18 @@ func newRootCommand(stdout, stderr io.Writer) *cobra.Command {
 	monitor := anonsurf.MonitorClient{}
 	safeKill := safekill.Runner{}
 	rootCmd.AddCommand(
-		serviceCommandWithSafeKill("start", "Route traffic through Tor", service.Start, "AnonSurf started.", safeKill),
-		serviceCommandWithSafeKill("stop", "Restore the original network", service.Stop, "AnonSurf stopped.", safeKill),
-		serviceCommandWithSafeKill("restart", "Rebuild protected routing", service.Restart, "AnonSurf restarted.", safeKill),
+		serviceCommandWithSafeKill(
+			"start", "Route traffic through Tor", "Starting AnonSurf...",
+			service.Start, "AnonSurf started.", safeKill,
+		),
+		serviceCommandWithSafeKill(
+			"stop", "Restore the original network", "Restoring the original network...",
+			service.Stop, "AnonSurf stopped.", safeKill,
+		),
+		serviceCommandWithSafeKill(
+			"restart", "Rebuild protected routing", "Restarting AnonSurf...",
+			service.Restart, "AnonSurf restarted.", safeKill,
+		),
 		statusCommand(status.Reader{}, monitor),
 		changeIDCommand(anonsurf.IdentityClient{}),
 		ipCommand(netcheck.Checker{}),
