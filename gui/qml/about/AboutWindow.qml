@@ -55,42 +55,21 @@ Window {
             Layout.fillWidth: true
             spacing: Theme.spacingMedium
 
-            Rectangle {
+            Image {
                 Layout.preferredWidth: 56
                 Layout.preferredHeight: 56
                 Layout.alignment: Qt.AlignVCenter
-                color: Theme.bgBottom
-                border.width: 1
-                border.color: Theme.borderLight
-
-                Image {
-                    anchors.centerIn: parent
-                    width: 42
-                    height: 42
-                    source: "qrc:/icons/anonsurf.png"
-                    fillMode: Image.PreserveAspectFit
-                }
+                source: "qrc:/icons/anonsurf.png"
+                fillMode: Image.PreserveAspectFit
             }
 
-            ColumnLayout {
-                Layout.fillWidth: true
-                spacing: Theme.spacingTiny
-
-                Text {
-                    text: "ANONSURF"
-                    color: Theme.textPrimary
-                    font.family: Theme.uiFont
-                    font.pixelSize: Theme.titleSize
-                    font.bold: true
-                    font.letterSpacing: 2
-                }
-
-                StatusBadge {
-                    Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                    text: "VERSION " + Qt.application.version
-                    accentColor: Theme.neonCyan
-                }
+            StatusBadge {
+                Layout.alignment: Qt.AlignVCenter
+                text: "VERSION " + Qt.application.version
+                accentColor: Theme.neonCyan
             }
+
+            Item { Layout.fillWidth: true }
         }
 
         Text {
