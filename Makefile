@@ -65,6 +65,7 @@ inst-configs:
 
 	cp sys-units/anonsurfd.service $(DESTDIR)/lib/systemd/system/anonsurfd.service
 	cp sys-units/anonsurf-recovery.service $(DESTDIR)/lib/systemd/system/anonsurf-recovery.service
+	cp sys-units/anonsurf-identity.service $(DESTDIR)/lib/systemd/system/anonsurf-identity.service
 	cp sys-units/tor@default.service.d/anonsurf-recovery.conf $(DESTDIR)/lib/systemd/system/tor@default.service.d/anonsurf-recovery.conf
 	ln -sfn ../anonsurf-recovery.service $(DESTDIR)/lib/systemd/system/multi-user.target.wants/anonsurf-recovery.service
 
@@ -95,5 +96,6 @@ uninstall:
 	rm /usr/bin/anonsurf
 	rm /lib/systemd/system/anonsurfd.service
 	rm /lib/systemd/system/anonsurf-recovery.service
+	rm /lib/systemd/system/anonsurf-identity.service
 	rm /lib/systemd/system/multi-user.target.wants/anonsurf-recovery.service
 	rm /lib/systemd/system/tor@default.service.d/anonsurf-recovery.conf

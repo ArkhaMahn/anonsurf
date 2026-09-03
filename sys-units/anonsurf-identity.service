@@ -1,0 +1,9 @@
+[Unit]
+Description=Request a new AnonSurf Tor identity
+Requisite=anonsurfd.service
+After=anonsurfd.service tor@default.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/lib/anonsurf/anondaemon changeid
+TimeoutStartSec=30
