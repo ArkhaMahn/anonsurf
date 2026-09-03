@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AnonSurf
+Comment=Manage system-wide Tor routing
+Exec=anonsurf-gui
+Icon=anonsurf
+Terminal=false
+Categories=Network;Security;System;
+Keywords=Tor;Privacy;Anonymity;Network;
+StartupNotify=true

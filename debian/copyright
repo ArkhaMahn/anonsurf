@@ -15,6 +15,7 @@ License: GPL-3.0+
 Files:
   sys-units/*
   src/*
+  gui/*
   configs/*
   Makefile
   README.md
