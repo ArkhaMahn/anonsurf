@@ -9,6 +9,7 @@ anonsurf (6.0.0+parrot0) echo; urgency=medium
   * Restore DNS, firewall, IPv6 and Tor configuration transactionally.
   * Restore active legacy sessions before upgrading to the Go backend.
   * Keep Tor control authentication and daemon state private.
+  * Add a Qt6 graphical interface for KDE Plasma.
 
  -- Dario "danterolle" Camonita <danterolle@parrotsec.org>  Tue, 28 Jul 2026 12:07:00 +0200
 

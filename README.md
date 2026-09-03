@@ -1,5 +1,5 @@
 # Build
-- Build dependencies: golang-go, git
+- Build dependencies: cmake, g++, golang-go, git, qt6-base-dev, qt6-declarative-dev, qml6-module-qtquick-shapes
 - Runtime dependencies: bleachbit, nyx, sudo, tor, iptables, network-manager, procps, systemd
 - Commands to build:
 1. `git clone https://gitlab.com/parrotsec/packages/anonsurf/`
@@ -11,10 +11,15 @@
 - `src/internal/anonsurf/`: lifecycle orchestration and transactional recovery.
 - `src/internal/dns/`, `firewall/`, `ipv6/`, `tor/`: network domains.
 - `src/internal/command/`, `fileops/`, `systemd/`: operating-system adapters.
+- `gui/`: Qt 6/QML interface for KDE Plasma.
 - `icons/`: AnonSurf and Nyx logos retained for the future interface.
 
 Interrupted sessions are recovered automatically at boot before Tor starts.
 Lifecycle progress is published to systemd and shown by the interactive CLI.
+
+The Qt interface stays unprivileged: it reads the CLI's JSON status and sends
+authorized lifecycle requests through systemd D-Bus. Build it with `make gui`
+and run `build/gui/anonsurf-gui`.
 
 - List of default bridges are at https://gitlab.torproject.org/tpo/anti-censorship/team/-/wikis/Default-Bridges
 # Thank to

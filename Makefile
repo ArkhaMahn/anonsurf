@@ -1,4 +1,5 @@
 GO ?= go
+CMAKE ?= cmake
 GO-SRC-DIR = src
 GO-MODULE = gitlab.com/parrotsec/packages/anonsurf
 GO-BUILD-FLAGS = -trimpath
@@ -7,6 +8,7 @@ GO-BUILD-MODE ?= module
 GO-GOPATH ?= $(CURDIR)/build/gopath:/usr/share/gocode
 GO-GOPATH-SRC = $(CURDIR)/build/gopath/src/$(GO-MODULE)
 BUILD-DEST = build/release
+GUI-BUILD-DIR = build/gui
 
 VERSION ?= $(shell sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)
 
@@ -20,7 +22,7 @@ GO-BUILD-ENV = GO111MODULE=on
 GO-PKG-PREFIX = .
 endif
 
-.PHONY: build check clean prepare-go-gopath
+.PHONY: build check clean gui gui-check inst-gui prepare-go-gopath
 
 all: build install
 
@@ -50,9 +52,16 @@ anondaemon: $(BUILD-DEST) $(GO-BUILD-DEPS)
 safekill: $(BUILD-DEST) $(GO-BUILD-DEPS)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/safekill $(GO-PKG-PREFIX)/cmd/safekill
 
-build: anonsurf-cli dnstool make-torrc anondaemon safekill
+gui:
+	$(CMAKE) -S gui -B $(GUI-BUILD-DIR) -DCMAKE_BUILD_TYPE=Release -DANONSURF_VERSION=$(VERSION)
+	$(CMAKE) --build $(GUI-BUILD-DIR) --parallel
 
-check: $(GO-BUILD-DEPS)
+gui-check: gui
+	$(CMAKE) --build $(GUI-BUILD-DIR) --target anonsurf-gui_qmllint
+
+build: anonsurf-cli dnstool make-torrc anondaemon safekill gui
+
+check: $(GO-BUILD-DEPS) gui-check
 	cd $(GO-SRC-DIR) && files=$$(gofmt -l .) && \
 		if [ -n "$$files" ]; then echo "not gofmt-clean: $$files"; exit 1; fi
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
@@ -76,24 +85,34 @@ inst-bins:
 	cp build/release/anondaemon $(DESTDIR)/usr/lib/anonsurf/anondaemon
 	cp build/release/safekill $(DESTDIR)/usr/lib/anonsurf/safekill
 
+inst-gui:
+	cp build/gui/anonsurf-gui $(DESTDIR)/usr/bin/anonsurf-gui
+	cp gui/org.parrotsec.Anonsurf.desktop $(DESTDIR)/usr/share/applications/.
+	cp icons/anonsurf.png $(DESTDIR)/usr/share/icons/hicolor/512x512/apps/anonsurf.png
+
 inst-perms:
-	chmod +x $(DESTDIR)/usr/lib/anonsurf/anondaemon $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf
+	chmod +x $(DESTDIR)/usr/lib/anonsurf/anondaemon $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gui
 	chmod 600 $(DESTDIR)/etc/anonsurf/anonsurf.cfg
 
 mk-folders:
 	mkdir -p $(DESTDIR)/etc/anonsurf/
 	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
 	mkdir -p $(DESTDIR)/usr/bin/
+	mkdir -p $(DESTDIR)/usr/share/applications/
+	mkdir -p $(DESTDIR)/usr/share/icons/hicolor/512x512/apps/
 	mkdir -p $(DESTDIR)/lib/systemd/system/
 	mkdir -p $(DESTDIR)/lib/systemd/system/multi-user.target.wants/
 	mkdir -p $(DESTDIR)/lib/systemd/system/tor@default.service.d/
 
-install: mk-folders inst-bins inst-configs inst-perms
+install: mk-folders inst-bins inst-gui inst-configs inst-perms
 
 uninstall:
 	rm -rf /etc/anonsurf/
 	rm -rf /usr/lib/anonsurf/
 	rm /usr/bin/anonsurf
+	rm /usr/bin/anonsurf-gui
+	rm /usr/share/applications/org.parrotsec.Anonsurf.desktop
+	rm /usr/share/icons/hicolor/512x512/apps/anonsurf.png
 	rm /lib/systemd/system/anonsurfd.service
 	rm /lib/systemd/system/anonsurf-recovery.service
 	rm /lib/systemd/system/anonsurf-identity.service

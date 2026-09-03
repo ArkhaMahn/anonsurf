@@ -34,7 +34,7 @@ cache:
 .go-job:
   before_script:
     - apt-get update
-    - apt-get install --yes --no-install-recommends ca-certificates git golang-go make
+    - apt-get install --yes --no-install-recommends ca-certificates cmake g++ git golang-go make qml6-module-qtquick-shapes qt6-base-dev qt6-declarative-dev
 
 check:
   stage: check
@@ -52,7 +52,8 @@ build-binaries:
     - mkdir -p dist/binaries
     - DEBIAN_VERSION="$(sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)"
     - BINARY_ARCHIVE="anonsurf_${DEBIAN_VERSION}_linux_amd64.tar.gz"
-    - tar -C build/release -czf "dist/binaries/${BINARY_ARCHIVE}" anondaemon anonsurf dnstool make-torrc safekill
+    - cp build/gui/anonsurf-gui build/release/
+    - tar -C build/release -czf "dist/binaries/${BINARY_ARCHIVE}" anondaemon anonsurf anonsurf-gui dnstool make-torrc safekill
     - printf 'BINARY_ARCHIVE=%s\n' "$BINARY_ARCHIVE" > dist/binaries.env
     - cd dist/binaries && sha256sum "$BINARY_ARCHIVE" > SHA256SUMS-binaries
   artifacts:
@@ -69,7 +70,7 @@ package-deb:
     - check
   before_script:
     - apt-get update
-    - apt-get install --yes --no-install-recommends bash-completion build-essential debhelper golang-github-spf13-cobra-dev golang-go
+    - apt-get install --yes --no-install-recommends bash-completion build-essential cmake debhelper golang-github-spf13-cobra-dev golang-go qml6-module-qtquick-shapes qt6-base-dev qt6-declarative-dev
   script:
     - dpkg-buildpackage --build=binary --no-sign
     - mkdir -p dist/debian
@@ -137,6 +138,9 @@ release:
           link_type: package
         - name: anonsurf-cli Debian package
           url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf-cli_${DEBIAN_VERSION}_${DEBIAN_ARCH}.deb
+          link_type: package
+        - name: AnonSurf GUI Debian package
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf-gui_${DEBIAN_VERSION}_${DEBIAN_ARCH}.deb
           link_type: package
         - name: Debian package checksums
           url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/SHA256SUMS-debian

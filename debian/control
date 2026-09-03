@@ -2,13 +2,18 @@ Source: anonsurf
 Section: net
 Priority: optional
 Maintainer: Parrot Team <team@parrotsec.org>
-Uploaders: Dario Camonita <danterolle@parrotsec.org>
+Uploaders: Dario "danterolle" Camonita <danterolle@parrotsec.org>
 Standards-Version: 4.7.2
 Build-Depends:
  debhelper-compat (= 13),
+ cmake,
+ g++,
  golang-go,
  golang-github-spf13-cobra-dev,
- bash-completion
+ bash-completion,
+ qt6-base-dev,
+ qt6-declarative-dev,
+ qml6-module-qtquick-shapes
 Homepage: https://www.parrotsec.org/
 
 Package: anonsurf
@@ -33,3 +38,23 @@ Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf (= ${binary:Version}), nyx, sudo
 Description: Command-line interface for AnonSurf
  AnonSurf's command-line interface written in Go.
+
+Package: anonsurf-gui
+Architecture: any
+Priority: optional
+Depends:
+ ${shlibs:Depends},
+ ${misc:Depends},
+ anonsurf-cli (= ${binary:Version}),
+ fonts-inter,
+ konsole,
+ qml6-module-qtcore,
+ qml6-module-qtquick,
+ qml6-module-qtquick-controls,
+ qml6-module-qtquick-layouts,
+ qml6-module-qtquick-shapes
+Replaces: anonsurf-gtk (<< 6.0.0~)
+Breaks: anonsurf-gtk (<< 6.0.0~)
+Description: Graphical interface for AnonSurf
+ A Qt 6 interface for managing AnonSurf routing, status,
+ Tor identities and startup integration on KDE Plasma.
