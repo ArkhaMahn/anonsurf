@@ -38,7 +38,7 @@ void AnonSurfBackend::updateProtection() {
   const bool brokenDNS = m_dnsState == "localhost-only" ||
                          m_dnsState == "missing" || m_dnsState == "empty";
   if (m_anonsurfActive && m_torActive && protectedDNS) {
-    m_protectionState = "PROTECTED";
+    m_protectionState = "ROUTED";
     m_protectionDetail = "System traffic is routed through Tor.";
   } else if (m_anonsurfActive || brokenDNS) {
     m_protectionState = "DEGRADED";
