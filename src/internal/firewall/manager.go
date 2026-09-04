@@ -109,14 +109,12 @@ func (Manager) filterRules(routing tor.RoutingConfig) [][]string {
 		rules = append(rules, []string{"-A", "OUTPUT", "-d", network, "-j", "ACCEPT"})
 	}
 	return append(rules,
-		[]string{"-A", "OUTPUT", "-m", "state", "--state", "ESTABLISHED,RELATED", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "ACCEPT"},
 		[]string{"-A", "INPUT", "-m", "state", "--state", "ESTABLISHED", "-j", "ACCEPT"},
 		[]string{"-A", "INPUT", "-i", "lo", "-j", "ACCEPT"},
 		[]string{"-A", "INPUT", "-j", "DROP"},
 		[]string{"-A", "FORWARD", "-j", "DROP"},
 		[]string{"-A", "OUTPUT", "-m", "state", "--state", "INVALID", "-j", "DROP"},
-		[]string{"-A", "OUTPUT", "-m", "state", "--state", "ESTABLISHED", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-p", "tcp", "-m", "tcp", "--tcp-flags", "FIN,SYN,RST,ACK", "SYN", "-m", "state", "--state", "NEW", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-d", "127.0.0.1/32", "-o", "lo", "-j", "ACCEPT"},
 		[]string{"-A", "OUTPUT", "-d", "127.0.0.1/32", "-p", "tcp", "-m", "tcp", "--dport", routing.TransPort, "--tcp-flags", "FIN,SYN,RST,ACK", "SYN", "-j", "ACCEPT"},

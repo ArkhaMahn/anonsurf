@@ -22,5 +22,11 @@ authorized lifecycle requests through systemd D-Bus. Build it with `make gui`
 and run `build/gui/anonsurf-gui`.
 
 - List of default bridges are at https://gitlab.torproject.org/tpo/anti-censorship/team/-/wikis/Default-Bridges
+
+# Connection handling
+Existing direct TCP/UDP connections to public IPv4 destinations are blocked
+when routing starts, except for Tor-owned traffic and the DHCP exception.
+They are not migrated into Tor; TCP applications must reconnect.
+
 # Thank to
 - Vivek Gite, who wrote tutorial of hook script for dhclient https://www.cyberciti.biz/faq/dhclient-etcresolvconf-hooks/
