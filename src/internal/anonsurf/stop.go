@@ -20,6 +20,10 @@ func (c Controller) Stop() error {
 		c.reportStatus("AnonSurf routing is inactive")
 		return nil
 	}
+	// Recovery must not mistake a partially restored session for active routing.
+	if err := c.clearActive(); err != nil {
+		return err
+	}
 	restartTor, err := torWasActive()
 	if err != nil {
 		return err
@@ -45,9 +49,6 @@ func (c Controller) Stop() error {
 		if err := systemd.NewTorController().Start(); err != nil {
 			return fmt.Errorf("restart original Tor service: %w", err)
 		}
-	}
-	if err := c.clearActive(); err != nil {
-		return err
 	}
 	if restartTor {
 		if err := clearTorState(); err != nil {
