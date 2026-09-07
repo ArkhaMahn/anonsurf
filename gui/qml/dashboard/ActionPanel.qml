@@ -35,8 +35,8 @@ Item {
                 iconName: "identity"
                 iconOnly: root.iconOnly
                 tooltip: "Asks Tor for a fresh circuit, so the exit address websites see changes."
-                enabled: root.backend.anonsurfActive && root.backend.torActive
-                         && !root.backend.busy
+                enabled: root.backend.statusAvailable && root.backend.anonsurfActive
+                         && root.backend.torActive && !root.backend.busy
                 onClicked: root.backend.changeIdentity()
             }
 
@@ -56,7 +56,8 @@ Item {
                 iconName: "restart"
                 iconOnly: root.iconOnly
                 tooltip: "Tears down and rebuilds the routing rules, keeping every setting as it is."
-                enabled: root.backend.anonsurfActive && !root.backend.busy
+                enabled: root.backend.statusAvailable && root.backend.anonsurfActive
+                         && !root.backend.busy
                 onClicked: root.backend.restart(root.safeKill)
             }
 
@@ -66,8 +67,8 @@ Item {
                 iconName: "monitor"
                 iconOnly: root.iconOnly
                 tooltip: "Opens nyx, the Tor connection monitor, in a Konsole window."
-                enabled: root.backend.anonsurfActive && root.backend.torActive
-                         && !root.backend.busy
+                enabled: root.backend.statusAvailable && root.backend.anonsurfActive
+                         && root.backend.torActive && !root.backend.busy
                 onClicked: root.backend.openMonitor()
             }
 

@@ -56,6 +56,8 @@ private:
   void beginLifecycle(const QString &action, bool safeKill);
   void runLifecycle(const QString &action);
   void beginAction(const QString &action, const QString &progress);
+  void beginIPCheck(bool automatic);
+  void invalidateIPCheck();
   void scheduleIPCheck();
   void finishAction(const QString &action, bool success,
                     const QString &message);
@@ -78,7 +80,9 @@ private:
   bool m_bootEnabled = false;
   bool m_busy = false;
   bool m_autoCheck = false;
+  bool m_ipCheckStale = false;
   QString m_dnsState;
+  QStringList m_dnsAddresses;
   QString m_dnsMode = "Unavailable";
   QString m_dnsServers = "No data";
   QString m_protectionState = "UNAVAILABLE";

@@ -30,9 +30,12 @@ Rectangle {
             Layout.fillWidth: true
             label: "Tor service"
             tooltip: "State of the tor daemon that actually carries the traffic. AnonSurf takes it over while routing is active."
-            value: root.backend.torActive ? "ACTIVE" : "INACTIVE"
-            detail: root.backend.anonsurfActive ? "Managed by AnonSurf" : "System service"
-            accentColor: root.backend.torActive ? Theme.neonCyan : Theme.textSecondary
+            value: !root.backend.statusAvailable ? "UNKNOWN"
+                   : root.backend.torActive ? "ACTIVE" : "INACTIVE"
+            detail: !root.backend.statusAvailable ? "Unavailable"
+                    : root.backend.anonsurfActive ? "Managed by AnonSurf" : "System service"
+            accentColor: root.backend.statusAvailable && root.backend.torActive
+                         ? Theme.neonCyan : Theme.textSecondary
         }
 
         StatusItem {
@@ -41,7 +44,8 @@ Rectangle {
             tooltip: "Where name lookups are sent. Only a Tor route keeps them from revealing to your provider which sites you visit."
             value: root.backend.dnsMode
             detail: root.backend.dnsServers
-            accentColor: !root.backend.anonsurfActive ? Theme.textSecondary
+            accentColor: !root.backend.statusAvailable || !root.backend.anonsurfActive
+                         ? Theme.textSecondary
                          : root.backend.dnsMode.indexOf("Tor") === 0
                            ? Theme.neonCyan : Theme.warning
         }

@@ -10,14 +10,20 @@ AnonSurfBackend::AnonSurfBackend(QObject *parent) : QObject(parent) {
   connect(&m_commands, &CommandClient::statusFailed, this,
           [this](const QString &message) {
             m_statusAvailable = false;
-            m_protectionState = "UNAVAILABLE";
             m_protectionDetail = message;
-            m_publicIP = "Not checked";
-            m_torCheck = "UNKNOWN";
+            m_dnsMode = "Unavailable";
+            m_dnsServers = "No data";
+            invalidateIPCheck();
             emit changed();
           });
   connect(&m_commands, &CommandClient::ipReady, this,
           [this](const QString &address, bool isTor) {
+            if (m_ipCheckStale) {
+              finishAction("ip", false,
+                           "Service or DNS status changed during the IP check. "
+                           "Run it again.");
+              return;
+            }
             m_publicIP = address;
             m_torCheck = isTor ? "TOR" : "CLEARNET";
             finishAction("ip", true, {});
@@ -84,8 +90,7 @@ void AnonSurfBackend::restart(bool safeKill) {
 void AnonSurfBackend::changeIdentity() {
   if (m_busy)
     return;
-  m_publicIP = "Not checked";
-  m_torCheck = "UNKNOWN";
+  invalidateIPCheck();
   beginAction("identity", "Requesting a new Tor identity");
   m_systemd.runUnit("identity", "StartUnit", IdentityUnit);
 }
@@ -93,7 +98,13 @@ void AnonSurfBackend::changeIdentity() {
 void AnonSurfBackend::checkIP() {
   if (m_busy)
     return;
-  m_autoCheck = false;
+  beginIPCheck(false);
+}
+
+void AnonSurfBackend::beginIPCheck(bool automatic) {
+  invalidateIPCheck();
+  m_ipCheckStale = false;
+  m_autoCheck = automatic;
   beginAction("ip", "Checking public IP and Tor routing");
   m_commands.requestIP();
 }

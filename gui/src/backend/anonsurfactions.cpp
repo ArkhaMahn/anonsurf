@@ -8,8 +8,7 @@ constexpr int IPCheckDelayMs = 2000;
 void AnonSurfBackend::beginLifecycle(const QString &action, bool safeKill) {
   if (m_busy)
     return;
-  m_publicIP = "Not checked";
-  m_torCheck = "UNKNOWN";
+  invalidateIPCheck();
   if (safeKill) {
     m_pendingAction = action;
     beginAction("safekill",
@@ -42,11 +41,11 @@ void AnonSurfBackend::finishAction(const QString &action, bool success,
   m_busy = false;
   m_activeAction.clear();
   m_progressTimer.stop();
+  updateProtection();
   if (success) {
     m_progress = successMessage(action);
     if (action == "stop") {
-      m_publicIP = "Not checked";
-      m_torCheck = "UNKNOWN";
+      invalidateIPCheck();
     }
     if (action == "start" || action == "restart" || action == "identity")
       scheduleIPCheck();
@@ -63,14 +62,11 @@ void AnonSurfBackend::finishAction(const QString &action, bool success,
 }
 
 void AnonSurfBackend::scheduleIPCheck() {
-  // Routing needs a moment to settle after the unit reports success, otherwise
-  // the request can still leave outside Tor and report a misleading address.
+  // Give Tor a short bootstrap grace period before the automatic check.
   QTimer::singleShot(IPCheckDelayMs, this, [this]() {
-    if (m_busy || !m_anonsurfActive)
+    if (m_busy || !m_statusAvailable || !m_anonsurfActive)
       return;
-    m_autoCheck = true;
-    beginAction("ip", "Checking public IP and Tor routing");
-    m_commands.requestIP();
+    beginIPCheck(true);
   });
 }
 
