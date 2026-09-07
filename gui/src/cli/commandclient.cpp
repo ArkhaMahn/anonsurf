@@ -1,5 +1,6 @@
 #include "cli/commandclient.h"
 
+#include <QDebug>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -35,6 +36,19 @@ CommandClient::CommandClient(QObject *parent) : QObject(parent) {
               emit safeKillFinished(false, "SafeKill could not be started.");
             }
           });
+}
+
+CommandClient::~CommandClient() {
+  // QProcess can emit completion signals while its owner is being destroyed.
+  for (auto *process : {&m_statusProcess, &m_ipProcess, &m_safeKillProcess}) {
+    process->disconnect(this);
+    if (process->state() != QProcess::NotRunning) {
+      process->kill();
+      if (!process->waitForFinished(1000))
+        qWarning() << "Cannot finish GUI command shutdown:"
+                   << process->errorString();
+    }
+  }
 }
 
 void CommandClient::requestStatus() {

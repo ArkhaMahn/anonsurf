@@ -9,6 +9,7 @@ class CommandClient final : public QObject {
 
 public:
   explicit CommandClient(QObject *parent = nullptr);
+  ~CommandClient() override;
 
   void requestStatus();
   void requestIP();
