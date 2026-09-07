@@ -74,9 +74,10 @@ Window {
 
         Text {
             Layout.fillWidth: true
-            text: "Routes every system connection through the Tor network with a "
-                  + "transparent proxy, disables IPv6 and clears application "
-                  + "caches to prevent leaks."
+            text: "Uses a transparent proxy for supported TCP traffic and DNS "
+                  + "lookups through Tor, with local-network exceptions. "
+                  + "Arbitrary UDP is not tunneled. IPv6 is disabled; "
+                  + "application cleanup is optional."
             color: Theme.textSecondary
             font.family: Theme.uiFont
             font.pixelSize: Theme.bodySize

@@ -86,7 +86,7 @@ QString AnonSurfBackend::lifecycleProgress(const QString &action) {
   if (action == "stop")
     return "Restoring the original network";
   if (action == "restart")
-    return "Restarting protected routing";
+    return "Restarting Tor routing";
   return "Starting AnonSurf";
 }
 

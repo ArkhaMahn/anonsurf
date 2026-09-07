@@ -27,10 +27,10 @@ Description: Anonymization toolkit for Parrot Security OS
  AnonSurf is an anonymization toolkit that helps
  prevent tracking and surveillance of the end-user.
  .
- AnonSurf creates a Tor transparent proxy using iptables
- to forward all traffic through the Tor network.
- It also disables IPv6 and clears application caches
- to prevent data leaks.
+ AnonSurf uses iptables to redirect supported TCP traffic and DNS lookups
+ through Tor. Local-network exceptions remain and arbitrary UDP is not
+ carried by Tor. It disables IPv6 and can optionally close selected
+ applications and clear their caches.
 
 Package: anonsurf-cli
 Architecture: any

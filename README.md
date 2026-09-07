@@ -27,6 +27,8 @@ and run `build/gui/anonsurf-gui`.
 Existing direct TCP/UDP connections to public IPv4 destinations are blocked
 when routing starts, except for Tor-owned traffic and the DHCP exception.
 They are not migrated into Tor; TCP applications must reconnect.
+Tor carries supported TCP traffic and DNS lookups, not arbitrary UDP.
+Private-network and loopback routing exceptions remain in effect.
 
 # Thank to
 - Vivek Gite, who wrote tutorial of hook script for dhclient https://www.cyberciti.biz/faq/dhclient-etcresolvconf-hooks/

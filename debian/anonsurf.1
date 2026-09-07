@@ -11,6 +11,9 @@ It provides commands to start and stop the AnonSurf service, inspect
 runtime status, request a new Tor identity, check the public Tor status,
 and manage startup integration.
 .PP
+Tor carries supported TCP traffic and DNS lookups, not arbitrary UDP.
+Private-network and loopback routing exceptions remain in effect.
+.PP
 The Go command-line interface keeps
 .B anonsurf status
 scriptable. Interactive Tor monitoring is available separately through
@@ -36,7 +39,7 @@ is supplied, AnonSurf runs
 before changing service state.
 .TP
 .B stop [-k | --safe-kill]
-Stop AnonSurf and return to clearnet. When
+Stop AnonSurf and restore the previous network settings. When
 .B --safe-kill
 is supplied, AnonSurf runs
 .B /usr/lib/anonsurf/safekill
@@ -74,9 +77,11 @@ Open Nyx using
 .TP
 .B changeid
 Request a new Tor identity through Tor's control port.
+A different exit IP is not guaranteed, and existing connections are unchanged.
 .TP
 .B ip [--json]
-Check the current public IP address and whether it is seen as Tor traffic.
+Check the public IP address used by this request and whether it is seen as Tor traffic.
+The result does not verify every application's traffic.
 With
 .B --json,
 print the

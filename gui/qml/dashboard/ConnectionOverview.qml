@@ -29,7 +29,7 @@ Rectangle {
         StatusItem {
             Layout.fillWidth: true
             label: "Tor service"
-            tooltip: "State of the tor daemon that actually carries the traffic. AnonSurf takes it over while routing is active."
+            tooltip: "Tor service state. ACTIVE alone does not confirm that a request uses Tor."
             value: !root.backend.statusAvailable ? "UNKNOWN"
                    : root.backend.torActive ? "ACTIVE" : "INACTIVE"
             detail: !root.backend.statusAvailable ? "Unavailable"
@@ -40,8 +40,8 @@ Rectangle {
 
         StatusItem {
             Layout.fillWidth: true
-            label: "DNS route"
-            tooltip: "Where name lookups are sent. Only a Tor route keeps them from revealing to your provider which sites you visit."
+            label: "DNS setup"
+            tooltip: "DNS configuration inferred from the resolver and service state, not a live DNS routing check."
             value: root.backend.dnsMode
             detail: root.backend.dnsServers
             accentColor: !root.backend.statusAvailable || !root.backend.anonsurfActive
@@ -53,7 +53,7 @@ Rectangle {
         StatusItem {
             Layout.fillWidth: true
             label: "Public IP"
-            tooltip: "Address the sites you visit see. The Tor check tells whether it belongs to a known exit node."
+            tooltip: "IP observed by the Tor Project for this request. A Tor exit result does not verify every application's traffic."
             value: root.backend.publicIP
             detail: "Tor check: " + root.backend.torCheck
             accentColor: root.backend.torCheck === "TOR" ? Theme.neonCyan
@@ -80,7 +80,7 @@ Rectangle {
                 ToggleOption {
                     Layout.fillWidth: true
                     label: root.backend.bootEnabled ? "Enabled" : "Disabled"
-                    tooltip: "Enables the AnonSurf service at boot, so routing is already in place when the session starts."
+                    tooltip: "Starts AnonSurf during boot. Traffic sent before routing is activated is not covered."
                     checked: root.backend.bootEnabled
                     enabled: !root.backend.busy
                     // The box follows the service, not the click: a refused

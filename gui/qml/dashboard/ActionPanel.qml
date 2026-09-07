@@ -34,7 +34,7 @@ Item {
                 text: "New Identity"
                 iconName: "identity"
                 iconOnly: root.iconOnly
-                tooltip: "Asks Tor for a fresh circuit, so the exit address websites see changes."
+                tooltip: "Requests new Tor circuits for new connections. The exit IP may stay the same; existing connections are unchanged."
                 enabled: root.backend.statusAvailable && root.backend.anonsurfActive
                          && root.backend.torActive && !root.backend.busy
                 onClicked: root.backend.changeIdentity()
@@ -45,7 +45,7 @@ Item {
                 text: "Verify IP"
                 iconName: "globe"
                 iconOnly: root.iconOnly
-                tooltip: "Reads the current public address and reports whether it belongs to a known Tor exit node."
+                tooltip: "Checks the public IP used by this request and whether it belongs to a known Tor exit node."
                 enabled: root.backend.statusAvailable && !root.backend.busy
                 onClicked: root.backend.checkIP()
             }
@@ -55,7 +55,7 @@ Item {
                 text: "Restart"
                 iconName: "restart"
                 iconOnly: root.iconOnly
-                tooltip: "Tears down and rebuilds the routing rules, keeping every setting as it is."
+                tooltip: "Restarts Tor and rebuilds routing from the current AnonSurf configuration."
                 enabled: root.backend.statusAvailable && root.backend.anonsurfActive
                          && !root.backend.busy
                 onClicked: root.backend.restart(root.safeKill)

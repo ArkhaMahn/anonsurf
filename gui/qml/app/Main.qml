@@ -118,11 +118,9 @@ ApplicationWindow {
 
         badge: "SAFEKILL"
         confirmText: "Enable"
-        message: "SafeKill closes browsers, mail clients, chat and download "
-                 + "applications with a termination signal, then wipes their "
-                 + "caches, history and sessions with BleachBit. Unsaved work "
-                 + "in those applications is lost and the cleaning cannot be "
-                 + "undone."
+        message: "SafeKill requests termination of selected applications, then "
+                 + "cleans selected caches, history and sessions with BleachBit. "
+                 + "Unsaved work may be lost and the cleaning cannot be undone."
         onAccepted: window.safeKill = true
     }
 

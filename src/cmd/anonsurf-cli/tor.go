@@ -14,8 +14,9 @@ func changeIDCommand(changer anonsurf.IdentityClient) *cobra.Command {
 	return &cobra.Command{
 		Use:   "changeid",
 		Short: "Request a new Tor identity",
-		Long:  "Request a new Tor identity through Tor's control port.",
-		Args:  cli.NoArgs,
+		Long: "Request new Tor circuits for new connections through Tor's control port.\n" +
+			"A different exit IP is not guaranteed; existing connections are unchanged.",
+		Args: cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printer := console.New(cmd.OutOrStdout(), cmd.ErrOrStderr())
 			printer.Running("Requesting a new Tor identity...")
@@ -33,8 +34,9 @@ func ipCommand(checker netcheck.Checker) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "ip",
 		Short: "Verify the public IP and Tor",
-		Long:  "Check the current public IP address and whether it is seen as Tor traffic.",
-		Args:  cli.NoArgs,
+		Long: "Check the public IP address used by this request and whether it is seen as Tor traffic.\n" +
+			"The result does not verify every application's traffic.",
+		Args: cli.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			printer := console.New(cmd.OutOrStdout(), cmd.ErrOrStderr())
 			printer.Running("Checking Tor connectivity...")

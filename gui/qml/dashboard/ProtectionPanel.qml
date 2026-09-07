@@ -94,8 +94,8 @@ Rectangle {
                 text: root.backend.anonsurfActive ? "Stop AnonSurf" : "Start AnonSurf"
                 iconName: root.backend.anonsurfActive ? "stop" : "start"
                 tooltip: root.backend.anonsurfActive
-                         ? "Removes the transparent proxy rules and puts the system back on its normal, unprotected routing."
-                         : "Installs the transparent proxy rules that push every system connection through Tor."
+                         ? "Removes AnonSurf routing and restores the previous network settings."
+                         : "Redirects supported TCP and DNS traffic through Tor. Private networks and loopback remain excluded; other UDP traffic is not tunneled."
                 primary: true
                 enabled: root.backend.statusAvailable && !root.backend.busy
                 onClicked: root.backend.anonsurfActive
@@ -106,7 +106,7 @@ Rectangle {
             ToggleOption {
                 Layout.alignment: Qt.AlignHCenter
                 label: "Use SafeKill"
-                tooltip: "Before the routing changes, closes browsers, mail, chat and download applications and wipes their caches with BleachBit, so nothing keeps writing outside Tor."
+                tooltip: "Requests termination of selected applications, then cleans selected caches, history and sessions with BleachBit before routing changes."
                 accentColor: Theme.warning
                 checked: root.safeKill
                 enabled: !root.backend.busy
