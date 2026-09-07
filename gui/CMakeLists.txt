@@ -13,16 +13,16 @@ find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Qml Quick QuickControls2)
 qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(anonsurf-gui
-    src/main.cpp
-    src/backend/anonsurfactions.cpp
-    src/backend/anonsurfbackend.cpp
-    src/backend/anonsurfbackend.h
-    src/backend/anonsurfstate.cpp
-    src/system/commandclient.cpp
-    src/system/commandclient.h
-    src/system/systemdclient.cpp
-    src/system/systemdclient.h
-    src/system/systemdjobs.cpp
+    src/application/main.cpp
+    src/anonsurf/anonsurfactions.cpp
+    src/anonsurf/anonsurfbackend.cpp
+    src/anonsurf/anonsurfbackend.h
+    src/anonsurf/anonsurfstate.cpp
+    src/cli/commandclient.cpp
+    src/cli/commandclient.h
+    src/systemd/systemdclient.cpp
+    src/systemd/systemdclient.h
+    src/systemd/systemdjobs.cpp
 )
 
 target_include_directories(anonsurf-gui PRIVATE src)

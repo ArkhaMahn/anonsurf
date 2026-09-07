@@ -1,4 +1,4 @@
-#include "backend/anonsurfbackend.h"
+#include "anonsurf/anonsurfbackend.h"
 
 #include <QGuiApplication>
 #include <QIcon>

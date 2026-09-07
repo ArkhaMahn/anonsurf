@@ -1,4 +1,4 @@
-#include "backend/anonsurfbackend.h"
+#include "anonsurf/anonsurfbackend.h"
 
 void AnonSurfBackend::handleStatus(bool active, bool torActive,
                                    const QString &dnsState,

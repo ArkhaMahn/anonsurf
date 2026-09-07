@@ -1,4 +1,4 @@
-#include "system/systemdclient.h"
+#include "systemd/systemdclient.h"
 
 void SystemdClient::handleJobRemoved(uint, const QDBusObjectPath &job,
                                      const QString &unit,

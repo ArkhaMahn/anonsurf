@@ -1,4 +1,4 @@
-#include "system/commandclient.h"
+#include "cli/commandclient.h"
 
 #include <QFileInfo>
 #include <QJsonArray>

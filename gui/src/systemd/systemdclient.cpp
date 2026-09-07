@@ -1,4 +1,4 @@
-#include "system/systemdclient.h"
+#include "systemd/systemdclient.h"
 
 #include <QDBusMessage>
 #include <QDBusPendingCallWatcher>

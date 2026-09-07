@@ -1,7 +1,7 @@
 #pragma once
 
-#include "system/commandclient.h"
-#include "system/systemdclient.h"
+#include "cli/commandclient.h"
+#include "systemd/systemdclient.h"
 
 #include <QObject>
 #include <QTimer>
