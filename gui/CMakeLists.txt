@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Qml Quick QuickControls2)
+find_package(Qt6 6.8 REQUIRED COMPONENTS Core DBus Gui Qml Quick QuickControls2 Widgets)
 qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(anonsurf-gui
@@ -25,6 +25,10 @@ qt_add_executable(anonsurf-gui
     src/systemd/systemdclient.cpp
     src/systemd/systemdclient.h
     src/systemd/systemdjobs.cpp
+    src/tray/traycontroller.cpp
+    src/tray/traycontroller.h
+    src/tray/traymenu.cpp
+    src/tray/traymenu.h
 )
 
 target_include_directories(anonsurf-gui PRIVATE src)
@@ -81,6 +85,7 @@ target_link_libraries(anonsurf-gui PRIVATE
     Qt6::Qml
     Qt6::Quick
     Qt6::QuickControls2
+    Qt6::Widgets
 )
 
 install(TARGETS anonsurf-gui RUNTIME DESTINATION bin)

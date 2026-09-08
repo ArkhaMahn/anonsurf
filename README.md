@@ -15,6 +15,7 @@
 - `gui/src/application/`: GUI startup and single-instance activation.
 - `gui/src/anonsurf/`: GUI state and AnonSurf action orchestration.
 - `gui/src/cli/`, `systemd/`: command-line and systemd D-Bus adapters.
+- `gui/src/tray/`: system tray integration.
 - `icons/`: AnonSurf and Nyx logos retained for the future interface.
 
 Interrupted sessions are recovered automatically at boot before Tor starts.

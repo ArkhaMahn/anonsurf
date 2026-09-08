@@ -7,9 +7,9 @@ ApplicationWindow {
     id: window
 
     required property var backend
+    required property var desktop
     property bool safeKill: false
-    // Polling costs a process and a D-Bus round trip, so it only runs while
-    // the window is on screen.
+    // The tray needs fresh status even while the window is hidden.
     readonly property bool live: window.visible
                                  && window.visibility !== Window.Minimized
     // The window opens exactly as tall as its content and cannot grow past it,
@@ -32,13 +32,17 @@ ApplicationWindow {
     font.family: Theme.uiFont
 
     Component.onCompleted: window.backend.refresh()
-    onClosing: aboutWindow.close()
+    onClosing: close => {
+        aboutWindow.close();
+        if (window.desktop.hideToTray())
+            close.accepted = false;
+    }
 
     onLiveChanged: if (window.live) window.backend.refresh()
 
     Timer {
         interval: 3000
-        running: window.live
+        running: window.live || window.desktop.trayAvailable
         repeat: true
         onTriggered: window.backend.refresh()
     }
@@ -128,6 +132,19 @@ ApplicationWindow {
         id: errorDialog
 
         backend: window.backend
+    }
+
+    Connections {
+        target: window.desktop
+
+        function onLifecycleRequested(action: string) {
+            if (action === "start")
+                window.backend.start(window.safeKill);
+            else if (action === "stop")
+                window.backend.stop(window.safeKill);
+            else if (action === "restart")
+                window.backend.restart(window.safeKill);
+        }
     }
 
     Connections {

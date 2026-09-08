@@ -1,8 +1,9 @@
 #include "anonsurf/anonsurfbackend.h"
 #include "application/instance.h"
+#include "tray/traycontroller.h"
 
+#include <QApplication>
 #include <QDebug>
-#include <QGuiApplication>
 #include <QIcon>
 #include <QQmlApplicationEngine>
 #include <QQuickStyle>
@@ -15,7 +16,7 @@
 int main(int argc, char *argv[]) {
   QQuickStyle::setStyle("Fusion");
 
-  QGuiApplication app(argc, argv);
+  QApplication app(argc, argv);
   app.setApplicationName("anonsurf-gui");
   app.setApplicationDisplayName("AnonSurf");
   app.setOrganizationName("ParrotSec");
@@ -32,9 +33,11 @@ int main(int argc, char *argv[]) {
     return 1;
 
   AnonSurfBackend backend;
+  TrayController desktop(backend);
   QQmlApplicationEngine engine;
   engine.setInitialProperties(
-      {{"backend", QVariant::fromValue(static_cast<QObject *>(&backend))}});
+      {{"backend", QVariant::fromValue(static_cast<QObject *>(&backend))},
+       {"desktop", QVariant::fromValue(static_cast<QObject *>(&desktop))}});
   engine.load(QUrl("qrc:/qt/qml/Parrot/AnonSurf/qml/app/Main.qml"));
   if (engine.rootObjects().isEmpty())
     return 1;
@@ -44,13 +47,9 @@ int main(int argc, char *argv[]) {
     qCritical() << "The main AnonSurf window is unavailable.";
     return 1;
   }
-  QObject::connect(&instance, &DesktopInstance::activationRequested, window,
-                   [window, &backend]() {
-                     window->showNormal();
-                     window->raise();
-                     window->requestActivate();
-                     backend.refresh();
-                   });
+  desktop.attachWindow(window);
+  QObject::connect(&instance, &DesktopInstance::activationRequested, &desktop,
+                   &TrayController::showWindow);
 
   return app.exec();
 }
