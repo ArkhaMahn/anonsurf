@@ -14,6 +14,8 @@ qt_policy(SET QTP0004 NEW)
 
 qt_add_executable(anonsurf-gui
     src/application/main.cpp
+    src/application/instance.cpp
+    src/application/instance.h
     src/anonsurf/anonsurfactions.cpp
     src/anonsurf/anonsurfbackend.cpp
     src/anonsurf/anonsurfbackend.h

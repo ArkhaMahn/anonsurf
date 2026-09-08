@@ -12,7 +12,7 @@
 - `src/internal/dns/`, `firewall/`, `ipv6/`, `tor/`: network domains.
 - `src/internal/command/`, `fileops/`, `systemd/`: operating-system adapters.
 - `gui/`: Qt 6/QML interface for KDE Plasma.
-- `gui/src/application/`: GUI startup.
+- `gui/src/application/`: GUI startup and single-instance activation.
 - `gui/src/anonsurf/`: GUI state and AnonSurf action orchestration.
 - `gui/src/cli/`, `systemd/`: command-line and systemd D-Bus adapters.
 - `icons/`: AnonSurf and Nyx logos retained for the future interface.
