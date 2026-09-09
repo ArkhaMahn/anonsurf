@@ -32,7 +32,10 @@ AnonSurfBackend::AnonSurfBackend(QObject *parent) : QObject(parent) {
       &m_commands, &CommandClient::ipFailed, this,
       [this](const QString &message) { finishAction("ip", false, message); });
   connect(&m_commands, &CommandClient::monitorFailed, this,
-          &AnonSurfBackend::setError);
+          [this](const QString &message) {
+            setError(message);
+            emit operationFinished("monitor", false, message);
+          });
   connect(&m_commands, &CommandClient::safeKillFinished, this,
           [this](bool success, const QString &message) {
             handleAction("safekill", success, message);

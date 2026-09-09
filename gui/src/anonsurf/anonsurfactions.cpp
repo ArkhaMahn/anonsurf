@@ -58,6 +58,14 @@ void AnonSurfBackend::finishAction(const QString &action, bool success,
     setError(message);
   }
   emit changed();
+  if (!automatic) {
+    QString result = success ? successMessage(action) : message;
+    if (action == "ip" && success)
+      result = QString("Public IP: %1\nTor check: %2\n"
+                       "This result describes this request only.")
+                   .arg(m_publicIP, m_torCheck);
+    emit operationFinished(action, success, result);
+  }
   refresh();
 }
 

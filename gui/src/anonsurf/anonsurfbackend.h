@@ -51,6 +51,8 @@ public:
 
 signals:
   void changed();
+  void operationFinished(const QString &action, bool success,
+                         const QString &message);
 
 private:
   void beginLifecycle(const QString &action, bool safeKill);

@@ -18,6 +18,8 @@ TrayController::TrayController(AnonSurfBackend &backend, QObject *parent)
   connect(&m_menu, &TrayMenu::ipRequested, &backend, &AnonSurfBackend::checkIP);
   connect(&m_menu, &TrayMenu::monitorRequested, &backend,
           &AnonSurfBackend::openMonitor);
+  connect(&m_notifications, &DesktopNotifications::activated, this,
+          &TrayController::showWindow);
   connect(&m_tray, &QSystemTrayIcon::activated, this,
           [this](QSystemTrayIcon::ActivationReason reason) {
             if (reason == QSystemTrayIcon::Trigger ||
@@ -26,6 +28,12 @@ TrayController::TrayController(AnonSurfBackend &backend, QObject *parent)
           });
   connect(&backend, &AnonSurfBackend::changed, this,
           &TrayController::updateState);
+  connect(&backend, &AnonSurfBackend::operationFinished, this,
+          [this](const QString &, bool success, const QString &message) {
+            m_notifications.send(success ? "AnonSurf"
+                                         : "AnonSurf action failed",
+                                 message, !success);
+          });
   m_availabilityTimer.setInterval(3000);
   connect(&m_availabilityTimer, &QTimer::timeout, this,
           &TrayController::updateAvailability);
@@ -45,6 +53,13 @@ bool TrayController::hideToTray() {
   if (m_quitting || !m_available || !m_window)
     return false;
   m_window->hide();
+  if (!m_hideNoticeShown) {
+    m_hideNoticeShown = true;
+    m_notifications.send(
+        "AnonSurf is running in the tray",
+        "Use the tray menu to reopen the window or quit the interface. "
+        "Closing the window does not stop routing.");
+  }
   return true;
 }
 

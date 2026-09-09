@@ -22,6 +22,8 @@ qt_add_executable(anonsurf-gui
     src/anonsurf/anonsurfstate.cpp
     src/cli/commandclient.cpp
     src/cli/commandclient.h
+    src/notifications/notifications.cpp
+    src/notifications/notifications.h
     src/systemd/systemdclient.cpp
     src/systemd/systemdclient.h
     src/systemd/systemdjobs.cpp

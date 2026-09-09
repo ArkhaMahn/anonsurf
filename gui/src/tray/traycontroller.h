@@ -1,5 +1,6 @@
 #pragma once
 
+#include "notifications/notifications.h"
 #include "tray/traymenu.h"
 
 #include <QPointer>
@@ -35,8 +36,10 @@ private:
   AnonSurfBackend &m_backend;
   TrayMenu m_menu;
   QSystemTrayIcon m_tray;
+  DesktopNotifications m_notifications;
   QTimer m_availabilityTimer;
   QPointer<QWindow> m_window;
   bool m_available = false;
   bool m_quitting = false;
+  bool m_hideNoticeShown = false;
 };
