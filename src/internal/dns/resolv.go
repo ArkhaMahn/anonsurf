@@ -19,6 +19,9 @@ var ErrBackupExists = errors.New("resolv.conf backup already exists")
 type Manager struct{}
 
 func (m Manager) CreateDHCPOnly() error {
+	if err := m.finishPendingRestore(); err != nil {
+		return err
+	}
 	if err := m.backupNetworkManagerHook(); err != nil {
 		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
 	}
@@ -31,6 +34,9 @@ func (m Manager) CreateDHCPOnly() error {
 func (m Manager) CreateAddrs(listAddr []string) error {
 	if len(listAddr) == 0 {
 		return ErrNoValidDNSAddress
+	}
+	if err := m.finishPendingRestore(); err != nil {
+		return err
 	}
 	if err := m.backupNetworkManagerHook(); err != nil {
 		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
@@ -66,33 +72,10 @@ func (m Manager) restoreResolverBackup() (bool, error) {
 	return true, nil
 }
 
-func (m Manager) RestoreBackupOrDHCP() error {
-	restoredBackup, err := m.restoreResolverBackup()
-	if err != nil {
+func (m Manager) MakeBackup() error {
+	if err := m.finishPendingRestore(); err != nil {
 		return err
 	}
-	if !restoredBackup {
-		if err := removeManagedResolver(ResolvConfPath); err != nil {
-			return fmt.Errorf("remove current DNS settings: %w", err)
-		}
-	}
-
-	hookState, err := m.restoreNetworkManagerHook()
-	if err != nil {
-		return fmt.Errorf("restore NetworkManager DNS ownership: %w", err)
-	}
-	if restoredBackup {
-		if err := fileops.RemoveIfExists(ResolvConfBackup); err != nil {
-			return fmt.Errorf("remove restored backup: %w", err)
-		}
-	}
-	if err := m.clearNetworkManagerHookState(hookState); err != nil {
-		return fmt.Errorf("clear NetworkManager hook backup: %w", err)
-	}
-	return nil
-}
-
-func (m Manager) MakeBackup() error {
 	if _, err := os.Lstat(ResolvConfBackup); err == nil {
 		return ErrBackupExists
 	} else if !errors.Is(err, os.ErrNotExist) {

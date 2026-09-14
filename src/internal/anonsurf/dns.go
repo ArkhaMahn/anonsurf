@@ -24,15 +24,12 @@ func (c Controller) configureDNS(state *startTransition) error {
 }
 
 func (c Controller) setDNSManaged(managed bool) error {
-	currentlyManaged, err := fileExists(DNSStatePath)
+	if !managed {
+		return c.restoreDNS()
+	}
+	currentlyManaged, err := (dns.Manager{}).IsManaged()
 	if err != nil {
 		return fmt.Errorf("check DNS state: %w", err)
-	}
-	if !managed {
-		if currentlyManaged {
-			return c.restoreDNS()
-		}
-		return nil
 	}
 	if currentlyManaged {
 		if err := (dns.Manager{}).CreateAddrs([]string{torDNSAddress}); err != nil {

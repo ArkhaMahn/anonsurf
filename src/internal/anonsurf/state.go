@@ -11,7 +11,7 @@ import (
 
 const (
 	ActiveStatePath    = "/run/anonsurf/active"
-	DNSStatePath       = "/var/lib/anonsurf/dns.changed"
+	DNSStatePath       = dns.StatePath
 	TorStatePath       = "/run/anonsurf/tor.was-active"
 	stateMarkerContent = "anonsurf\n"
 )
@@ -28,7 +28,7 @@ func (c Controller) clearActive() error {
 }
 
 func (c Controller) markDNSChanged() error {
-	return writeFile(DNSStatePath, []byte(stateMarkerContent), 0600)
+	return (dns.Manager{}).MarkChanged()
 }
 
 func captureTorState(active bool) (bool, error) {
@@ -72,20 +72,13 @@ func (c Controller) restoreDNS() error {
 	if !exists {
 		return nil
 	}
-	if err := (dns.Manager{}).RestoreBackupOrDHCP(); err != nil {
-		return err
-	}
-	if err := removeFile(path); err != nil {
-		return fmt.Errorf("remove DNS state: %w", err)
-	}
-	return nil
+	return (dns.Manager{}).RestoreBackupOrDHCP()
 }
 
 func (c Controller) hasManagedState() (bool, error) {
 	paths := []string{
 		ActiveStatePath,
 		firewall.StatePath,
-		DNSStatePath,
 		ipv6.StatePath,
 		TorStatePath,
 		tor.TorrcBackupPath,
@@ -100,7 +93,11 @@ func (c Controller) hasManagedState() (bool, error) {
 			return true, nil
 		}
 	}
-	return false, nil
+	managed, err := (dns.Manager{}).HasLifecycleState()
+	if err != nil {
+		return false, fmt.Errorf("check DNS state: %w", err)
+	}
+	return managed, nil
 }
 
 func (c Controller) Recover() error {
@@ -119,6 +116,9 @@ func (c Controller) Recover() error {
 		return err
 	}
 	if !managed {
+		if err := c.restoreDNS(); err != nil {
+			return err
+		}
 		c.reportStatus("No interrupted network state found")
 		return nil
 	}

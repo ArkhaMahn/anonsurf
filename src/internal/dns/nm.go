@@ -155,14 +155,3 @@ func (m Manager) restoreNetworkManagerHook() (networkManagerHookState, error) {
 	}
 	return state, nil
 }
-
-func (m Manager) clearNetworkManagerHookState(state networkManagerHookState) error {
-	switch state {
-	case networkManagerHookBackedUp:
-		return fileops.RemoveIfExists(NMHookBackup)
-	case networkManagerHookMissing:
-		return fileops.RemoveIfExists(NMHookMissingMarker)
-	default:
-		return nil
-	}
-}

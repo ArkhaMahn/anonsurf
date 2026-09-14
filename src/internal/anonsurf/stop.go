@@ -17,6 +17,9 @@ func (c Controller) Stop() error {
 		return err
 	}
 	if !managed {
+		if err := c.restoreDNS(); err != nil {
+			return err
+		}
 		c.reportStatus("AnonSurf routing is inactive")
 		return nil
 	}

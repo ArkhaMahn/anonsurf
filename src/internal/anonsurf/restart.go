@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"gitlab.com/parrotsec/packages/anonsurf/internal/dns"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/firewall"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/systemd"
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
@@ -64,7 +65,7 @@ func (c Controller) captureRestartSnapshot() (restartSnapshot, error) {
 	if err != nil {
 		return restartSnapshot{}, fmt.Errorf("parse current torrc: %w", err)
 	}
-	dnsManaged, err := fileExists(DNSStatePath)
+	dnsManaged, err := (dns.Manager{}).IsManaged()
 	if err != nil {
 		return restartSnapshot{}, fmt.Errorf("check DNS state: %w", err)
 	}
