@@ -109,6 +109,12 @@ Manage and inspect system DNS settings used by AnonSurf.
 Generate or restore Tor configuration from AnonSurf settings.
 .SH FILES
 .TP
+.B /etc/resolv.conf
+System DNS resolver file or symbolic link restored when AnonSurf stops.
+.TP
+.B /etc/anonsurf/resolv.conf.bak
+Backup preserving the original resolver file or symbolic link target.
+.TP
 .B /etc/anonsurf/anonsurf.cfg
 AnonSurf configuration.
 .TP

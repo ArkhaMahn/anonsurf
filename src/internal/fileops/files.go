@@ -58,6 +58,25 @@ func CopyAtomic(source, destination string, perm os.FileMode) error {
 	return WriteAtomic(destination, data, perm)
 }
 
+func CopySymlinkAtomic(source, destination string) error {
+	target, err := os.Readlink(source)
+	if err != nil {
+		return err
+	}
+	tempDir, err := os.MkdirTemp(filepath.Dir(destination), "."+filepath.Base(destination)+".tmp-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tempDir)
+
+	tempPath := filepath.Join(tempDir, "link")
+	if err := os.Symlink(target, tempPath); err != nil {
+		return err
+	}
+	defer os.Remove(tempPath)
+	return os.Rename(tempPath, destination)
+}
+
 func RemoveIfExists(path string) error {
 	err := os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {

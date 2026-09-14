@@ -10,7 +10,7 @@ import (
 const torDNSAddress = "127.0.0.1"
 
 func (c Controller) configureDNS(state *startTransition) error {
-	if err := (dns.Manager{}).MakeBackup(); err != nil && !isSkippableDNSBackupError(err) {
+	if err := (dns.Manager{}).MakeBackup(); err != nil && !errors.Is(err, dns.ErrBackupExists) {
 		return fmt.Errorf("backup DNS settings: %w", err)
 	}
 	if err := c.markDNSChanged(); err != nil {
@@ -43,8 +43,4 @@ func (c Controller) setDNSManaged(managed bool) error {
 
 	state := startTransition{}
 	return c.configureDNS(&state)
-}
-
-func isSkippableDNSBackupError(err error) bool {
-	return errors.Is(err, dns.ErrBackupExists) || errors.Is(err, dns.ErrBackupSkippedSymlink)
 }

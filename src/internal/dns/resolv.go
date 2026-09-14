@@ -14,10 +14,7 @@ const (
 	ResolvConfPath   = "/etc/resolv.conf"
 )
 
-var (
-	ErrBackupExists         = errors.New("resolv.conf backup already exists")
-	ErrBackupSkippedSymlink = errors.New("skip backup because resolv.conf is a symlink")
-)
+var ErrBackupExists = errors.New("resolv.conf backup already exists")
 
 type Manager struct{}
 
@@ -45,16 +42,19 @@ func (m Manager) CreateAddrs(listAddr []string) error {
 }
 
 func (m Manager) restoreResolverBackup() (bool, error) {
-	exists, err := fileops.Exists(ResolvConfBackup)
-	if err != nil {
-		return false, fmt.Errorf("check backup: %w", err)
-	}
-	if !exists {
+	// Relative symlink backups can be dangling in the backup directory.
+	info, err := os.Lstat(ResolvConfBackup)
+	if errors.Is(err, os.ErrNotExist) {
 		return false, nil
 	}
-	info, err := os.Stat(ResolvConfBackup)
 	if err != nil {
 		return false, fmt.Errorf("stat backup: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		if err := fileops.CopySymlinkAtomic(ResolvConfBackup, ResolvConfPath); err != nil {
+			return false, fmt.Errorf("restore resolver symlink: %w", err)
+		}
+		return true, nil
 	}
 	content, err := os.ReadFile(ResolvConfBackup)
 	if err != nil {
@@ -93,43 +93,27 @@ func (m Manager) RestoreBackupOrDHCP() error {
 }
 
 func (m Manager) MakeBackup() error {
-	backupExists, err := fileops.Exists(ResolvConfBackup)
-	if err != nil {
+	if _, err := os.Lstat(ResolvConfBackup); err == nil {
+		return ErrBackupExists
+	} else if !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("check resolv.conf backup: %w", err)
 	}
-	if backupExists {
-		return ErrBackupExists
-	}
 
-	exists, err := fileops.Exists(ResolvConfPath)
-	if err != nil {
-		return fmt.Errorf("check resolv.conf: %w", err)
-	}
-	if !exists {
+	info, err := os.Lstat(ResolvConfPath)
+	if errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("missing %s", ResolvConfPath)
 	}
-
-	isSymlink, err := SystemDNSFileIsSymlink(ResolvConfPath)
-	if err != nil {
-		return fmt.Errorf("check resolv.conf symlink: %w", err)
-	}
-	if isSymlink {
-		// Copying a symlink would lose its ownership model:
-		//   /etc/resolv.conf -> NetworkManager file -> ReadFile -> bytes only
-		// Restoring those bytes atomically would create a regular resolv.conf, not
-		// the original link.
-		return ErrBackupSkippedSymlink
-		// The symlink path therefore uses no file backup:
-		//   save NM hook -> install AnonSurf resolver -> restore NM hook
-		//   -> reload NetworkManager -> **NetworkManager recreates its resolver**
-	}
-
-	info, err := os.Stat(ResolvConfPath)
 	if err != nil {
 		return fmt.Errorf("stat resolv.conf: %w", err)
 	}
 	if err := os.MkdirAll(filepath.Dir(ResolvConfBackup), 0755); err != nil {
 		return fmt.Errorf("create backup directory: %w", err)
+	}
+	if info.Mode()&os.ModeSymlink != 0 {
+		if err := fileops.CopySymlinkAtomic(ResolvConfPath, ResolvConfBackup); err != nil {
+			return fmt.Errorf("backup resolver symlink: %w", err)
+		}
+		return nil
 	}
 	if err := fileops.CopyAtomic(ResolvConfPath, ResolvConfBackup, info.Mode().Perm()); err != nil {
 		return fmt.Errorf("create backup: %w", err)
