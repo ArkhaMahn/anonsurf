@@ -32,6 +32,8 @@ Existing direct TCP/UDP connections to public IPv4 destinations are blocked
 when routing starts, except for Tor-owned traffic and the DHCP exception.
 They are not migrated into Tor; TCP applications must reconnect.
 Tor carries supported TCP traffic and DNS lookups, not arbitrary UDP.
+UDP DNS requests use Tor's UDP-only DNSPort. TCP DNS requests to public
+IPv4 resolvers use TransPort, following the same routing as other TCP traffic.
 Private-network and loopback routing exceptions remain in effect.
 
 # Thank to

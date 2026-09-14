@@ -12,6 +12,8 @@ runtime status, request a new Tor identity, check the public Tor status,
 and manage startup integration.
 .PP
 Tor carries supported TCP traffic and DNS lookups, not arbitrary UDP.
+UDP DNS requests use Tor's UDP-only DNSPort. TCP DNS requests to public
+IPv4 resolvers use TransPort, following the same routing as other TCP traffic.
 Private-network and loopback routing exceptions remain in effect.
 .PP
 The Go command-line interface keeps
