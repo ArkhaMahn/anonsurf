@@ -58,3 +58,12 @@ Breaks: anonsurf-gtk (<< 6.0.0~)
 Description: Graphical interface for AnonSurf
  A Qt 6 interface for managing AnonSurf routing, status,
  Tor identities and startup integration on KDE Plasma.
+
+Package: anonsurf-gtk
+Architecture: all
+Section: oldlibs
+Priority: optional
+Depends: ${misc:Depends}, anonsurf-gui (>= ${source:Version})
+Description: Transitional package for the AnonSurf graphical interface
+ This package upgrades the legacy GTK interface to anonsurf-gui.
+ It contains no legacy GTK executable.

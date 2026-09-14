@@ -142,6 +142,9 @@ release:
         - name: AnonSurf GUI Debian package
           url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf-gui_${DEBIAN_VERSION}_${DEBIAN_ARCH}.deb
           link_type: package
+        - name: anonsurf-gtk transition Debian package
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf-gtk_${DEBIAN_VERSION}_all.deb
+          link_type: package
         - name: Debian package checksums
           url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/SHA256SUMS-debian
           link_type: package
