@@ -56,13 +56,15 @@ func (c ServiceController) Disable() error {
 
 func (c ServiceController) IsEnabled() (bool, error) {
 	return c.queryState("is-enabled", map[string]bool{
-		"enabled":   true,
-		"disabled":  false,
-		"masked":    false,
-		"static":    false,
-		"indirect":  false,
-		"generated": false,
-		"transient": false,
+		"enabled":         true,
+		"enabled-runtime": true,
+		"disabled":        false,
+		"masked":          false,
+		"masked-runtime":  false,
+		"static":          false,
+		"indirect":        false,
+		"generated":       false,
+		"transient":       false,
 	})
 }
 
