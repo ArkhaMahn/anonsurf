@@ -92,7 +92,7 @@ func (m Manager) restoreExistingState(state ipv6State) error {
 				continue
 			}
 		}
-		if err := (command.Runner{}).Run(sysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
+		if err := m.writeSetting(setting); err != nil {
 			failures = append(failures, fmt.Errorf("%s: %w", setting.Key, err))
 		}
 	}
@@ -125,18 +125,27 @@ func ipv6InterfaceName(key string) (string, bool) {
 		return "", false
 	}
 	name := strings.TrimSuffix(strings.TrimPrefix(key, prefix), suffix)
-	if name == "" || strings.ContainsAny(name, "/= \t\r\n") {
+	if name == "" || name == "." || name == ".." || strings.ContainsAny(name, "/= \t\r\n") {
 		return "", false
 	}
 	return name, true
 }
 
-func (Manager) setState(state ipv6State) error {
+func (m Manager) setState(state ipv6State) error {
 	var failures []error
 	for _, setting := range state.Settings {
-		if err := (command.Runner{}).Run(sysctlPath, "-w", setting.Key+"="+setting.Value); err != nil {
+		if err := m.writeSetting(setting); err != nil {
 			failures = append(failures, fmt.Errorf("%s: %w", setting.Key, err))
 		}
 	}
 	return errors.Join(failures...)
+}
+
+func (Manager) writeSetting(setting ipv6Setting) error {
+	name, ok := ipv6InterfaceName(setting.Key)
+	if !ok {
+		return fmt.Errorf("invalid IPv6 state key %q", setting.Key)
+	}
+	key := "net/ipv6/conf/" + name + "/disable_ipv6"
+	return (command.Runner{}).Run(sysctlPath, "-w", key+"="+setting.Value)
 }
