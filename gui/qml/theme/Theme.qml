@@ -14,12 +14,12 @@ QtObject {
     readonly property color bgPanelAlt: "#0C2633"
     readonly property color bgBottom: "#03090D"
     readonly property color textPrimary: "#F4FAFC"
-    readonly property color textSecondary: "#8CB2C1"
+    readonly property color textSecondary: "#A0B9C4"
     readonly property color textOnAccent: "#F7FCFF"
     readonly property color borderLight: Qt.rgba(0.22, 0.85, 1, 0.18)
     readonly property color buttonText: "#BDEEFF"
     readonly property color buttonPrimary: "#007CA6"
-    readonly property color buttonPrimaryHover: "#109DCC"
+    readonly property color buttonPrimaryHover: "#006F96"
     readonly property color buttonSecondary: "#0A202A"
     readonly property color buttonSecondaryHover: "#0D3040"
     readonly property color buttonBorder: "#008DBD"
@@ -33,10 +33,10 @@ QtObject {
     readonly property string uiFont: "Inter"
     readonly property int titleSize: 26
     readonly property int headingSize: 18
-    readonly property int bodySize: 14
-    readonly property int buttonSize: 12
-    readonly property int badgeSize: 11
-    readonly property int detailSize: 12
+    readonly property int bodySize: 15
+    readonly property int buttonSize: 13
+    readonly property int badgeSize: 12
+    readonly property int detailSize: 13
     readonly property int spacingTiny: 5
     readonly property int spacingSmall: 8
     readonly property int spacingMedium: 10

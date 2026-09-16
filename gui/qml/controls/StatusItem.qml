@@ -10,7 +10,7 @@ Item {
     property string tooltip: ""
     property color accentColor: Theme.neonCyan
 
-    implicitHeight: 54
+    implicitHeight: content.implicitHeight
 
     HoverHandler {
         id: hover
@@ -27,8 +27,12 @@ Item {
     }
 
     ColumnLayout {
-        anchors.fill: parent
-        spacing: 2
+        id: content
+
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        spacing: Theme.spacingTiny
 
         Text {
             text: root.label

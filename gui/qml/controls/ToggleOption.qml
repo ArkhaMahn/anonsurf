@@ -10,7 +10,9 @@ CheckBox {
 
     spacing: Theme.spacingSmall
     hoverEnabled: true
+    opacity: enabled ? 1 : 0.55
     Accessible.name: label
+    Accessible.description: tooltip
 
     indicator: Rectangle {
         x: 0
@@ -36,8 +38,7 @@ CheckBox {
 
         leftPadding: 28
         verticalAlignment: Text.AlignVCenter
-        color: !root.enabled ? Theme.borderLight
-                             : root.checked ? root.accentColor : Theme.textSecondary
+        color: root.checked ? root.accentColor : Theme.textPrimary
         font.family: Theme.uiFont
         font.pixelSize: Theme.detailSize
     }

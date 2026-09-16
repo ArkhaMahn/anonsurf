@@ -121,10 +121,11 @@ ApplicationWindow {
         id: safeKillDialog
 
         badge: "SAFEKILL"
-        confirmText: "Enable"
-        message: "SafeKill requests termination of selected applications, then "
-                 + "cleans selected caches, history and sessions with BleachBit. "
-                 + "Unsaved work may be lost and the cleaning cannot be undone."
+        confirmText: "Enable SafeKill"
+        message: "Enabling SafeKill does not run it now. Before each start, stop "
+                 + "or restart, it requests termination of selected applications, "
+                 + "then clears selected caches, history and sessions with BleachBit. "
+                 + "Unsaved work may be lost and cleared data cannot be recovered."
         onAccepted: window.safeKill = true
     }
 

@@ -15,6 +15,8 @@ Dialog {
     anchors.centerIn: parent
     width: parent ? Math.min(root.maxWidth, parent.width - Theme.contentMargin * 2)
                   : root.maxWidth
+    height: parent ? Math.min(implicitHeight, parent.height - Theme.contentMargin * 2)
+                   : implicitHeight
     modal: true
     focus: true
     padding: Theme.spacingLarge
@@ -30,13 +32,27 @@ Dialog {
             accentColor: root.accentColor
         }
 
-        Text {
+        ScrollView {
+            id: messageScroll
+
             Layout.fillWidth: true
-            text: root.message
-            color: Theme.textSecondary
-            font.family: Theme.uiFont
-            font.pixelSize: Theme.bodySize
-            wrapMode: Text.WordWrap
+            Layout.fillHeight: true
+            implicitHeight: messageText.implicitHeight
+            contentWidth: availableWidth
+            clip: true
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AsNeeded
+
+            Text {
+                id: messageText
+
+                width: messageScroll.availableWidth
+                text: root.message
+                color: Theme.textPrimary
+                font.family: Theme.uiFont
+                font.pixelSize: Theme.bodySize
+                wrapMode: Text.WordWrap
+            }
         }
 
         RowLayout {

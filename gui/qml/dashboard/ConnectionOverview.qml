@@ -35,7 +35,7 @@ Rectangle {
             detail: !root.backend.statusAvailable ? "Unavailable"
                     : root.backend.anonsurfActive ? "Managed by AnonSurf" : "System service"
             accentColor: root.backend.statusAvailable && root.backend.torActive
-                         ? Theme.neonCyan : Theme.textSecondary
+                         ? Theme.neonCyan : Theme.textPrimary
         }
 
         StatusItem {
@@ -45,7 +45,7 @@ Rectangle {
             value: root.backend.dnsMode
             detail: root.backend.dnsServers
             accentColor: !root.backend.statusAvailable || !root.backend.anonsurfActive
-                         ? Theme.textSecondary
+                         ? Theme.textPrimary
                          : root.backend.dnsMode.indexOf("Tor") === 0
                            ? Theme.neonCyan : Theme.warning
         }
@@ -58,16 +58,21 @@ Rectangle {
             detail: "Tor check: " + root.backend.torCheck
             accentColor: root.backend.torCheck === "TOR" ? Theme.neonCyan
                          : root.backend.torCheck === "CLEARNET" ? Theme.danger
-                         : Theme.textSecondary
+                         : Theme.textPrimary
         }
 
         Item {
             Layout.fillWidth: true
-            implicitHeight: 54
+            Layout.alignment: Qt.AlignTop
+            implicitHeight: startupContent.implicitHeight
 
             ColumnLayout {
-                anchors.fill: parent
-                spacing: 2
+                id: startupContent
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
+                spacing: Theme.spacingTiny
 
                 Text {
                     text: "System startup"

@@ -16,81 +16,80 @@ Rectangle {
         : root.backend.protectionState === "INACTIVE" ? Theme.textSecondary
         : Theme.danger
 
-    implicitHeight: 104
+    implicitHeight: content.implicitHeight + Theme.spacingLarge * 2
     color: Theme.bgPanel
     border.width: 1
     border.color: Theme.borderLight
 
-    RowLayout {
-        anchors.fill: parent
-        anchors.leftMargin: Theme.spacingLarge
-        anchors.rightMargin: Theme.spacingLarge
-        spacing: Theme.spacingLarge
+    ColumnLayout {
+        id: content
 
-        Icon {
-            Layout.preferredWidth: visible ? 48 : 0
-            Layout.preferredHeight: visible ? 48 : 0
-            Layout.alignment: Qt.AlignVCenter
-            visible: !root.veryCompact
-            icon: root.backend.protectionState === "DEGRADED"
-                  || root.backend.protectionState === "UNVERIFIED"
-                  ? "warning" : "shield"
-            color: root.stateColor
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.margins: Theme.spacingLarge
+        spacing: Theme.spacingMedium
 
-            SequentialAnimation on opacity {
-                running: root.backend.busy
-                loops: Animation.Infinite
-                NumberAnimation { to: 0.45; duration: 500 }
-                NumberAnimation { to: 1; duration: 500 }
-            }
-        }
-
-        ColumnLayout {
+        RowLayout {
             Layout.fillWidth: true
-            Layout.alignment: Qt.AlignVCenter
-            spacing: Theme.spacingSmall
+            spacing: Theme.spacingLarge
 
-            Text {
-                text: "Routing status"
-                color: Theme.textSecondary
-                font.family: Theme.uiFont
-                font.pixelSize: Theme.detailSize
-            }
-
-            Text {
-                text: root.backend.protectionState
+            Icon {
+                Layout.preferredWidth: visible ? 48 : 0
+                Layout.preferredHeight: visible ? 48 : 0
+                Layout.alignment: Qt.AlignVCenter
+                visible: !root.veryCompact
+                icon: root.backend.protectionState === "DEGRADED"
+                      || root.backend.protectionState === "UNVERIFIED"
+                      ? "warning" : "shield"
                 color: root.stateColor
-                font.family: Theme.uiFont
-                font.pixelSize: root.compact ? Theme.headingSize + 2 : Theme.titleSize
-                font.bold: true
-                font.letterSpacing: 2
+
+                SequentialAnimation on opacity {
+                    running: root.backend.busy
+                    loops: Animation.Infinite
+                    NumberAnimation { to: 0.45; duration: 500 }
+                    NumberAnimation { to: 1; duration: 500 }
+                }
             }
 
-            // While an action runs the detail line carries its progress: it is
-            // the only transient message the interface has, and the panel is
-            // where the user is already looking.
-            Text {
+            ColumnLayout {
                 Layout.fillWidth: true
-                text: root.backend.busy ? root.backend.progress
-                                        : root.backend.protectionDetail
-                color: root.backend.busy ? Theme.neonCyan : Theme.textSecondary
-                font.family: Theme.uiFont
-                font.pixelSize: Theme.bodySize
-                wrapMode: Text.WordWrap
-                visible: !root.compact || root.backend.busy
-            }
-        }
+                Layout.alignment: Qt.AlignVCenter
+                spacing: Theme.spacingSmall
 
-        ColumnLayout {
-            Layout.preferredWidth: root.compact ? 150 : 190
-            // A nested layout fills by default, which would silently override
-            // the width above and let the button sprawl across the panel.
-            Layout.fillWidth: false
-            Layout.alignment: Qt.AlignVCenter
-            spacing: Theme.spacingSmall
+                Text {
+                    text: "Routing status"
+                    color: Theme.textSecondary
+                    font.family: Theme.uiFont
+                    font.pixelSize: Theme.detailSize
+                }
+
+                Text {
+                    text: root.backend.protectionState
+                    color: root.stateColor
+                    font.family: Theme.uiFont
+                    font.pixelSize: root.compact ? Theme.headingSize + 2 : Theme.titleSize
+                    font.bold: true
+                    font.letterSpacing: 2
+                }
+
+                // Keep lifecycle progress in the status panel.
+                Text {
+                    Layout.fillWidth: true
+                    text: root.backend.busy ? root.backend.progress
+                                            : root.backend.protectionDetail
+                    color: root.backend.busy ? Theme.neonCyan : Theme.textPrimary
+                    font.family: Theme.uiFont
+                    font.pixelSize: Theme.bodySize
+                    wrapMode: Text.WordWrap
+                    visible: !root.compact || root.backend.busy
+                }
+            }
 
             ActionButton {
-                Layout.fillWidth: true
+                Layout.preferredWidth: root.compact ? 150 : 190
+                Layout.fillWidth: false
+                Layout.alignment: Qt.AlignVCenter
                 text: root.backend.anonsurfActive ? "Stop AnonSurf" : "Start AnonSurf"
                 iconName: root.backend.anonsurfActive ? "stop" : "start"
                 tooltip: root.backend.anonsurfActive
@@ -102,11 +101,23 @@ Rectangle {
                            ? root.backend.stop(root.safeKill)
                            : root.backend.start(root.safeKill)
             }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 1
+            color: Theme.borderLight
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingLarge
 
             ToggleOption {
-                Layout.alignment: Qt.AlignHCenter
+                Layout.alignment: Qt.AlignTop
                 label: "Use SafeKill"
-                tooltip: "Requests termination of selected applications, then cleans selected caches, history and sessions with BleachBit before routing changes."
+                tooltip: safeKillDescription.text + " Uses BleachBit. Unsaved work "
+                         + "may be lost and cleared data cannot be recovered."
                 accentColor: Theme.warning
                 checked: root.safeKill
                 enabled: !root.backend.busy
@@ -116,6 +127,19 @@ Rectangle {
                     root.safeKillToggled(checked);
                     checked = Qt.binding(() => root.safeKill);
                 }
+            }
+
+            Text {
+                id: safeKillDescription
+
+                Layout.fillWidth: true
+                Layout.alignment: Qt.AlignVCenter
+                text: "Before start, stop or restart: closes selected apps "
+                      + "and clears caches, history and sessions."
+                color: Theme.textSecondary
+                font.family: Theme.uiFont
+                font.pixelSize: Theme.detailSize
+                wrapMode: Text.WordWrap
             }
         }
     }
