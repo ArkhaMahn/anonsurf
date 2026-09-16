@@ -27,6 +27,7 @@ cache:
   key:
     files:
       - src/go.sum
+      - src/vendor/modules.txt
   paths:
     - .cache/go-build/
     - .cache/go-mod/
@@ -41,6 +42,9 @@ check:
   extends: .go-job
   script:
     - make check
+    # Fail if src/vendor is stale: re-vendor (network allowed here) and
+    # require a clean tree. Builds themselves stay offline via Makefile.
+    - cd src && go mod vendor && git diff --exit-code -- go.sum vendor/ && test -z "$(git status --porcelain -- vendor/)"
 
 build-binaries:
   stage: build
@@ -70,7 +74,7 @@ package-deb:
     - check
   before_script:
     - apt-get update
-    - apt-get install --yes --no-install-recommends bash-completion build-essential cmake debhelper golang-github-spf13-cobra-dev golang-go qml6-module-qtquick-shapes qt6-base-dev qt6-declarative-dev
+    - apt-get install --yes --no-install-recommends bash-completion build-essential cmake debhelper golang-go qml6-module-qtquick-shapes qt6-base-dev qt6-declarative-dev
   script:
     - dpkg-buildpackage --build=binary --no-sign
     - mkdir -p dist/debian

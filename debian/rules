@@ -9,10 +9,10 @@ override_dh_installsystemd-arch:
 	dh_installsystemd -p anonsurf anonsurf-recovery.service
 
 override_dh_auto_build-arch:
-	make build GO-BUILD-MODE=gopath
+	make build
 
 override_dh_auto_test-arch:
-	make check GO-BUILD-MODE=gopath
+	make check
 
 override_dh_fixperms-arch:
 	dh_fixperms

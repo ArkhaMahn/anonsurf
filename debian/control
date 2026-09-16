@@ -9,7 +9,6 @@ Build-Depends:
  cmake,
  g++,
  golang-go,
- golang-github-spf13-cobra-dev,
  bash-completion,
  qt6-base-dev,
  qt6-declarative-dev,

@@ -1,28 +1,16 @@
 GO ?= go
 CMAKE ?= cmake
 GO-SRC-DIR = src
-GO-MODULE = gitlab.com/parrotsec/packages/anonsurf
-GO-BUILD-FLAGS = -trimpath
+GO-BUILD-FLAGS = -trimpath -mod=vendor
 GO-LDFLAGS = -s -w
-GO-BUILD-MODE ?= module
-GO-GOPATH ?= $(CURDIR)/build/gopath:/usr/share/gocode
-GO-GOPATH-SRC = $(CURDIR)/build/gopath/src/$(GO-MODULE)
+GO-BUILD-ENV = GO111MODULE=on GOPROXY=off GOTOOLCHAIN=local
+GO-PKG-PREFIX = .
 BUILD-DEST = build/release
 GUI-BUILD-DIR = build/gui
 
 VERSION ?= $(shell sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)
 
-ifeq ($(GO-BUILD-MODE),gopath)
-GO-BUILD-DEPS = prepare-go-gopath
-GO-BUILD-ENV = GO111MODULE=off GOPATH=$(GO-GOPATH)
-GO-PKG-PREFIX = $(GO-MODULE)
-else
-GO-BUILD-DEPS =
-GO-BUILD-ENV = GO111MODULE=on
-GO-PKG-PREFIX = .
-endif
-
-.PHONY: build check clean gui gui-check inst-gui prepare-go-gopath
+.PHONY: build check clean gui gui-check inst-gui vendor
 
 all: build install
 
@@ -32,24 +20,24 @@ clean:
 $(BUILD-DEST):
 	mkdir -p $(BUILD-DEST)
 
-prepare-go-gopath: $(BUILD-DEST)
-	mkdir -p $(dir $(GO-GOPATH-SRC))
-	rm -rf $(GO-GOPATH-SRC)
-	cp -a $(CURDIR)/$(GO-SRC-DIR) $(GO-GOPATH-SRC)
+# Regenerate src/vendor after changing src/go.mod or src/go.sum.
+# CI verifies vendor is in sync: run this and commit the result.
+vendor:
+	cd $(GO-SRC-DIR) && $(GO) mod vendor && $(GO) mod verify
 
-anonsurf-cli: $(BUILD-DEST) $(GO-BUILD-DEPS)
+anonsurf-cli: $(BUILD-DEST)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS) -X main.version=$(VERSION)" -o ../$(BUILD-DEST)/anonsurf $(GO-PKG-PREFIX)/cmd/anonsurf-cli
 
-dnstool: $(BUILD-DEST) $(GO-BUILD-DEPS)
+dnstool: $(BUILD-DEST)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/dnstool $(GO-PKG-PREFIX)/cmd/dnstool
 
-make-torrc: $(BUILD-DEST) $(GO-BUILD-DEPS)
+make-torrc: $(BUILD-DEST)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/make-torrc $(GO-PKG-PREFIX)/cmd/make-torrc
 
-anondaemon: $(BUILD-DEST) $(GO-BUILD-DEPS)
+anondaemon: $(BUILD-DEST)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anondaemon $(GO-PKG-PREFIX)/cmd/anondaemon
 
-safekill: $(BUILD-DEST) $(GO-BUILD-DEPS)
+safekill: $(BUILD-DEST)
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/safekill $(GO-PKG-PREFIX)/cmd/safekill
 
 gui:
@@ -61,8 +49,9 @@ gui-check: gui
 
 build: anonsurf-cli dnstool make-torrc anondaemon safekill gui
 
-check: $(GO-BUILD-DEPS) gui-check
-	cd $(GO-SRC-DIR) && files=$$(gofmt -l .) && \
+check: gui-check
+	# vendor/ is upstream code: only format-check our own sources.
+	cd $(GO-SRC-DIR) && files=$$(find . -path ./vendor -prune -o -name '*.go' -print0 | xargs -0 gofmt -l) && \
 		if [ -n "$$files" ]; then echo "not gofmt-clean: $$files"; exit 1; fi
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
 	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build $(GO-PKG-PREFIX)/cmd/...
