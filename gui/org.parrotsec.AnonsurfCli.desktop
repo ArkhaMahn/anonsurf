@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=AnonSurf CLI
+Comment=Manage system-wide Tor routing from the terminal
+Exec=anonsurf
+Icon=anonsurf
+Terminal=true
+Categories=Network;Security;anonsurf;
+Keywords=Tor;Privacy;Anonymity;Network;CLI;Terminal;
+StartupNotify=false

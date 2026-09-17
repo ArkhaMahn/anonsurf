@@ -77,6 +77,7 @@ inst-bins:
 inst-gui:
 	cp build/gui/anonsurf-gui $(DESTDIR)/usr/bin/anonsurf-gui
 	cp gui/org.parrotsec.Anonsurf.desktop $(DESTDIR)/usr/share/applications/.
+	cp gui/org.parrotsec.AnonsurfCli.desktop $(DESTDIR)/usr/share/applications/.
 	cp icons/anonsurf.png $(DESTDIR)/usr/share/icons/hicolor/512x512/apps/anonsurf.png
 
 inst-perms:
@@ -101,6 +102,7 @@ uninstall:
 	rm /usr/bin/anonsurf
 	rm /usr/bin/anonsurf-gui
 	rm /usr/share/applications/org.parrotsec.Anonsurf.desktop
+	rm /usr/share/applications/org.parrotsec.AnonsurfCli.desktop
 	rm /usr/share/icons/hicolor/512x512/apps/anonsurf.png
 	rm /lib/systemd/system/anonsurfd.service
 	rm /lib/systemd/system/anonsurf-recovery.service
