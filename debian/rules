@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
 
+export GOCACHE := $(CURDIR)/build/go-cache
+
 %:
 	dh $@ --with bash-completion
 
