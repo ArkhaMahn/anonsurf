@@ -1,0 +1,156 @@
+stages:
+  - check
+  - build
+  - package
+  - publish
+  - release
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
+default:
+  image: debian:trixie-slim
+  interruptible: true
+
+variables:
+  DEBIAN_FRONTEND: noninteractive
+  GOCACHE: $CI_PROJECT_DIR/.cache/go-build
+  GOMODCACHE: $CI_PROJECT_DIR/.cache/go-mod
+  PACKAGE_REGISTRY_NAME: anonsurf
+
+cache:
+  key:
+    files:
+      - src/go.sum
+      - src/vendor/modules.txt
+  paths:
+    - .cache/go-build/
+    - .cache/go-mod/
+
+.go-job:
+  before_script:
+    - apt-get update
+    - apt-get install --yes --no-install-recommends ca-certificates cmake g++ git golang-go make qml6-module-qtquick-shapes qt6-base-dev qt6-declarative-dev
+
+check:
+  stage: check
+  extends: .go-job
+  script:
+    - make check
+    # Fail if src/vendor is stale: re-vendor (network allowed here) and
+    # require a clean tree. Builds themselves stay offline via Makefile.
+    - cd src && go mod vendor && git diff --exit-code -- go.sum vendor/ && test -z "$(git status --porcelain -- vendor/)"
+
+build-binaries:
+  stage: build
+  extends: .go-job
+  needs:
+    - check
+  script:
+    - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 make build
+    - mkdir -p dist/binaries
+    - DEBIAN_VERSION="$(sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)"
+    - BINARY_ARCHIVE="anonsurf_${DEBIAN_VERSION}_linux_amd64.tar.gz"
+    - cp build/gui/anonsurf-gui build/release/
+    - tar -C build/release -czf "dist/binaries/${BINARY_ARCHIVE}" anondaemon anonsurf anonsurf-gui dnstool make-torrc safekill
+    - printf 'BINARY_ARCHIVE=%s\n' "$BINARY_ARCHIVE" > dist/binaries.env
+    - cd dist/binaries && sha256sum "$BINARY_ARCHIVE" > SHA256SUMS-binaries
+  artifacts:
+    name: anonsurf-binaries-$CI_COMMIT_REF_SLUG
+    paths:
+      - dist/binaries/
+    reports:
+      dotenv: dist/binaries.env
+    expire_in: 4 weeks
+
+package-deb:
+  stage: package
+  needs:
+    - check
+  before_script:
+    - apt-get update
+    - apt-get install --yes --no-install-recommends bash-completion build-essential cmake debhelper golang-go qml6-module-qtquick-shapes qt6-base-dev qt6-declarative-dev
+  script:
+    - dpkg-buildpackage --build=binary --no-sign
+    - mkdir -p dist/debian
+    - cp ../*.deb ../*.buildinfo ../*.changes dist/debian/
+    - DEBIAN_VERSION="$(dpkg-parsechangelog --show-field Version)"
+    - DEBIAN_ARCH="$(dpkg-architecture --query DEB_HOST_ARCH)"
+    - printf 'DEBIAN_VERSION=%s\nDEBIAN_ARCH=%s\n' "$DEBIAN_VERSION" "$DEBIAN_ARCH" > dist/debian.env
+    - cd dist/debian && sha256sum *.deb *.buildinfo *.changes > SHA256SUMS-debian
+  artifacts:
+    name: anonsurf-debian-$CI_COMMIT_REF_SLUG
+    paths:
+      - dist/debian/
+    reports:
+      dotenv: dist/debian.env
+    expire_in: 4 weeks
+
+publish-package:
+  stage: publish
+  needs:
+    - job: build-binaries
+      artifacts: true
+    - job: package-deb
+      artifacts: true
+  before_script:
+    - apt-get update
+    - apt-get install --yes --no-install-recommends ca-certificates curl
+  script:
+    - |
+      for file in dist/binaries/* dist/debian/*; do
+        filename="$(basename "$file")"
+        curl --fail-with-body --location --retry 3 \
+          --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+          --upload-file "$file" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/${filename}"
+      done
+  rules:
+    - if: $CI_COMMIT_TAG
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  needs:
+    - job: build-binaries
+      artifacts: true
+    - job: package-deb
+      artifacts: true
+    - job: publish-package
+      artifacts: false
+  script:
+    - echo "Creating release ${CI_COMMIT_TAG}"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    name: AnonSurf $CI_COMMIT_TAG
+    description: Automated Linux binaries and Debian packages for $CI_COMMIT_TAG.
+    assets:
+      links:
+        - name: Linux amd64 binaries
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/${BINARY_ARCHIVE}
+          link_type: package
+        - name: Linux binary checksums
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/SHA256SUMS-binaries
+          link_type: package
+        - name: anonsurf Debian package
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf_${DEBIAN_VERSION}_${DEBIAN_ARCH}.deb
+          link_type: package
+        - name: anonsurf-cli Debian package
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf-cli_${DEBIAN_VERSION}_${DEBIAN_ARCH}.deb
+          link_type: package
+        - name: AnonSurf GUI Debian package
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf-gui_${DEBIAN_VERSION}_${DEBIAN_ARCH}.deb
+          link_type: package
+        - name: anonsurf-gtk transition Debian package
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/anonsurf-gtk_${DEBIAN_VERSION}_all.deb
+          link_type: package
+        - name: Debian package checksums
+          url: ${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_REGISTRY_NAME}/${DEBIAN_VERSION}/SHA256SUMS-debian
+          link_type: package
+  rules:
+    - if: $CI_COMMIT_TAG

@@ -1,95 +1,109 @@
-VALA-FLAGS = --pkg gtk+-3.0 # GTK3
-VALA-FLAGS += --pkg libsoup-2.4 # Use libsoup to parse HTML, build-time requires libsoup2.4-dev
-VALA-FLAGS += --pkg libnotify # Use libnotify to send notifications, build-time requires libnotify-dev
-VALA-FLAGS += --vapidir /usr/share/vala/vapi/ --pkg vte-2.91 # Use libvte to create a terminal. build-time requires libvte-2.91-dev. Libvte binding is at /usr/share/vala/vapi/vte-2.91.vapi
-VALA-FLAGS += -X -Wno-incompatible-pointer-types # Suppress Vala's warning. Check https://stackoverflow.com/a/66559047
-VALA-FLAGS += -X -Wno-discarded-qualifiers # Supress Vala's warning. Check https://stackoverflow.com/a/66559047
-
-VALA-SRC-DIR = src/anonsurf-gtk
-VALA-SRC-LAYOUTS = $(VALA-SRC-DIR)/layouts
-VALA-SRC-DIALOGS = $(VALA-SRC-DIR)/dialogs
-VALA-SRC-SYS = $(VALA-SRC-DIR)/system_interactions
-
-NIM-FLAGS = c --nimcache:/tmp/ -d:ssl -d:release
+GO ?= go
+CMAKE ?= cmake
+GO-SRC-DIR = src
+GO-BUILD-FLAGS = -trimpath -mod=vendor
+GO-LDFLAGS = -s -w
+GO-BUILD-ENV = GO111MODULE=on GOPROXY=off GOTOOLCHAIN=local
+GO-PKG-PREFIX = .
 BUILD-DEST = build/release
+GUI-BUILD-DIR = build/gui
 
-os_name="$(shell cat /etc/os-release | grep "^ID=" | cut -d = -f 2)"
+VERSION ?= $(shell sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)
 
-.PHONY: build
+.PHONY: build check clean gui gui-check inst-gui vendor
 
 all: build install
 
 clean:
 	rm -rf build
 
-anonsurf-gtk:
-	valac $(VALA-FLAGS) $(VALA-SRC-DIR)/anonsurf_gtk.vala \
-	$(VALA-SRC-LAYOUTS)/box_boot.vala $(VALA-SRC-LAYOUTS)/box_controller.vala $(VALA-SRC-LAYOUTS)/titlebar.vala \
-	$(VALA-SRC-DIALOGS)/about.vala $(VALA-SRC-DIALOGS)/tor_controller.vala $(VALA-SRC-DIALOGS)/ask_kill.vala \
-	$(VALA-SRC-SYS)/notifications.vala $(VALA-SRC-SYS)/system_tray_icon.vala $(VALA-SRC-SYS)/system_tray_menu.vala $(VALA-SRC-SYS)/threads.vala \
-	-o $(BUILD-DEST)/anonsurf-gtk
+$(BUILD-DEST):
+	mkdir -p $(BUILD-DEST)
 
-anonsurf-cli:
-	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/anonsurf src/anonsurf_cli/anonsurf_cli.nim
+# Regenerate src/vendor after changing src/go.mod or src/go.sum.
+# CI verifies vendor is in sync: run this and commit the result.
+vendor:
+	cd $(GO-SRC-DIR) && $(GO) mod vendor && $(GO) mod verify
 
-dnstool:
-	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/dnstool src/dnstool/dnstool.nim
+anonsurf-cli: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS) -X main.version=$(VERSION)" -o ../$(BUILD-DEST)/anonsurf $(GO-PKG-PREFIX)/cmd/anonsurf-cli
 
-make-torrc:
-	nim $(NIM-FLAGS) --out:$(BUILD-DEST)/make-torrc src/make_torrc/make_torrc.nim
+dnstool: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/dnstool $(GO-PKG-PREFIX)/cmd/dnstool
 
-build: anonsurf-cli anonsurf-gtk dnstool make-torrc
+make-torrc: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/make-torrc $(GO-PKG-PREFIX)/cmd/make-torrc
 
-inst-launchers:
-	# Copy launchers
-	if [ $(os_name) = "parrot" ]; then \
-		cp launchers/parrot/*.desktop $(DESTDIR)/usr/share/applications/; \
-	else \
-		cp launchers/debian/*.desktop $(DESTDIR)/usr/share/applications/; \
-	fi
+anondaemon: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anondaemon $(GO-PKG-PREFIX)/cmd/anondaemon
+
+safekill: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/safekill $(GO-PKG-PREFIX)/cmd/safekill
+
+gui:
+	$(CMAKE) -S gui -B $(GUI-BUILD-DIR) -DCMAKE_BUILD_TYPE=Release -DANONSURF_VERSION=$(VERSION)
+	$(CMAKE) --build $(GUI-BUILD-DIR) --parallel
+
+gui-check: gui
+	$(CMAKE) --build $(GUI-BUILD-DIR) --target anonsurf-gui_qmllint
+
+build: anonsurf-cli dnstool make-torrc anondaemon safekill gui
+
+check: gui-check
+	# vendor/ is upstream code: only format-check our own sources.
+	cd $(GO-SRC-DIR) && files=$$(find . -path ./vendor -prune -o -name '*.go' -print0 | xargs -0 gofmt -l) && \
+		if [ -n "$$files" ]; then echo "not gofmt-clean: $$files"; exit 1; fi
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build $(GO-PKG-PREFIX)/cmd/...
 
 inst-configs:
-	# Copy configs
 	cp configs/bridges.txt $(DESTDIR)/etc/anonsurf/.
 	cp configs/onion.pac $(DESTDIR)/etc/anonsurf/.
 	cp configs/anonsurf.cfg $(DESTDIR)/etc/anonsurf/.
 
-	# Copy daemon service
 	cp sys-units/anonsurfd.service $(DESTDIR)/lib/systemd/system/anonsurfd.service
+	cp sys-units/anonsurf-recovery.service $(DESTDIR)/lib/systemd/system/anonsurf-recovery.service
+	cp sys-units/anonsurf-identity.service $(DESTDIR)/lib/systemd/system/anonsurf-identity.service
+	cp sys-units/tor@default.service.d/anonsurf-recovery.conf $(DESTDIR)/lib/systemd/system/tor@default.service.d/anonsurf-recovery.conf
+	ln -sfn ../anonsurf-recovery.service $(DESTDIR)/lib/systemd/system/multi-user.target.wants/anonsurf-recovery.service
 
 inst-bins:
-	# Copy binaries to system
 	cp build/release/anonsurf $(DESTDIR)/usr/bin/anonsurf
-	cp build/release/anonsurf-gtk $(DESTDIR)/usr/bin/anonsurf-gtk
 	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
 	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
-	cp scripts/* $(DESTDIR)/usr/lib/anonsurf/
+	cp build/release/anondaemon $(DESTDIR)/usr/lib/anonsurf/anondaemon
+	cp build/release/safekill $(DESTDIR)/usr/lib/anonsurf/safekill
+
+inst-gui:
+	cp build/gui/anonsurf-gui $(DESTDIR)/usr/bin/anonsurf-gui
+	cp gui/org.parrotsec.Anonsurf.desktop $(DESTDIR)/usr/share/applications/.
+	cp icons/anonsurf.png $(DESTDIR)/usr/share/icons/hicolor/512x512/apps/anonsurf.png
 
 inst-perms:
-	chmod +x $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gtk
-
-inst-icons:
-	cp icons/*.png $(DESTDIR)/usr/share/icons/.
+	chmod +x $(DESTDIR)/usr/lib/anonsurf/anondaemon $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gui
+	chmod 600 $(DESTDIR)/etc/anonsurf/anonsurf.cfg
 
 mk-folders:
-	# Create all folders
 	mkdir -p $(DESTDIR)/etc/anonsurf/
 	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
 	mkdir -p $(DESTDIR)/usr/bin/
 	mkdir -p $(DESTDIR)/usr/share/applications/
+	mkdir -p $(DESTDIR)/usr/share/icons/hicolor/512x512/apps/
 	mkdir -p $(DESTDIR)/lib/systemd/system/
+	mkdir -p $(DESTDIR)/lib/systemd/system/multi-user.target.wants/
+	mkdir -p $(DESTDIR)/lib/systemd/system/tor@default.service.d/
 
-install: mk-folders inst-bins inst-configs inst-launchers inst-icons inst-perms
+install: mk-folders inst-bins inst-gui inst-configs inst-perms
 
 uninstall:
-	# Remove config files
 	rm -rf /etc/anonsurf/
-	# Remove daemon scripts and some other binaries
 	rm -rf /usr/lib/anonsurf/
-	# Remove binaries
 	rm /usr/bin/anonsurf
-	rm /usr/bin/anonsurf-gtk
-	# Remove systemd unit
+	rm /usr/bin/anonsurf-gui
+	rm /usr/share/applications/org.parrotsec.Anonsurf.desktop
+	rm /usr/share/icons/hicolor/512x512/apps/anonsurf.png
 	rm /lib/systemd/system/anonsurfd.service
-	# Remove launchers
-	rm /usr/share/applications/anonsurf*.desktop
+	rm /lib/systemd/system/anonsurf-recovery.service
+	rm /lib/systemd/system/anonsurf-identity.service
+	rm /lib/systemd/system/multi-user.target.wants/anonsurf-recovery.service
+	rm /lib/systemd/system/tor@default.service.d/anonsurf-recovery.conf

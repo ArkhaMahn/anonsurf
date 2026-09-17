@@ -1,14 +1,25 @@
 [Unit]
-Description="Anonsurf Daemon Service"
-Before=poweroff.target reboot.target tor.service
-After=network.target
-Wants=tor.service
+Description=AnonSurf system-wide Tor routing
+Requires=anonsurf-recovery.service
+Wants=network-online.target
+After=anonsurf-recovery.service network-online.target NetworkManager.service
 
 [Service]
+Type=oneshot
+NotifyAccess=all
+StateDirectory=anonsurf
+StateDirectoryMode=0700
+RuntimeDirectory=anonsurf
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStartPre=/usr/lib/anonsurf/anondaemon stop
 ExecStart=/usr/lib/anonsurf/anondaemon start
 ExecReload=/usr/lib/anonsurf/anondaemon restart
 ExecStop=/usr/lib/anonsurf/anondaemon stop
+ExecStopPost=/usr/lib/anonsurf/anondaemon stop
 RemainAfterExit=yes
+TimeoutStartSec=360
+TimeoutStopSec=360
 
 [Install]
-WantedBy=default.target
+WantedBy=multi-user.target

@@ -1,0 +1,129 @@
+package tor
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
+	"gitlab.com/parrotsec/packages/anonsurf/internal/fileops"
+)
+
+const (
+	TorrcPath              = "/etc/tor/torrc"
+	TorrcBackupPath        = "/var/lib/anonsurf/torrc.backup"
+	TorrcMissingMarkerPath = "/var/lib/anonsurf/torrc.missing"
+)
+
+var (
+	ErrEmptyTorrc          = errors.New("torrc content is empty")
+	ErrTorrcBackupExists   = errors.New("torrc backup already exists")
+	ErrTorrcBackupNotFound = errors.New("torrc backup not found")
+	ErrTorrcBackupConflict = errors.New("torrc backup state is inconsistent")
+)
+
+type TorrcManager struct{}
+
+func (TorrcManager) Backup() error {
+	backupExists, err := fileops.Exists(TorrcBackupPath)
+	if err != nil {
+		return fmt.Errorf("check torrc backup: %w", err)
+	}
+	markerExists, err := fileops.Exists(TorrcMissingMarkerPath)
+	if err != nil {
+		return fmt.Errorf("check missing torrc marker: %w", err)
+	}
+	if backupExists && markerExists {
+		return ErrTorrcBackupConflict
+	}
+	if backupExists || markerExists {
+		return ErrTorrcBackupExists
+	}
+
+	info, err := os.Stat(TorrcPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// Original state      Backup artifact   Restore action
+			// torrc exists        torrc.backup      write the saved bytes back
+			// torrc is absent     torrc.missing     remove the generated torrc
+			// No artifact means no backup transaction exists; both artifacts at
+			// once mean corrupted state. The explicit marker is therefore what
+			// makes "restore the original absence" possible without guessing.
+			if err := os.MkdirAll(filepath.Dir(TorrcMissingMarkerPath), 0700); err != nil {
+				return fmt.Errorf("create torrc state directory: %w", err)
+			}
+			if err := fileops.WriteAtomic(TorrcMissingMarkerPath, []byte("missing\n"), 0600); err != nil {
+				return fmt.Errorf("write missing torrc marker: %w", err)
+			}
+			return nil
+		}
+		return fmt.Errorf("stat torrc: %w", err)
+	}
+	content, err := os.ReadFile(TorrcPath)
+	if err != nil {
+		return fmt.Errorf("read torrc: %w", err)
+	}
+	if err := os.MkdirAll(filepath.Dir(TorrcBackupPath), 0700); err != nil {
+		return fmt.Errorf("create torrc backup directory: %w", err)
+	}
+	if err := fileops.WriteAtomic(TorrcBackupPath, content, info.Mode().Perm()); err != nil {
+		return fmt.Errorf("write torrc backup: %w", err)
+	}
+	return nil
+}
+
+func (TorrcManager) Restore() error {
+	backupExists, err := fileops.Exists(TorrcBackupPath)
+	if err != nil {
+		return fmt.Errorf("check torrc backup: %w", err)
+	}
+	markerExists, err := fileops.Exists(TorrcMissingMarkerPath)
+	if err != nil {
+		return fmt.Errorf("check missing torrc marker: %w", err)
+	}
+	if backupExists && markerExists {
+		return ErrTorrcBackupConflict
+	}
+
+	if backupExists {
+		info, err := os.Stat(TorrcBackupPath)
+		if err != nil {
+			return fmt.Errorf("stat torrc backup: %w", err)
+		}
+		content, err := os.ReadFile(TorrcBackupPath)
+		if err != nil {
+			return fmt.Errorf("read torrc backup: %w", err)
+		}
+		if err := fileops.WriteAtomic(TorrcPath, content, info.Mode().Perm()); err != nil {
+			return fmt.Errorf("restore torrc backup: %w", err)
+		}
+		if err := os.Remove(TorrcBackupPath); err != nil {
+			return fmt.Errorf("remove torrc backup: %w", err)
+		}
+		return nil
+	}
+	if !markerExists {
+		return ErrTorrcBackupNotFound
+	}
+	if err := os.Remove(TorrcPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("remove generated torrc: %w", err)
+	}
+	if err := os.Remove(TorrcMissingMarkerPath); err != nil {
+		return fmt.Errorf("remove missing torrc marker: %w", err)
+	}
+	return nil
+}
+
+func (TorrcManager) Write(content string) error {
+	if strings.TrimSpace(content) == "" {
+		return ErrEmptyTorrc
+	}
+	if err := os.MkdirAll(filepath.Dir(TorrcPath), 0755); err != nil {
+		return fmt.Errorf("create torrc directory: %w", err)
+	}
+	if err := fileops.WriteAtomic(TorrcPath, []byte(content), 0600); err != nil {
+		return fmt.Errorf("write torrc: %w", err)
+	}
+	return nil
+}
