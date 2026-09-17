@@ -1,3 +1,12 @@
+anonsurf (6.0.1+parrot0) echo; urgency=medium
+
+  * Split CLI and GUI desktop launchers to avoid menu duplicates.
+  * Ship a dedicated AnonSurf CLI launcher in anonsurf-cli.
+  * Keep a single main menu category with the Parrot Anon Surf submenu
+    entry.
+
+ -- Dario "danterolle" Camonita <danterolle@parrotsec.org>  Thu, 17 Sep 2026 13:42:29 +0200
+
 anonsurf (6.0.0+parrot0) echo; urgency=medium
 
   * New version 6.0 with the Go command-line and daemon migration.
