@@ -1,3 +1,10 @@
+anonsurf (6.0.1+parrot1) echo; urgency=medium
+
+  * Allow anonsurf-cli to take over the man page from pre-6.0 anonsurf
+    packages during upgrades.
+
+ -- Dario "danterolle" Camonita <danterolle@parrotsec.org>  Fri, 25 Sep 2026 15:06:48 +0200
+
 anonsurf (6.0.1+parrot0) echo; urgency=medium
 
   * Split CLI and GUI desktop launchers to avoid menu duplicates.

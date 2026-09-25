@@ -35,6 +35,8 @@ Package: anonsurf-cli
 Architecture: any
 Priority: optional
 Depends: ${shlibs:Depends}, ${misc:Depends}, anonsurf (= ${binary:Version}), nyx, sudo
+Breaks: anonsurf (<< 6.0.0~)
+Replaces: anonsurf (<< 6.0.0~)
 Description: Command-line interface for AnonSurf
  AnonSurf's command-line interface written in Go.
 
