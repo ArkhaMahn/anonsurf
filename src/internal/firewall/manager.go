@@ -9,12 +9,7 @@ import (
 	"gitlab.com/parrotsec/packages/anonsurf/internal/tor"
 )
 
-const (
-	SavePath       = "/usr/sbin/iptables-save"
-	RestorePath    = "/usr/sbin/iptables-restore"
-	StatePath      = "/run/anonsurf/iptables.rules"
-	defaultTorUser = "debian-tor"
-)
+const StatePath = "/run/anonsurf/iptables.rules"
 
 var excludedNetworks = [...]string{
 	"192.168.0.0/16",
@@ -32,7 +27,7 @@ func (Manager) Backup() error {
 		return nil
 	}
 
-	rules, err := (command.Runner{}).Output(SavePath)
+	rules, err := (command.Runner{}).Output(iptablesPath("iptables-save"))
 	if err != nil {
 		return fmt.Errorf("save iptables rules: %w", err)
 	}
@@ -48,7 +43,7 @@ func (m Manager) Apply(routing tor.RoutingConfig) error {
 		return fmt.Errorf("read iptables backup for apply: %w", err)
 	}
 	rules := m.renderRules(routing, backup)
-	if err := (command.Runner{}).RunWithInput(RestorePath, []byte(rules)); err != nil {
+	if err := (command.Runner{}).RunWithInput(iptablesPath("iptables-restore"), []byte(rules)); err != nil {
 		return fmt.Errorf("apply iptables rules: %w", err)
 	}
 	return nil
@@ -71,7 +66,7 @@ func (Manager) restoreRules() error {
 		return fmt.Errorf("read iptables backup: %w", err)
 	}
 	rules = ensureManagedIPTablesTables(rules)
-	if err := (command.Runner{}).RunWithInput(RestorePath, rules); err != nil {
+	if err := (command.Runner{}).RunWithInput(iptablesPath("iptables-restore"), rules); err != nil {
 		return fmt.Errorf("restore iptables rules: %w", err)
 	}
 	if err := fileops.RemoveIfExists(StatePath); err != nil {
@@ -81,7 +76,7 @@ func (Manager) restoreRules() error {
 }
 
 func (Manager) natRules(routing tor.RoutingConfig) [][]string {
-	torUser := defaultTorUser
+	torUser := torUsername()
 	rules := [][]string{
 		{"-A", "OUTPUT", "-m", "owner", "--uid-owner", torUser, "-j", "RETURN"},
 		{"-A", "OUTPUT", "-p", "udp", "-m", "udp", "--sport", "68", "--dport", "67", "-j", "RETURN"},
@@ -100,7 +95,7 @@ func (Manager) natRules(routing tor.RoutingConfig) [][]string {
 }
 
 func (Manager) filterRules(routing tor.RoutingConfig) [][]string {
-	torUser := defaultTorUser
+	torUser := torUsername()
 	rules := [][]string{
 		{"-A", "OUTPUT", "-p", "udp", "-m", "udp", "--sport", "68", "--dport", "67", "-j", "ACCEPT"},
 		{"-A", "INPUT", "-p", "udp", "-m", "udp", "--sport", "67", "--dport", "68", "-j", "ACCEPT"},

@@ -24,6 +24,11 @@ func (m Manager) RestoreBackupOrDHCP() error {
 				return fmt.Errorf("remove current DNS settings: %w", err)
 			}
 		}
+		// Start resolved before NetworkManager reloads: NetworkManager only
+		// adopts systemd-resolved as its DNS backend while the service runs.
+		if err := m.RestoreResolved(); err != nil {
+			return err
+		}
 		if _, err := m.restoreNetworkManagerHook(); err != nil {
 			return fmt.Errorf("restore NetworkManager DNS ownership: %w", err)
 		}
@@ -37,6 +42,10 @@ func (m Manager) RestoreBackupOrDHCP() error {
 		if err := writeDNSState(completed); err != nil {
 			return err
 		}
+	} else if err := m.RestoreResolved(); err != nil {
+		// A completed restore can still have a pending service restart if a
+		// previous run was interrupted after writing state.
+		return err
 	}
 	return m.cleanupRestore()
 }

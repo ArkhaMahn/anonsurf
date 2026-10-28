@@ -1,0 +1,50 @@
+# Arch/CachyOS package hooks for AnonSurf.
+#
+# The recovery unit must run before Tor starts, so it is enabled at boot. The
+# routing unit itself stays disabled until the user runs `anonsurf start` or
+# enables it explicitly with `anonsurf boot enable`.
+
+# Remove files that older AnonSurf packages or a manual `make install` may have
+# left behind. They are not tracked by this package's file list, so pacman
+# cannot remove them automatically.
+cleanup_legacy() {
+  # The CLI is terminal-only: no menu entry or launcher.
+  rm -f /usr/share/applications/org.parrotsec.AnonsurfCli.desktop
+
+  # Debian/Parrot drop-in from the upstream Makefile. Arch uses tor.service.
+  rm -f /usr/lib/systemd/system/tor@default.service.d/anonsurf-recovery.conf
+  rmdir /usr/lib/systemd/system/tor@default.service.d 2>/dev/null || true
+
+  if command -v update-desktop-database >/dev/null 2>&1; then
+    update-desktop-database -q /usr/share/applications 2>/dev/null || true
+  fi
+}
+
+post_install() {
+  cleanup_legacy
+  if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl enable anonsurf-recovery.service
+  fi
+}
+
+post_upgrade() {
+  cleanup_legacy
+  if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+    systemctl try-restart anonsurf-recovery.service 2>/dev/null || true
+  fi
+}
+
+pre_remove() {
+  if [ -d /run/systemd/system ]; then
+    systemctl disable --now anonsurfd.service 2>/dev/null || true
+    systemctl disable anonsurf-recovery.service 2>/dev/null || true
+  fi
+}
+
+post_remove() {
+  if [ -d /run/systemd/system ]; then
+    systemctl daemon-reload
+  fi
+}

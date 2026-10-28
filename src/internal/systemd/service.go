@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"gitlab.com/parrotsec/packages/anonsurf/internal/command"
+	"gitlab.com/parrotsec/packages/anonsurf/internal/platform"
 )
 
 const (
@@ -26,7 +27,7 @@ func NewAnonsurfdController() ServiceController {
 }
 
 func NewTorController() ServiceController {
-	return ServiceController{unit: TorUnit}
+	return ServiceController{unit: platform.TorUnit()}
 }
 
 func IsSystemStopping() bool {

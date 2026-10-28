@@ -22,6 +22,12 @@ func (m Manager) CreateDHCPOnly() error {
 	if err := m.finishPendingRestore(); err != nil {
 		return err
 	}
+	// Hand DNS back to NetworkManager/DHCP, including systemd-resolved on
+	// systems that use it. If AnonSurf suspended resolved, re-enable it before
+	// NetworkManager reloads so the service can be adopted again.
+	if err := m.RestoreResolved(); err != nil {
+		return err
+	}
 	if err := m.backupNetworkManagerHook(); err != nil {
 		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
 	}
@@ -41,10 +47,18 @@ func (m Manager) CreateAddrs(listAddr []string) error {
 	if err := m.backupNetworkManagerHook(); err != nil {
 		return fmt.Errorf("backup NetworkManager DNS settings: %w", err)
 	}
+	// Reload NetworkManager first so its D-Bus DNS backend does not re-activate
+	// systemd-resolved immediately after it is stopped.
+	if err := m.createNetworkManagerHook(NMHookDontManageResolvConf); err != nil {
+		return err
+	}
+	if err := m.SuspendResolved(); err != nil {
+		return err
+	}
 	if err := WriteDNSToSystem(listAddr, ResolvConfPath); err != nil {
 		return fmt.Errorf("write DNS settings: %w", err)
 	}
-	return m.createNetworkManagerHook(NMHookDontManageResolvConf)
+	return nil
 }
 
 func (m Manager) restoreResolverBackup() (bool, error) {

@@ -48,7 +48,11 @@ func TorrcOptionsFromConfig(cfg config.Config) TorrcOptions {
 }
 
 func RenderTorrc(options TorrcOptions) (string, error) {
-	return renderTorrcWithBase(defaultTorrcBase, options)
+	rendered, err := renderTorrcWithBase(defaultTorrcBase, options)
+	if err != nil {
+		return "", err
+	}
+	return applyPlatformDefaults(rendered), nil
 }
 
 func renderTorrcWithBase(base string, options TorrcOptions) (string, error) {

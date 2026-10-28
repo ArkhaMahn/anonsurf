@@ -29,17 +29,18 @@ DesktopInstance::Startup DesktopInstance::start() {
   m_exported =
       m_bus.registerObject(Path, this, QDBusConnection::ExportScriptableSlots);
   if (!m_exported) {
-    qCritical() << "Cannot export the AnonSurf activation endpoint:"
-                << m_bus.lastError().message();
-    return Startup::Failed;
+    // A GUI without activation support is still better than a silent exit.
+    qWarning() << "Cannot export the AnonSurf activation endpoint:"
+               << m_bus.lastError().message();
+    return Startup::Unavailable;
   }
 
   const auto reply = m_bus.interface()->registerService(
       Service, QDBusConnectionInterface::DontQueueService);
   if (!reply.isValid()) {
-    qCritical() << "Cannot register the AnonSurf desktop instance:"
-                << reply.error().message();
-    return Startup::Failed;
+    qWarning() << "Cannot register the AnonSurf desktop instance:"
+               << reply.error().message();
+    return Startup::Unavailable;
   }
   if (reply.value() == QDBusConnectionInterface::ServiceRegistered) {
     m_registered = true;
@@ -50,9 +51,11 @@ DesktopInstance::Startup DesktopInstance::start() {
       QDBusMessage::createMethodCall(Service, Path, Service, "Activate"),
       QDBus::Block, 3000);
   if (activation.type() == QDBusMessage::ErrorMessage) {
-    qCritical() << "Cannot activate the existing AnonSurf window:"
-                << activation.errorMessage();
-    return Startup::Failed;
+    // An old, stale or unresponsive instance may still own the name. Open a
+    // window instead of leaving the launcher with no feedback at all.
+    qWarning() << "Cannot activate the existing AnonSurf window:"
+               << activation.errorMessage();
+    return Startup::Unavailable;
   }
   return Startup::Activated;
 }

@@ -70,7 +70,10 @@ func (c Controller) restoreDNS() error {
 		return fmt.Errorf("check DNS state: %w", err)
 	}
 	if !exists {
-		return nil
+		// The DNS marker is written after systemd-resolved is suspended, so an
+		// interrupted start can leave the service stopped without any DNS state
+		// to restore. Re-enable it from the condition marker on its own.
+		return (dns.Manager{}).RestoreResolved()
 	}
 	return (dns.Manager{}).RestoreBackupOrDHCP()
 }

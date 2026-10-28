@@ -8,7 +8,7 @@ class DesktopInstance final : public QObject {
   Q_CLASSINFO("D-Bus Interface", "org.parrotsec.Anonsurf")
 
 public:
-  enum class Startup { Primary, Activated, Unavailable, Failed };
+  enum class Startup { Primary, Activated, Unavailable };
 
   explicit DesktopInstance(
       const QDBusConnection &bus = QDBusConnection::sessionBus(),

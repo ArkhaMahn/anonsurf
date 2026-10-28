@@ -1,0 +1,121 @@
+# Arch/CachyOS install rules for AnonSurf.
+#
+# The upstream Makefile targets Debian: it installs units into /lib/systemd and
+# ships a tor@default.service drop-in. Arch-based distributions ship a plain
+# tor.service instead, so this file selects the correct paths while sharing the
+# same build targets.
+GO ?= go
+CMAKE ?= cmake
+GO-SRC-DIR = src
+GO-BUILD-FLAGS = -trimpath -mod=vendor
+GO-LDFLAGS = -s -w
+GO-BUILD-ENV = GO111MODULE=on GOPROXY=off GOTOOLCHAIN=local
+GO-PKG-PREFIX = .
+BUILD-DEST = build/release
+GUI-BUILD-DIR = build/gui
+SYSTEMD_UNIT_DIR ?= /usr/lib/systemd/system
+
+VERSION ?= $(shell sed -n '1s/^[^(]*(\([^)]*\)).*/\1/p' debian/changelog)
+
+.PHONY: build check clean gui gui-check inst-gui vendor install uninstall
+
+all: build install
+
+clean:
+	rm -rf build
+
+$(BUILD-DEST):
+	mkdir -p $(BUILD-DEST)
+
+vendor:
+	cd $(GO-SRC-DIR) && $(GO) mod vendor && $(GO) mod verify
+
+anonsurf-cli: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS) -X main.version=$(VERSION)" -o ../$(BUILD-DEST)/anonsurf $(GO-PKG-PREFIX)/cmd/anonsurf-cli
+
+dnstool: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/dnstool $(GO-PKG-PREFIX)/cmd/dnstool
+
+make-torrc: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/make-torrc $(GO-PKG-PREFIX)/cmd/make-torrc
+
+anondaemon: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/anondaemon $(GO-PKG-PREFIX)/cmd/anondaemon
+
+safekill: $(BUILD-DEST)
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) build $(GO-BUILD-FLAGS) -ldflags="$(GO-LDFLAGS)" -o ../$(BUILD-DEST)/safekill $(GO-PKG-PREFIX)/cmd/safekill
+
+gui:
+	$(CMAKE) -S gui -B $(GUI-BUILD-DIR) -DCMAKE_BUILD_TYPE=Release -DANONSURF_VERSION=$(VERSION)
+	$(CMAKE) --build $(GUI-BUILD-DIR) --parallel
+
+gui-check: gui
+	$(CMAKE) --build $(GUI-BUILD-DIR) --target anonsurf-gui_qmllint
+
+build: anonsurf-cli dnstool make-torrc anondaemon safekill gui
+
+check: gui-check
+	cd $(GO-SRC-DIR) && files=$$(find . -path ./vendor -prune -o -name '*.go' -print0 | xargs -0 gofmt -l) && \
+		if [ -n "$$files" ]; then echo "not gofmt-clean: $$files"; exit 1; fi
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) $(GO) vet $(GO-PKG-PREFIX)/...
+	cd $(GO-SRC-DIR) && $(GO-BUILD-ENV) GOOS=linux GOARCH=amd64 CGO_ENABLED=0 $(GO) build $(GO-PKG-PREFIX)/cmd/...
+
+inst-configs:
+	cp configs/bridges.txt $(DESTDIR)/etc/anonsurf/.
+	cp configs/onion.pac $(DESTDIR)/etc/anonsurf/.
+	cp configs/anonsurf.cfg $(DESTDIR)/etc/anonsurf/.
+
+	cp sys-units/anonsurfd.service $(DESTDIR)$(SYSTEMD_UNIT_DIR)/anonsurfd.service
+	cp sys-units/anonsurf-recovery.service $(DESTDIR)$(SYSTEMD_UNIT_DIR)/anonsurf-recovery.service
+	cp sys-units/anonsurf-identity.service $(DESTDIR)$(SYSTEMD_UNIT_DIR)/anonsurf-identity.service
+
+	mkdir -p $(DESTDIR)$(SYSTEMD_UNIT_DIR)/tor.service.d
+	cp sys-units/tor.service.d/anonsurf-recovery.conf $(DESTDIR)$(SYSTEMD_UNIT_DIR)/tor.service.d/anonsurf-recovery.conf
+
+inst-bins:
+	cp build/release/anonsurf $(DESTDIR)/usr/bin/anonsurf
+	cp build/release/dnstool $(DESTDIR)/usr/bin/dnstool
+	cp build/release/make-torrc $(DESTDIR)/usr/lib/anonsurf/make-torrc
+	cp build/release/anondaemon $(DESTDIR)/usr/lib/anonsurf/anondaemon
+	cp build/release/safekill $(DESTDIR)/usr/lib/anonsurf/safekill
+
+inst-gui:
+	cp build/gui/anonsurf-gui $(DESTDIR)/usr/bin/anonsurf-gui
+	cp gui/org.parrotsec.Anonsurf.desktop $(DESTDIR)/usr/share/applications/.
+	cp icons/anonsurf.png $(DESTDIR)/usr/share/icons/hicolor/512x512/apps/anonsurf.png
+
+inst-perms:
+	chmod +x $(DESTDIR)/usr/lib/anonsurf/anondaemon $(DESTDIR)/usr/lib/anonsurf/make-torrc $(DESTDIR)/usr/lib/anonsurf/safekill $(DESTDIR)/usr/bin/anonsurf $(DESTDIR)/usr/bin/anonsurf-gui
+	chmod 600 $(DESTDIR)/etc/anonsurf/anonsurf.cfg
+
+inst-docs:
+	install -Dm644 debian/anonsurf.bash-completion $(DESTDIR)/usr/share/bash-completion/completions/anonsurf
+	ln -sfn anonsurf $(DESTDIR)/usr/share/bash-completion/completions/dnstool
+	install -Dm644 debian/anonsurf.1 $(DESTDIR)/usr/share/man/man1/anonsurf.1
+	gzip -9n $(DESTDIR)/usr/share/man/man1/anonsurf.1
+
+mk-folders:
+	mkdir -p $(DESTDIR)/etc/anonsurf/
+	mkdir -p $(DESTDIR)/usr/lib/anonsurf/
+	mkdir -p $(DESTDIR)/usr/bin/
+	mkdir -p $(DESTDIR)/usr/share/applications/
+	mkdir -p $(DESTDIR)/usr/share/icons/hicolor/512x512/apps/
+	mkdir -p $(DESTDIR)/usr/share/bash-completion/completions/
+	mkdir -p $(DESTDIR)/usr/share/man/man1/
+	mkdir -p $(DESTDIR)$(SYSTEMD_UNIT_DIR)/
+	mkdir -p $(DESTDIR)$(SYSTEMD_UNIT_DIR)/tor.service.d/
+
+install: mk-folders inst-bins inst-gui inst-configs inst-perms inst-docs
+
+uninstall:
+	rm -rf /etc/anonsurf/
+	rm -rf /usr/lib/anonsurf/
+	rm -f /usr/bin/anonsurf
+	rm -f /usr/bin/anonsurf-gui
+	rm -f /usr/bin/dnstool
+	rm -f /usr/share/applications/org.parrotsec.Anonsurf.desktop
+	rm -f /usr/share/icons/hicolor/512x512/apps/anonsurf.png
+	rm -f $(SYSTEMD_UNIT_DIR)/anonsurfd.service
+	rm -f $(SYSTEMD_UNIT_DIR)/anonsurf-recovery.service
+	rm -f $(SYSTEMD_UNIT_DIR)/anonsurf-identity.service
+	rm -f $(SYSTEMD_UNIT_DIR)/tor.service.d/anonsurf-recovery.conf

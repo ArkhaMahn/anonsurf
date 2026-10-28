@@ -1,7 +1,7 @@
 [Unit]
 Description=Request a new AnonSurf Tor identity
 Requisite=anonsurfd.service
-After=anonsurfd.service tor@default.service
+After=anonsurfd.service tor@default.service tor.service
 
 [Service]
 Type=oneshot

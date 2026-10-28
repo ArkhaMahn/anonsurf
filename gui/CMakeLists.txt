@@ -77,6 +77,21 @@ qt_add_resources(anonsurf-gui "anonsurf-assets"
 target_compile_options(anonsurf-gui PRIVATE
     "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wall;-Wextra;-Wpedantic>"
 )
+# A default PIE executable still emits R_X86_64_COPY relocations for external
+# data such as Qt's staticMetaObject. Distribution Qt builds (Arch, CachyOS)
+# set GNU_PROPERTY_1_NEEDED_INDIRECT_EXTERN_ACCESS on their libraries, and the
+# dynamic loader then aborts the program with "copy relocation against
+# non-copyable protected symbol". Compiling the executable as fully
+# position-independent keeps every external data access GOT-based, and
+# -z nocopyreloc makes the linker reject any copy relocation that would sneak
+# back in.
+set_target_properties(anonsurf-gui PROPERTIES POSITION_INDEPENDENT_CODE ON)
+target_compile_options(anonsurf-gui PRIVATE
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-fPIC>"
+)
+target_link_options(anonsurf-gui PRIVATE
+    "$<$<LINK_LANG_AND_ID:CXX,GNU,Clang,AppleClang>:-Wl,-z,nocopyreloc>"
+)
 target_compile_definitions(anonsurf-gui PRIVATE
     ANONSURF_VERSION="${ANONSURF_VERSION}"
 )
